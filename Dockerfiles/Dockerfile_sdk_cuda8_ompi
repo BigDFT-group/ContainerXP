@@ -4,7 +4,7 @@
 #
 
 #build stage : heavy image, will be discarded after build 
-FROM nvidia/cuda:9.1-cudnn7-devel-ubuntu16.04
+FROM nvidia/cuda:8.0-devel-ubuntu16.04
 LABEL maintainer bigdft-developers@lists.launchpad.net 
 
 WORKDIR /opt/bigdft
@@ -29,20 +29,13 @@ RUN apt-get update && \
 	python-gobject-dev libyaml-dev \
 	libgirepository1.0-dev 
 
-RUN apt-get install -y --no-install-recommends \
-        libibverbs-dev libibverbs1 libibcm1 \
-        librdmacm1 librdmacm-dev rdmacm-utils \
-        byacc libmlx5-1 libgomp1 libibmad5 \
-        libibumad3 infiniband-diags \
-        opensm libmlx5-dev perftest ibverbs-utils \
-        alien
-#build with mvapich
-WORKDIR /tmp
-RUN curl -O http://mvapich.cse.ohio-state.edu/download/mvapich/gdr/2.2/stock2/mvapich2-gdr-2.2-4.cuda8.0.stock.gnu4.8.5.el7.centos.x86_64.rpm && alien -c *.rpm && mkdir /usr/local/mvapich && dpkg --install *.deb && rm -f *.rpm *.deb
-RUN cp -r /opt/mvapich2/gdr/no-mcast/2.2/cuda8.0/mpirun/gnu4.8.5/* /usr/local/mvapich
+#build openmpi with gpudirect
+RUN wget https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.gz \
+    && tar xzf openmpi-3.0.0.tar.gz && cd openmpi-3.0.0 && mkdir build && cd build \
+    && ../configure --with-cuda=/usr/local/cuda --prefix=/usr/local/mpi \
+    && make -j$(nproc) && make install \
+    && cd /opt/bigdft && rm -rf /opt/bigdft/openmpi-3.0.*
 
-#mvapich needs bash
-RUN ln -s /bin/bash /usr/bin/bash
 SHELL ["/bin/bash", "-c"]
 ENV SHELL /bin/bash
 
@@ -62,12 +55,11 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 #RUN cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/lib/libcuda.so.1
 #RUN cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1
-
+ENV PATH /usr/local/mpi/bin:${PATH}
 #update ldconfig as /usr/local/lib may not be in the path
-RUN echo "/usr/local/mvapich/lib" > /etc/ld.so.conf.d/mpi.conf
+RUN echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf
 #RUN echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf
 RUN ldconfig
-ENV PATH "/usr/local/mvapich/bin:${PATH}"
 
 CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser
 
@@ -77,3 +69,4 @@ USER bigdft
 ENV XDG_CACHE_HOME /home/bigdft/.cache/
 WORKDIR /home/bigdft 
 RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot"
+

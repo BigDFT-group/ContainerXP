@@ -24,9 +24,9 @@ RUN apt-get update && \
         lsof linux-headers-generic python-libxml2 \
         graphviz tk tcl swig chrpath dpatch flex cmake libxml2-dev\
         ssh gdb strace git libglu1-mesa-dev pkg-config libglib2.0-dev \
-	libnetcdf-dev libopenbabel-dev \
+	libnetcdf-dev valgrind gnuplot \
 	intltool libtool gtk-doc-tools libgtk-3-dev \
-	python-gobject-dev libyaml-dev \
+	python-gobject-dev \
 	libgirepository1.0-dev 
 
 #build openmpi with gpudirect
@@ -60,6 +60,8 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 RUN echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf
 #RUN echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf
 RUN ldconfig
+
+ENV PATH "/usr/local/mpi/bin:${PATH}"
 
 CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser
 
