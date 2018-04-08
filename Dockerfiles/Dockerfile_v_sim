@@ -1,0 +1,58 @@
+#
+# This Dockerfile installs a V_sim-ready to run environment
+#
+
+#build stage : heavy image, will be discarded after build 
+FROM nvidia/cuda:9.1-cudnn7-devel-ubuntu16.04
+LABEL maintainer bigdft-project@gmail.com 
+
+WORKDIR /opt/bigdft
+
+#install needed dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        autoconf autotools-dev automake \
+        bzr gfortran libblas-dev liblapack-dev \
+        fort77 build-essential curl python-pip python-dev \
+        bison libz-dev pkg-config python-setuptools \
+        libpcre3-dev libtool libglib2.0-dev libltdl-dev \
+        gnome-common ipython ipython-notebook \
+        python-matplotlib ocl-icd-libopencl1 vim wget \
+        net-tools ethtool perl lsb-release iproute2 \
+        pciutils libnl-route-3-200 kmod libnuma1 \
+        lsof linux-headers-generic python-libxml2 \
+        graphviz tk tcl swig chrpath dpatch flex cmake libxml2-dev\
+        ssh gdb strace git libglu1-mesa-dev pkg-config libglib2.0-dev \
+	libnetcdf-dev libopenbabel-dev \
+	intltool libtool gtk-doc-tools libgtk-3-dev \
+	python-gobject-dev libyaml-dev \
+	libgirepository1.0-dev \
+        && rm -rf /var/lib/apt/lists/
+
+SHELL ["/bin/bash", "-c"]
+ENV SHELL /bin/bash
+
+#install jupyter
+#upgrade pip to avoid annoying message
+RUN pip install --upgrade pip && \ 
+    pip install scipy jupyter
+
+#install OpenCL icd file
+RUN mkdir -p /etc/OpenCL/vendors && \
+    echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+WORKDIR /opt/v_sim-dev
+RUN echo "Downloading v_sim"
+RUN wget http://inac.cea.fr/L_Sim/V_Sim/download/v_sim-dev.tar.bz2
+RUN tar xjvf v_sim-dev.tar.bz2
+
+RUN v_sim*/configure --with-abinit --with-archives --with-openbabel --with-cube --without-strict-cflags
+RUN make -j3
+RUN make install
+
+RUN ldconfig
+
+CMD v_sim-dev
