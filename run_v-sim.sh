@@ -5,4 +5,4 @@ xhost +local:root #requires x11-xserver-utils
 docker run -ti  \
     -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v $PWD:/$dirname -w /$dirname \
-    v_sim-dev v_sim-dev $*
+    luigigenovese/v_sim-dev v_sim-dev $*
