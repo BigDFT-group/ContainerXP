@@ -72,7 +72,7 @@ ENV LD_LIBRARY_PATH "/usr/local/lib:${LD_LIBRARY_PATH}"
 RUN echo "prefix='/usr/local/bigdft_mvapich2' " > ./buildrc && cat ../rcfiles/container.rc >> buildrc
 
 RUN ../Installer.py autogen -y
-RUN rm -rf /opt/bigdft/build_mvapich2/* && echo "graou5"
+RUN rm -rf /opt/bigdft/build_mvapich2/*
 
 RUN echo "prefix='/usr/local/bigdft_mvapich2' " > ./buildrc && cat ../rcfiles/container.rc >> buildrc
 RUN ../Installer.py build -y -a babel -v
