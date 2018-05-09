@@ -34,3 +34,10 @@ of driving down the overall purity values of the system. Note that this depends
 on the results of the PDB to Fragment Notebook, and also running BigDFT on those
 results.
 
+One example run using the refragmentation procedure is included in the `PurityData`
+results called `NewFragmentation`. In this example, all fragments with a purity
+value greater than `0.05` were selected for analysis from a single snapshot of
+the protein with a 2.0 angstrom waterbox. The fragments included three organic
+molecules, and one chlorine atom. 0-5 new neighbors were included in those fragments,
+and the purity value was analyzed. You can see the results using the Analysis notebook.
+
