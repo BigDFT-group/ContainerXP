@@ -1,0 +1,8 @@
+OpenBabel.err
+outfile.xyz
+*~
+.DS_Store
+.ipynb_checkpoints
+NewFragment/*
+FragmentInput/*
+Geometry/*/*.yaml

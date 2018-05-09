@@ -1,0 +1,168 @@
+---
+ Code logo:
+   "__________________________________ A fast and precise DFT wavelet code
+   |     |     |     |     |     |
+   |     |     |     |     |     |      BBBB         i       gggggg
+   |_____|_____|_____|_____|_____|     B    B               g
+   |     |  :  |  :  |     |     |    B     B        i     g
+   |     |-0+--|-0+--|     |     |    B    B         i     g        g
+   |_____|__:__|__:__|_____|_____|___ BBBBB          i     g         g
+   |  :  |     |     |  :  |     |    B    B         i     g         g
+   |--+0-|     |     |-0+--|     |    B     B     iiii     g         g
+   |__:__|_____|_____|__:__|_____|    B     B        i      g        g
+   |     |  :  |  :  |     |     |    B BBBB        i        g      g
+   |     |-0+--|-0+--|     |     |    B        iiiii          gggggg
+   |_____|__:__|__:__|_____|_____|__BBBBB
+   |     |     |     |  :  |     |                           TTTTTTTTT
+   |     |     |     |--+0-|     |  DDDDDD          FFFFF        T
+   |_____|_____|_____|__:__|_____| D      D        F        TTTT T
+   |     |     |     |  :  |     |D        D      F        T     T
+   |     |     |     |--+0-|     |D         D     FFFF     T     T
+   |_____|_____|_____|__:__|_____|D___      D     F         T    T
+   |     |     |  :  |     |     |D         D     F          TTTTT
+   |     |     |--+0-|     |     | D        D     F         T    T
+   |_____|_____|__:__|_____|_____|          D     F        T     T
+   |     |     |     |     |     |         D               T    T
+   |     |     |     |     |     |   DDDDDD       F         TTTT
+   |_____|_____|_____|_____|_____|______                    www.bigdft.org   "
+ 
+ Reference Paper                       : The Journal of Chemical Physics 129, 014109 (2008)
+ Version Number                        : 1.8.1
+ Timestamp of this run                 : 2018-05-09 13:24:24.113
+ Root process Hostname                 : o40-024
+ Number of MPI tasks                   :  16
+ OpenMP parallelization                :  Yes
+ Maximal OpenMP threads per MPI task   :  8
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BIGDFT PRE-/POST-PROCESSING
+ Parallel environment:
+   MPI tasks                           :  16
+   OpenMP threads                      :  8
+ Atomic System Properties:
+   Types of atoms                      :  [ N, H, C, O, Na, Cl ]
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/overlap_sparse.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/overlap_sparse.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/density_kernel_sparse.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/density_kernel_sparse.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/density_kernel_sparse_matmul.mpi
+ Sparse matrix multiplications before optimization:
+   Load unbalancing:
+     Minimal number of columns         :  252
+     Maximal number of columns         :  253
+     Average number of columns         :  252.8
+     Minimal time                      :  4.02E-01
+     Maximal time                      :  4.69E-01
+     Ideal time                        :  4.35E-01
+     Unbalancing in %                  :  7.92
+ Sparse matrix multiplications after optimization:
+   Load unbalancing:
+     Minimal number of columns         :  235
+     Maximal number of columns         :  271
+     Average number of columns         :  252.8
+     Minimal time                      :  4.25E-01
+     Maximal time                      :  4.50E-01
+     Ideal time                        :  4.34E-01
+     Unbalancing in %                  :  3.65
+ Matrix properties:
+   Overlap matrix:
+     total elements                    :  16362025
+     segments                          :  168876
+     non-zero elements                 :  494105
+     sparsity in %                     :  96.98
+     sparse matrix multiplication initialized:  No
+     taskgroup summary:
+       number of taskgroups            :  1
+       taskgroups overview:
+       -  {number of tasks:  16, start / end:  [  1,  494105 ], start / end disjoint: [ 1, 
+  494105]}
+   Density kernel:
+     total elements                    :  16362025
+     segments                          :  468909
+     non-zero elements                 :  1713053
+     sparsity in %                     :  89.53
+     sparse matrix multiplication initialized:  Yes
+     sparse matrix multiplication setup:
+       segments                        :  234274
+       non-zero elements               :  15452517
+       sparsity in %                   :  5.56
+     taskgroup summary:
+       number of taskgroups            :  1
+       taskgroups overview:
+       -  {number of tasks:  16, start / end:  [  1,  1713053 ], start / end disjoint: [ 1, 
+  1713053]}
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_0_0.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_1_-1.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_1_0.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_1_1.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_2_-2.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_2_-1.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_2_0.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_2_1.mpi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reading from file GS/Work-2/mpmat_2_2.mpi
+ beta for penaltyfunction              : -1000.0
+ determine eigenvalue bounds:
+ -  {npl:  110, npl penalty:  110, npl determined by: penalty, scale:  1.00E+00, 
+ bounds:  [  0.500,  1.500 ], exp accur:  [  5.06E-14 ], 
+ Load unbalancing: {Minimal time:  2.39E+01, Maximal time:  4.03E+01, 
+                      Ideal time:  3.13E+01, Unbalancing in %:  28.94}, 
+ penalty: -1.8E+03, npl calculated:  110, ok:  [  Yes,  No ]}
+ -  {npl:  120, npl penalty:  120, npl determined by: penalty, scale:  8.33E-01, 
+ bounds:  [  0.500,  1.800 ], exp accur:  [  3.55E-14 ], 
+ Load unbalancing: {Minimal time:  3.20E+01, Maximal time:  5.49E+01, 
+                      Ideal time:  4.25E+01, Unbalancing in %:  29.04}, 
+ penalty:  5.2E+02, npl calculated:  120, ok:  [  No,  Yes ]}
+ -  {npl:  120, npl penalty:  120, npl determined by: function, scale:  9.17E-01, 
+ bounds:  [  0.417,  1.800 ], exp accur:  [  4.13E-14 ], 
+ Load unbalancing: {Minimal time:  5.11E+01, Maximal time:  5.49E+01, 
+                      Ideal time:  5.26E+01, Unbalancing in %:  4.19}, 
+ penalty:  1.5E-10, npl calculated:  120, ok:  [  Yes,  Yes ]}
+ summary: {npl:  120, npl determined by: function, scale:  9.17E-01, 
+ bounds:  [  0.417,  1.800 ], exp accur:  [  4.13E-14 ]}
+ Fragment multipoles:
+ - Atom IDs: [ 220,  221,  222,  223,  224,  225,  226,  1337,  1338,  1339,  1679,  1680, 
+               1681]
+   Atom names                          :  [ N, H, C, H, H, C, O, O, H, H, O, H, H ]
+   Neutral fragment charge             :  3.800000E+01
+   Purity indicator                    : -4.514186E-02
+   q0                                  :  [ -3.805344E+01 ]
+   q1                                  :  [  3.575547E-01, -2.183016E+00, -1.115413E+00 ]
+   q2: [-3.012006E+02, -1.028702E+02,  5.452400E+01,  1.798051E+02, -1.353917E+02]
+ - Atom IDs: [ 177,  178,  179,  180,  181,  182,  183,  170,  171,  172,  173,  174,  175, 
+               176,  93,   94,   95,   96,   97,   98,   99,   100,  101,  102,  103,  104, 
+               105,  106,  107,  108,  109,  110,  111,  112,  113,  114,  115,  116]
+   Atom names: [N, H, C, H, H, C, O, N, H, C, H, H, C, O, N, H, C, H, C, H, H, C, C, H, N, 
+                                                                         H, C, C, C, H, C, 
+                                                                         H, C, H, C, H, C, 
+                                                                         O]
+   Neutral fragment charge             :  1.140000E+02
+   Purity indicator                    : -2.857278E-02
+   q0                                  :  [ -1.139387E+02 ]
+   q1                                  :  [ -3.566716E+00,  1.453004E+00,  7.434238E+00 ]
+   q2: [-8.796058E+02, -5.058761E+01, -1.089937E+03,  1.233521E+03, -1.635528E+02]
+ - Atom IDs: [ 170,  171,  172,  173,  174,  175,  176,  177,  178,  179,  180,  181,  182, 
+               183,  344,  345,  346]
+   Atom names: [N, H, C, H, H, C, O, N, H, C, H, H, C, O, O, H, H]
+   Neutral fragment charge             :  5.200000E+01
+   Purity indicator                    : -3.218607E-02
+   q0                                  :  [ -5.192952E+01 ]
+   q1                                  :  [ -2.50444E+00, -6.294190E-01,  4.659780E+00 ]
+   q2: [-1.829685E+02,  2.581992E+02, -5.508576E+02, -2.109615E+01, -9.201716E+02]
+ - Atom IDs: [ 1942,  1460,  1461,  1462,  1661,  1662,  1663]
+   Atom names                          :  [ Cl, O, H, H, O, H, H ]
+   Neutral fragment charge             :  2.300000E+01
+   Purity indicator                    : -9.528805E-03
+   q0                                  :  [ -2.383955E+01 ]
+   q1                                  :  [ -4.381023E+02,  1.206670E+00,  2.522213E+00 ]
+   q2: [-1.495134E+02, -3.055957E+01, -4.223925E+03,  1.979158E+01, -7.325753E+03]
+ Memory Consumption Report:
+   Tot. No. of Allocations             :  4750
+   Tot. No. of Deallocations           :  4750
+   Remaining Memory (B)                :  0
+   Memory occupation:
+     Peak Value (MB)                   :  7336.871
+     for the array                     : ivectorindex_work
+     in the routine                    : get_arrays_for_sequential_acces_
+     Memory Peak of process            : 7636.704 MB
+ Walltime since initialization         :  00:03:49.748393928
+ Max No. of dictionaries used          :  2141 #( 1058 still in use)
+ Number of dictionary folders allocated:  1
