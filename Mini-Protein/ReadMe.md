@@ -5,11 +5,12 @@ analysis for BigDFT.
 
 ## Data Sets
 
-There are two data sets included, both which deal with the mini-protein system
+There are three data sets included, both which deal with the mini-protein system
 (1L2Y)[https://www.rcsb.org/structure/1L2Y]. First, there is the `Size` dataset,
 which is the same protein, with a different size waterbox added to it. The second
 is the `TimeStep` dataset, which is the same protein, but we've taken different
-snapshots from a production MD run (each snapshot is 1ns apart).
+snapshots from a production MD run (each snapshot is 1ns apart). Finally there
+is the `Single` test data set.
 
 ## PDB To Fragment
 
@@ -29,4 +30,7 @@ not differ substantially over a course of a run, or with changing waterbox size.
 ## Refragmentation
 
 The refragmentation notebook is used to generate a new fragmentation with the goal
-of driving down the overall purity values of the system. 
+of driving down the overall purity values of the system. Note that this depends
+on the results of the PDB to Fragment Notebook, and also running BigDFT on those
+results.
+
