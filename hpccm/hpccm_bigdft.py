@@ -48,10 +48,10 @@ mpi = USERARG.get('mpi', 'ompi')
 
 if mpi == "ompi":
   mpi_version = USERARG.get('mpi_version', '3.0.0')
-  mpi_lib = openmpi(infiniband=False, version=mpi_version, prefix="/usr/local/mpi")
+  mpi_lib = openmpi(infiniband=False, version=mpi_version)
 elif mpi in ["mvapich2", "mvapich"]:
-  mpi_version = USERARG.get('mpi_version', '2.3b')
-  mpi_lib = mvapich2(version=mpi_version, toolchain=tc, prefix="/usr/local/mpi")
+  mpi_version = USERARG.get('mpi_version', '2.3a')
+  mpi_lib = mvapich2_gdr(version=mpi_version, toolchain=tc, cuda_version=cuda_version)
   
 Stage0 += mpi_lib
 
@@ -152,7 +152,7 @@ Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_li
 "CPATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/include:${CPATH}",
 "PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
 
-Stage0 += environment(variables={"PATH": "/bigdft/bin:/usr/local/mpi/bin:${PATH}",
+Stage0 += environment(variables={"PATH": "/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/bigdft/lib:${LD_LIBRARY_PATH}",
 "PYTHONPATH": "/bigdft/lib/python2.7/site-packages:${PYTHONPATH}",
 "PKG_CONFIG_PATH": "/bigdft/lib/pkgconfig:${PKG_CONFIG_PATH}",
@@ -161,8 +161,7 @@ Stage0 += environment(variables={"PATH": "/bigdft/bin:/usr/local/mpi/bin:${PATH}
 "GI_TYPELIB_PATH": "/bigdft/lib/girepository-1.0:${GI_TYPELIB_PATH}"})
 
 #update ldconfig as /usr/local/lib may not be in the path
-Stage0 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf',
-                          'echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
+Stage0 += shell(commands=['echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'ldconfig'])
                           
 Stage0 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
@@ -258,7 +257,6 @@ Stage2 += copy(_from="sdk", src="/usr/local/cuda/lib64/stubs/libcuda.so", dest="
 Stage2 += copy(_from="sdk", src="/usr/local/cuda/lib64/stubs/libnvidia-ml.so", dest="/usr/local/lib/libnvidia-ml.so.1")
 
 #Stage2 += copy(_from="build", src="/opt/intel", dest="/opt/intel")
-Stage2 += copy(_from="build", src="/usr/local/mpi", dest="/usr/local/mpi")
 Stage2 += copy(_from="build", src="/usr/local/bigdft", dest="/usr/local/bigdft")
 
 mklroot="/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/"
@@ -310,8 +308,7 @@ Stage2 += shell(commands=['apt-get remove -y --purge build-essential python-setu
 Stage2 += shell(commands=["rm -rf $(find / | perl -ne 'print if /[^[:ascii:]]/')"])
 
 #update ldconfig as /usr/local/lib may not be in the path
-Stage2 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf',
-                          'echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
+Stage2 += shell(commands=['echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'echo "/usr/local/intel/mkl/lib/intel64" >> /etc/ld.so.conf.d/intel.conf',
                           "echo '/usr/local/intel/compiler/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
                           'ldconfig'])
