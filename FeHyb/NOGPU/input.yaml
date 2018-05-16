@@ -4,6 +4,7 @@
  dft:
    ixc: PBE0
    itermax: 50
+   qcharge: 2
  posinp:
    positions:
    - Fe: [0.0, 0.0, 0.0]
