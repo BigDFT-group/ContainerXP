@@ -67,7 +67,7 @@ Stage0 += apt_get(ospackages=['autoconf','autotools-dev', 'automake', 'bzr',
                               'build-essential', 'libblas-dev', 'liblapack-dev',
                               'curl', 'python-pip', 'python-dev', 'bison', 
                               'libz-dev', 'pkg-config', 'python-setuptools', 
-                              'libpcre3-dev','libtool', 'libglib2.0-dev', 
+                              'libpcre3-dev','libtool', 'libglib2.0-dev', 'git',
                               'libltdl-dev', 'gnome-common', 'ipython', 
                               'ipython-notebook', 'python-matplotlib', 
                               'ocl-icd-libopencl1', 'vim', 'net-tools', 
@@ -163,7 +163,12 @@ Stage0 += environment(variables={"PATH": "/bigdft/bin:${PATH}",
 #update ldconfig as /usr/local/lib may not be in the path
 Stage0 += shell(commands=['echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'ldconfig'])
-                          
+
+#clone example files and recipes
+
+Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
+
+
 Stage0 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
 Stage0 += shell(commands=['useradd -ms /bin/bash bigdft'])
@@ -258,6 +263,7 @@ Stage2 += copy(_from="sdk", src="/usr/local/cuda/lib64/stubs/libnvidia-ml.so", d
 
 #Stage2 += copy(_from="build", src="/opt/intel", dest="/opt/intel")
 Stage2 += copy(_from="build", src="/usr/local/bigdft", dest="/usr/local/bigdft")
+Stage2 += copy(_from="build", src="/docker", dest="/docker")
 
 mklroot="/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/"
 mklroot_out="/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/"
@@ -317,4 +323,6 @@ Stage2 += shell(commands=['useradd -ms /bin/bash bigdft'])
 Stage2 += raw(docker='USER bigdft')
 Stage2 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage2 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
+
+
 
