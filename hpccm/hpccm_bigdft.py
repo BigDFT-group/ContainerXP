@@ -203,8 +203,9 @@ Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:${LD_LIBRARY
 Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
                           'cat ../rcfiles/container.rc >> buildrc',
                           'sed -i "s/configuration()\:/configuration\(\)\:\\n    import os\\n    mkl=os.environ[\'MKLROOT\']/g" ./buildrc',
-                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -O2 -fPIC -fopenmp"|g\' ./buildrc ',
-                          'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc'
+                          'sed -i \'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
+                          'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
+                          'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc'
                           ])
 #                                                    'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc'
                                                    #'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
