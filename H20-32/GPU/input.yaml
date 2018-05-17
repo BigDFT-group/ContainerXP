@@ -1,0 +1,20 @@
+  #---------------------------------------------------------------------- Minimal input file
+  #This file indicates the minimal set of input variables which has to be given to perform 
+  #the run. The code would produce the same output if this file is used as input.
+ dft:
+   hgrids: 0.4
+   rmult: [10.0, 18.0]
+   ixc: PBE0
+   inputpsiid: -2
+   itermax: 5
+#   ncong: 1
+# mix:
+#   norbsempty: 300
+#   tel: 0.005
+ perf:
+#   profiling_depth: 0
+   projrad: 8.000
+#   unblock_comms: DEN
+ psolver:
+   setup:
+     accel: CUDA
