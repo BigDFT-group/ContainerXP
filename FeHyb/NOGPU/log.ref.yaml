@@ -36,16 +36,12 @@
   #------------------------------------------------------------------ Code compiling options
  Compilation options:
    Configure arguments:
-     " '--prefix' '/home/degomme/bigdft/build_gpudirect/install' 
-     'FC=/home/degomme/openmpi-install/bin/mpif90' 'CC=gcc-6' 'FCFLAGS=-O2 -g -fopenmp 
+     " '--prefix' 'bigdft/build_gpudirect/install' 
+     'FC=mpif90' 'CC=gcc-6' 'FCFLAGS=-O2 -g -fopenmp 
      -fPIC -fbacktrace' '--enable-opencl' '--enable-cuda-gpu' 'CFLAGS=-O2 -fPIC' 
      '--enable-dynamic-libraries' 'NVCC_FLAGS=-g -ccbin=gcc-6 --compiler-options -fPIC -g' 
-     'LDFLAGS=-L/home/degomme/bigdft/build_gpudirect/install/lib ' 
-     'C_INCLUDE_PATH=/home/degomme/bigdft/build_gpudirect/install/include' 
-     'PKG_CONFIG_PATH=/home/degomme/bigdft/build_gpudirect/install/lib/pkgconfig:/home/degomm
-     e/bigdft/build_gpudirect/install/share/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/us
-     r/lib/pkgconfig:/usr/share/pkgconfig'"
-   Compilers (CC, FC, CXX): [gcc-6, /home/degomme/openmpi-install/bin/mpif90, g++]
+     "
+   Compilers (CC, FC, CXX): [gcc-6, mpif90, g++]
    Compiler flags:
      CFLAGS                            : -O2 -fPIC
      FCFLAGS                           : -O2 -g -fopenmp -fPIC -fbacktrace
