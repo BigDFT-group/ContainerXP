@@ -124,10 +124,10 @@ Stage0 += comment("MKL install", reformat=False)
 Stage0 += apt_get(ospackages=['cpio'])
 Stage0 += workdir(directory='/opt/mkl')
 command= []
-command.append(hpccm.wget().download_step(url='http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/12414/l_mkl_2018.1.163.tgz', directory='/opt/mkl'))
-command.append(hpccm.tar().untar_step(tarball='l_mkl_2018.1.163.tgz'))
+command.append(hpccm.wget().download_step(url='http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/12725/l_mkl_2018.2.199.tgz', directory='/opt/mkl'))
+command.append(hpccm.tar().untar_step(tarball='l_mkl_2018.2.199.tgz'))
 Stage0 += shell(commands=command)
-command=['cd l_mkl_2018.1.163',
+command=['cd l_mkl_2018.2.199',
                 hpccm.sed().sed_step(file='silent.cfg',
                 patterns=[r's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/g',
                           r's/ARCH_SELECTED=ALL/ARCH_SELECTED=INTEL64/g',
@@ -135,7 +135,7 @@ command=['cd l_mkl_2018.1.163',
 "./install.sh -s silent.cfg",
 "cd ..",
 "rm -rf *",
-"rm -rf /opt/intel/.*.log /opt/intel/compilers_and_libraries_2018.1.163/licensing",
+"rm -rf /opt/intel/.*.log /opt/intel/compilers_and_libraries_2018.2.199/licensing",
 "echo '/opt/intel/mkl/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
 "echo '/opt/intel/compiler/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
 "ldconfig",
@@ -144,13 +144,13 @@ Stage0 += shell(commands=command)
 
 
 
-Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl"})
+Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
 
-Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
-"NLSPATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
-"CPATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/include:${CPATH}",
-"PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/tel64_lin:/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
+"NLSPATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
+"CPATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/include:${CPATH}",
+"PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
 
 Stage0 += environment(variables={"PATH": "/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/bigdft/lib:${LD_LIBRARY_PATH}",
@@ -166,15 +166,17 @@ Stage0 += shell(commands=['echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
 
 #clone example files and recipes
 
-Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
 
 
 Stage0 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
 Stage0 += shell(commands=['useradd -ms /bin/bash bigdft'])
+Stage0 += shell(commands=['mkdir /docker',
+                          'chmod -R 777 /docker'])
 
 Stage0 += raw(docker='USER bigdft')
 
+Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
 Stage0 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage0 += workdir(directory='/opt/bigdft')
 Stage0 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
@@ -265,24 +267,25 @@ Stage2 += copy(_from="sdk", src="/usr/local/cuda/lib64/stubs/libnvidia-ml.so", d
 #Stage2 += copy(_from="build", src="/opt/intel", dest="/opt/intel")
 Stage2 += copy(_from="build", src="/usr/local/bigdft", dest="/usr/local/bigdft")
 Stage2 += copy(_from="build", src="/docker", dest="/docker")
+Stage2 += shell(commands=['chmod -R 777 /docker'])
 
-mklroot="/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/"
-mklroot_out="/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/"
+mklroot="/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
+mklroot_out="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
 
 Stage2 += copy(_from="build", src=mklroot+"libmkl_gf_lp64.so" , dest=mklroot_out+"libmkl_gf_lp64.so")
 Stage2 += copy(_from="build", src=mklroot+"libmkl_gnu_thread.so" , dest=mklroot_out+"libmkl_gnu_thread.so")
 Stage2 += copy(_from="build", src=mklroot+"libmkl_core.so" , dest=mklroot_out+"libmkl_core.so")
 Stage2 += copy(_from="build", src=mklroot+"libmkl_avx2.so" , dest=mklroot_out+"libmkl_avx2.so")
 Stage2 += copy(_from="build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
-Stage2 += copy(_from="build", src="/opt/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin/libiomp5.so")
+Stage2 += copy(_from="build", src="/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so")
 
-Stage2 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl"})
+Stage2 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
 
-Stage2 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
-"NLSPATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
-"CPATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/include:${CPATH}",
-"PKG_CONFIG_PATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+Stage2 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
+"NLSPATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
+"CPATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/include:${CPATH}",
+"PKG_CONFIG_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
 
 Stage2 += environment(variables={"PATH": "/usr/local/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/usr/local/bigdft/lib:${LD_LIBRARY_PATH}",
