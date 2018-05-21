@@ -1,0 +1,93 @@
+---
+Default tolerances:
+ Epsilon: 1.1e-7
+
+Keys to ignore:
+ - Code logo
+ - Compilation options
+ - MPI task*
+ - Timings for root process
+ - Maximal OpenMP threads per MPI task
+ - OpenMP threads per task
+ - OpenMP parallelization
+ - logfile
+ - Memory*
+ - Orbitals Repartition*
+ - Rho Commun
+ - Total number of components
+ - GPU acceleration
+ - High Res. box is treated separately
+ - Grid Spacing threshold (AU)
+ - Direct and transposed data repartition
+ - Write Waves Time
+ - Reading Waves Time
+ - Maxdifference*
+ - Tolerances for this check
+ - Material acceleration
+ - Number of OpenCL devices per node
+ - Version Number
+ - Root process Hostname
+ - Input ixc parameter corresponds to XC
+ - Wavefunction written No.
+ - accel
+ - Max No. of dictionaries used
+ - Occupation numbers coming from
+ - Number of dictionary folders allocated
+ - Maximum size of masking arrays for a projector
+ - Cumulative size of masking arrays
+ - Dictionary for lin
+ - Raw version
+ - Size of the global database
+ - Total No. of Taskgroups created
+ - sparse matmul load balancing naive / optimized
+ - preconditioning load balancing before
+ - preconditioning load balancing after
+ - preconditioning load balancing min/max before # to be deleted as soon as refs are updated
+ - preconditioning load balancing min/max after # to be deleted as soon as refs are updated
+ - task with max load
+ - nonlocal forces; maximal number of atoms per iteration, number of iterations
+ - number of taskgroups
+ - taskgroups overview
+ - outdir
+ - Atomic positions within the cell (Atomic and Grid Units)
+ - Rigid Shift Applied (AU)
+ - Walltime since initialization
+ - Support function repartition
+ - Output grid format # to be removed for updated references
+ - Support Function Repartition
+ - Iostat for format
+ - check_overlap
+ - check_sumrho
+ - Leaked force
+ - psolver_accel
+ - psolver_groupsize
+ - gps_method
+ - solvent
+ - Operation  1
+ - check
+ - main
+ - noise
+ - penalty
+ - SCF criterion
+ - cavitation
+ - minres
+ - verbosity
+ - output_wf
+ - write_orbitals
+ - profiling_depth
+ - Load unbalancing
+ - Parallel environment
+ #- adjustment required
+ #- new value
+ #- avg pot difference (actual/min)
+ #- number of tasks
+ #- IDs
+ #- start / end
+ #- start / end disjoint
+Patterns to ignore:
+ - Timestamp
+ - memory
+ - FLAGS
+ - input_guess
+ - delta
+
