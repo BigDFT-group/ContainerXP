@@ -13,7 +13,7 @@ Contents:
   BigDFT SDK
   jupyter notebook
   This recipe was generated with command line :
-$ hpccm.py --recipe hpccm_bigdft.py --userarg cuda={}""".format(USERARG.get('cuda', '9.1'))+""" mpi="""+USERARG.get('mpi', 'ompi')+""" mpi_version="""+USERARG.get('mpi_version', '3.0.0')
+$ hpccm.py --recipe hpccm_bigdft.py --userarg cuda={}""".format(USERARG.get('cuda', '9.1'))+""" mpi="""+USERARG.get('mpi', 'ompi')+""" mpi_version="""+USERARG.get('mpi_version', '3.0.0')+""" mkl="""+USERARG.get('mkl', 'yes')
 
 #######
 ## SDK stage
@@ -119,15 +119,19 @@ command.append( cm.install_step())
 Stage0 += shell(commands=command)
 
 
-Stage0 += comment("MKL install", reformat=False)
 
-Stage0 += apt_get(ospackages=['cpio'])
-Stage0 += workdir(directory='/opt/mkl')
-command= []
-command.append(hpccm.wget().download_step(url='http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/12725/l_mkl_2018.2.199.tgz', directory='/opt/mkl'))
-command.append(hpccm.tar().untar_step(tarball='l_mkl_2018.2.199.tgz'))
-Stage0 += shell(commands=command)
-command=['cd l_mkl_2018.2.199',
+use_mkl = USERARG.get('mkl', 'yes')
+
+if use_mkl == 'yes':
+  Stage0 += comment("MKL install", reformat=False)
+
+  Stage0 += apt_get(ospackages=['cpio'])
+  Stage0 += workdir(directory='/opt/mkl')
+  command= []
+  command.append(hpccm.wget().download_step(url='http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/12725/l_mkl_2018.2.199.tgz', directory='/opt/mkl'))
+  command.append(hpccm.tar().untar_step(tarball='l_mkl_2018.2.199.tgz'))
+  Stage0 += shell(commands=command)
+  command=['cd l_mkl_2018.2.199',
                 hpccm.sed().sed_step(file='silent.cfg',
                 patterns=[r's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/g',
                           r's/ARCH_SELECTED=ALL/ARCH_SELECTED=INTEL64/g',
@@ -140,17 +144,19 @@ command=['cd l_mkl_2018.2.199',
 "echo '/opt/intel/compiler/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
 "ldconfig",
 "echo 'source /opt/intel/mkl/bin/mklvars.sh intel64' >> /etc/bash.bashrc "]
-Stage0 += shell(commands=command)
+  Stage0 += shell(commands=command)
 
 
 
-Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
+  Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
 
-Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/tel64_lin:/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/tel64_lin:/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
 "LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
 "NLSPATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
 "CPATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/include:${CPATH}",
 "PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+
+
 
 Stage0 += environment(variables={"PATH": "/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/bigdft/lib:${LD_LIBRARY_PATH}",
@@ -171,12 +177,12 @@ Stage0 += shell(commands=['echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
 Stage0 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
 Stage0 += shell(commands=['useradd -ms /bin/bash bigdft'])
-Stage0 += shell(commands=['mkdir /docker',
-                          'chmod -R 777 /docker'])
+Stage0 += shell(commands=['mkdir /ContainerXp',
+                          'chmod -R 777 /ContainerXp'])
 
 Stage0 += raw(docker='USER bigdft')
 
-Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
+Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/ContainerXp')])
 Stage0 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage0 += workdir(directory='/opt/bigdft')
 Stage0 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
@@ -202,17 +208,21 @@ Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/
 Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1'])
 Stage1 += raw(docker='USER bigdft')
 Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:${LD_LIBRARY_PATH}"})
-Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
+if use_mkl == "yes":
+  Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
                           'cat ../rcfiles/container.rc >> buildrc',
                           'sed -i "s/configuration()\:/configuration\(\)\:\\n    import os\\n    mkl=os.environ[\'MKLROOT\']/g" ./buildrc',
                           'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
                           'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
                           'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc'
                           ])
-#                                                    'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc'
-                                                   #'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
-#Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
-#                          'cat ../rcfiles/container_mkl.rc >> buildrc'])
+else:
+  Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
+                          'cat ../rcfiles/container.rc >> buildrc',
+                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -O2 -fPIC -fopenmp"|g\' ./buildrc ',
+                          'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
+                          ])
+
 
 Stage1 += shell(commands=['../Installer.py autogen -y'])
 
@@ -266,22 +276,23 @@ Stage2 += copy(_from="sdk", src="/usr/local/cuda/lib64/stubs/libnvidia-ml.so", d
 
 #Stage2 += copy(_from="build", src="/opt/intel", dest="/opt/intel")
 Stage2 += copy(_from="build", src="/usr/local/bigdft", dest="/usr/local/bigdft")
-Stage2 += copy(_from="build", src="/docker", dest="/docker")
-Stage2 += shell(commands=['chmod -R 777 /docker'])
+Stage2 += copy(_from="build", src="/ContainerXp", dest="/ContainerXp")
+Stage2 += shell(commands=['chmod -R 777 /ContainerXp'])
 
-mklroot="/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
-mklroot_out="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
+if use_mkl == "yes":
+  mklroot="/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
+  mklroot_out="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
 
-Stage2 += copy(_from="build", src=mklroot+"libmkl_gf_lp64.so" , dest=mklroot_out+"libmkl_gf_lp64.so")
-Stage2 += copy(_from="build", src=mklroot+"libmkl_gnu_thread.so" , dest=mklroot_out+"libmkl_gnu_thread.so")
-Stage2 += copy(_from="build", src=mklroot+"libmkl_core.so" , dest=mklroot_out+"libmkl_core.so")
-Stage2 += copy(_from="build", src=mklroot+"libmkl_avx2.so" , dest=mklroot_out+"libmkl_avx2.so")
-Stage2 += copy(_from="build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
-Stage2 += copy(_from="build", src="/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so")
+  Stage2 += copy(_from="build", src=mklroot+"libmkl_gf_lp64.so" , dest=mklroot_out+"libmkl_gf_lp64.so")
+  Stage2 += copy(_from="build", src=mklroot+"libmkl_gnu_thread.so" , dest=mklroot_out+"libmkl_gnu_thread.so")
+  Stage2 += copy(_from="build", src=mklroot+"libmkl_core.so" , dest=mklroot_out+"libmkl_core.so")
+  Stage2 += copy(_from="build", src=mklroot+"libmkl_avx2.so" , dest=mklroot_out+"libmkl_avx2.so")
+  Stage2 += copy(_from="build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
+  Stage2 += copy(_from="build", src="/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so")
 
-Stage2 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
+  Stage2 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
 
-Stage2 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+  Stage2 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
 "LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
 "NLSPATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
 "CPATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/include:${CPATH}",
