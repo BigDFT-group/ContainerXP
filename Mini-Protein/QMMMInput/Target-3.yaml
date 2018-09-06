@@ -1,0 +1,306 @@
+chess:
+  foe:
+    ef_interpol_chargediff: 1.0
+    eval_range_foe: [-1.0, 1.0]
+    fscale: 0.05
+dft:
+  disablesym: true
+  gnrm_cv: 1.0e-05
+  hgrids: 0.55
+  idsx: 6
+  inputpsiid: linear
+  itermax: 50
+  ixc: PBE (ABINIT)
+  ncong: 5
+  nrepmax: 10
+  qcharge: 1.0
+  rmult: [5.0, 7.0]
+lin_basis: {alpha_diis: 0.5, alpha_sd: 0.5, correction_orthoconstraint: 0, deltae_cv: 0.0001,
+  fix_basis: 1.0e-12, gnrm_cv: 0.002, gnrm_ig: 0.1, idsx: 8, min_gnrm_for_dynamic: 0.004,
+  nit: 8, nstep_prec: 6}
+lin_basis_params:
+  C: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Cl: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 6.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  H: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 5.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Hw: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 5.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  K: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 7.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  N: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Na: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 7.2, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  O: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Os: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Ow: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  P: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 6.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  S: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 6.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+lin_general: {calc_dipole: true, calc_quadrupole: true, charge_multipoles: 1, hybrid: true,
+  max_inversion_error: 5.0e-08, nit: 50, output_mat: 4, output_wf: 1, rpnrm_cv: 1.0e-11,
+  taylor_order: 1020}
+lin_kernel:
+  alphamix: 0.2
+  idsx: 4
+  idsx_coeff: [6, 0]
+  linear_method: FOE
+  nit: 4
+  nstep: 10
+perf: {FOE_restart: 1, calculate_KS_residue: false, check_matrix_compression: false,
+  check_overlap: 0, check_sumrho: 0, correction_co_contra: true, experimental_mode: true,
+  foe_gap: true, hamapp_radius_incr: 6, kappa_conv: 0.1, loewdin_charge_analysis: true,
+  mixing_after_inputguess: 1, store_index: false, wf_extent_analysis: true}
+posinp:
+  abc:
+  - [28.0, 0.0, 0.0]
+  - [1.7145055188062944e-15, 28.0, 0.0]
+  - [1.7145055188062944e-15, 1.7145055188062944e-15, 28.0]
+  alpha: 90.0
+  beta: 90.0
+  cell: [28.0, 28.0, 28.0]
+  gamma: 90.0
+  positions:
+  - N: [13.379, 8.817, 15.733]
+    frag: [LYS, 8]
+  - H: [12.509, 9.117, 15.351]
+    frag: [LYS, 8]
+  - C: [13.646, 7.431, 15.322]
+    frag: [LYS, 8]
+  - H: [13.891, 6.972, 16.268]
+    frag: [LYS, 8]
+  - C: [12.388, 6.791, 14.645]
+    frag: [LYS, 8]
+  - H: [12.494, 5.694, 14.779]
+    frag: [LYS, 8]
+  - H: [11.5, 7.219, 15.157]
+    frag: [LYS, 8]
+  - C: [12.062, 7.173, 13.212]
+    frag: [LYS, 8]
+  - H: [12.152, 8.272, 13.071]
+    frag: [LYS, 8]
+  - H: [10.981, 6.984, 13.039]
+    frag: [LYS, 8]
+  - C: [12.756, 6.396, 12.149]
+    frag: [LYS, 8]
+  - H: [12.705, 5.303, 12.341]
+    frag: [LYS, 8]
+  - H: [13.857, 6.514, 12.061]
+    frag: [LYS, 8]
+  - C: [12.309, 6.661, 10.688]
+    frag: [LYS, 8]
+  - H: [13.04, 6.247, 9.962]
+    frag: [LYS, 8]
+  - H: [12.11, 7.701, 10.351]
+    frag: [LYS, 8]
+  - N: [11.073, 5.863, 10.418]
+    frag: [LYS, 8]
+  - H: [11.242, 4.841, 10.51]
+    frag: [LYS, 8]
+  - H: [10.291, 6.271, 10.97]
+    frag: [LYS, 8]
+  - H: [10.943, 5.959, 9.391]
+    frag: [LYS, 8]
+  - C: [14.914, 7.282, 14.475]
+    frag: [LYS, 8]
+  - O: [15.61, 6.233, 14.649]
+    frag: [LYS, 8]
+  - N: [15.245, 8.199, 13.642]
+    frag: [ASP, 9]
+  - H: [14.634, 8.981, 13.545]
+    frag: [ASP, 9]
+  - C: [16.55, 8.077, 12.924]
+    frag: [ASP, 9]
+  - H: [16.574, 7.071, 12.53]
+    frag: [ASP, 9]
+  - C: [16.571, 9.079, 11.746]
+    frag: [ASP, 9]
+  - H: [16.297, 10.146, 11.89]
+    frag: [ASP, 9]
+  - H: [17.614, 9.098, 11.362]
+    frag: [ASP, 9]
+  - C: [15.851, 8.638, 10.501]
+    frag: [ASP, 9]
+  - O: [15.509, 7.432, 10.407]
+    frag: [ASP, 9]
+  - O: [15.848, 9.449, 9.523]
+    frag: [ASP, 9]
+  - C: [17.792, 8.337, 13.882]
+    frag: [ASP, 9]
+  - O: [18.895, 7.84, 13.715]
+    frag: [ASP, 9]
+  - N: [21.375, 15.668, 11.079]
+    frag: [ARG, 16]
+  - H: [21.154, 15.286, 11.973]
+    frag: [ARG, 16]
+  - C: [20.296, 16.413, 10.522]
+    frag: [ARG, 16]
+  - H: [20.657, 16.932, 9.646]
+    frag: [ARG, 16]
+  - C: [19.21, 15.456, 9.922]
+    frag: [ARG, 16]
+  - H: [18.39, 16.11, 9.554]
+    frag: [ARG, 16]
+  - H: [19.732, 15.0, 9.054]
+    frag: [ARG, 16]
+  - C: [18.598, 14.412, 10.821]
+    frag: [ARG, 16]
+  - H: [18.06, 14.908, 11.656]
+    frag: [ARG, 16]
+  - H: [19.397, 13.817, 11.312]
+    frag: [ARG, 16]
+  - C: [17.555, 13.316, 10.242]
+    frag: [ARG, 16]
+  - H: [16.99, 13.872, 9.463]
+    frag: [ARG, 16]
+  - H: [16.919, 12.893, 11.048]
+    frag: [ARG, 16]
+  - N: [18.348, 12.182, 9.695]
+    frag: [ARG, 16]
+  - H: [18.847, 11.645, 10.375]
+    frag: [ARG, 16]
+  - C: [18.863, 12.061, 8.452]
+    frag: [ARG, 16]
+  - N: [18.682, 13.003, 7.562]
+    frag: [ARG, 16]
+  - H: [18.119, 13.818, 7.698]
+    frag: [ARG, 16]
+  - H: [19.115, 12.926, 6.664]
+    frag: [ARG, 16]
+  - N: [19.635, 11.04, 8.114]
+    frag: [ARG, 16]
+  - H: [19.558, 10.253, 8.726]
+    frag: [ARG, 16]
+  - H: [20.027, 10.986, 7.196]
+    frag: [ARG, 16]
+  - C: [19.671, 17.193, 11.635]
+    frag: [ARG, 16]
+  - O: [19.412, 16.743, 12.751]
+    frag: [ARG, 16]
+  - O: [21.037, 11.2, 19.365]
+    frag: [WAT, 438]
+  - H: [20.371, 10.89, 18.751]
+    frag: [WAT, 438]
+  - H: [20.786, 10.816, 20.205]
+    frag: [WAT, 438]
+  - N: [17.489, 8.997, 14.98]
+    frag: [GLY, 10]
+  - H: [16.535, 9.233, 15.151]
+    frag: [GLY, 10]
+  - C: [18.576, 9.198, 16.041]
+    frag: [GLY, 10]
+  - H: [19.578, 8.898, 15.773]
+    frag: [GLY, 10]
+  - H: [18.152, 8.611, 16.843]
+    frag: [GLY, 10]
+  - C: [18.665, 10.598, 16.499]
+    frag: [GLY, 10]
+  - O: [19.513, 10.931, 17.31]
+    frag: [GLY, 10]
+  - N: [17.888, 11.571, 16.03]
+    frag: [GLY, 11]
+  - H: [17.327, 11.193, 15.297]
+    frag: [GLY, 11]
+  - C: [17.834, 12.962, 16.371]
+    frag: [GLY, 11]
+  - H: [17.528, 13.125, 17.394]
+    frag: [GLY, 11]
+  - H: [17.122, 13.297, 15.632]
+    frag: [GLY, 11]
+  - C: [19.178, 13.551, 16.076]
+    frag: [GLY, 11]
+  - O: [19.592, 13.446, 14.962]
+    frag: [GLY, 11]
+  - N: [19.859, 14.2, 17.051]
+    frag: [PRO, 12]
+  - C: [19.451, 14.366, 18.485]
+    frag: [PRO, 12]
+  - H: [18.362, 14.439, 18.693]
+    frag: [PRO, 12]
+  - H: [19.765, 13.482, 19.081]
+    frag: [PRO, 12]
+  - C: [21.098, 14.886, 16.797]
+    frag: [PRO, 12]
+  - H: [20.911, 15.589, 15.998]
+    frag: [PRO, 12]
+  - C: [21.58, 15.571, 18.14]
+    frag: [PRO, 12]
+  - H: [22.012, 16.557, 17.864]
+    frag: [PRO, 12]
+  - H: [22.241, 14.917, 18.748]
+    frag: [PRO, 12]
+  - C: [20.222, 15.689, 18.859]
+    frag: [PRO, 12]
+  - H: [19.681, 16.525, 18.367]
+    frag: [PRO, 12]
+  - H: [20.281, 15.87, 19.954]
+    frag: [PRO, 12]
+  - C: [22.307, 14.043, 16.333]
+    frag: [PRO, 12]
+  - O: [23.22, 14.604, 15.753]
+    frag: [PRO, 12]
+  - N: [22.877, 13.365, 12.002]
+    frag: [GLY, 15]
+  - H: [23.106, 13.46, 12.968]
+    frag: [GLY, 15]
+  - C: [23.513, 14.375, 11.14]
+    frag: [GLY, 15]
+  - H: [24.032, 13.762, 10.417]
+    frag: [GLY, 15]
+  - H: [24.288, 14.82, 11.746]
+    frag: [GLY, 15]
+  - C: [22.568, 15.391, 10.498]
+    frag: [GLY, 15]
+  - O: [22.905, 15.916, 9.446]
+    frag: [GLY, 15]
+  - N: [21.991, 11.675, 13.898]
+    frag: [SER, 14]
+  - H: [21.562, 12.472, 14.316]
+    frag: [SER, 14]
+  - C: [21.589, 11.264, 12.594]
+    frag: [SER, 14]
+  - H: [22.179, 10.428, 12.248]
+    frag: [SER, 14]
+  - C: [20.144, 10.95, 12.499]
+    frag: [SER, 14]
+  - H: [19.929, 10.177, 13.268]
+    frag: [SER, 14]
+  - H: [19.625, 11.888, 12.793]
+    frag: [SER, 14]
+  - O: [19.702, 10.346, 11.283]
+    frag: [SER, 14]
+  - H: [20.165, 9.529, 11.082]
+    frag: [SER, 14]
+  - C: [22.039, 12.355, 11.584]
+    frag: [SER, 14]
+  - O: [21.719, 12.338, 10.425]
+    frag: [SER, 14]
+  - N: [22.267, 12.69, 16.517]
+    frag: [SER, 13]
+  - H: [21.47, 12.389, 17.034]
+    frag: [SER, 13]
+  - C: [23.307, 11.699, 16.07]
+    frag: [SER, 13]
+  - H: [24.211, 12.282, 15.974]
+    frag: [SER, 13]
+  - C: [23.421, 10.533, 17.069]
+    frag: [SER, 13]
+  - H: [22.549, 9.877, 16.86]
+    frag: [SER, 13]
+  - H: [24.228, 9.815, 16.81]
+    frag: [SER, 13]
+  - O: [23.461, 10.784, 18.453]
+    frag: [SER, 13]
+  - H: [22.589, 11.072, 18.733]
+    frag: [SER, 13]
+  - C: [22.966, 11.14, 14.675]
+    frag: [SER, 13]
+  - O: [23.633, 10.239, 14.149]
+    frag: [SER, 13]
+  units: angstroem
