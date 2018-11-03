@@ -5,7 +5,7 @@ Contents:
   Ubuntu 16.04
   CUDA
   FFTW version 3.3.7
-  MKL 
+  MKL
   GNU compilers (upstream)
   Mellanox OFED version 3.4-1.0.0.0
   Python 2 and 3 (upstream)
@@ -13,7 +13,8 @@ Contents:
   BigDFT SDK
   jupyter notebook
   This recipe was generated with command line :
-$ hpccm.py --recipe hpccm_bigdft.py --userarg cuda={}""".format(USERARG.get('cuda', '9.1'))+""" mpi="""+USERARG.get('mpi', 'ompi')+""" mpi_version="""+USERARG.get('mpi_version', '3.0.0')
+$ hpccm.py --recipe hpccm_bigdft.py --userarg cuda={}""".format(USERARG.get('cuda', '9.1'))+""" mpi="""+USERARG.get('mpi', 'ompi')+""" mpi_version="""+USERARG.get('mpi_version', '3.0.0')+\
+	""" v_sim-builtin="""+USERARG.get('v_sim-builtin','yes')
 
 #######
 ## SDK stage
@@ -21,14 +22,14 @@ $ hpccm.py --recipe hpccm_bigdft.py --userarg cuda={}""".format(USERARG.get('cud
 
 # Set the image tag based on the specified version (default to 9.1)
 cuda_version = USERARG.get('cuda', '9.1')
-image = 'nvidia/cuda:{}-devel'.format(cuda_version)
+image = 'nvidia/cuda:{}-devel-ubuntu16.04'.format(cuda_version)
 
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'sdk'
 Stage0.baseimage(image)
 Stage0 += comment("SDK stage", reformat=False)
 # Python
-python = python(python3=False)
+python = python(python3=True)
 Stage0 += python
 
 # GNU compilers
@@ -52,38 +53,44 @@ if mpi == "ompi":
 elif mpi in ["mvapich2", "mvapich"]:
   mpi_version = USERARG.get('mpi_version', '2.3b')
   mpi_lib = mvapich2(version=mpi_version, toolchain=tc, prefix="/usr/local/mpi")
-  
+
 Stage0 += mpi_lib
 
 # FFTW
 fftw = fftw(version='3.3.7', toolchain=tc)
 Stage0 += fftw
 
+#intel python distribution GPG
+Stage0 += shell(commands=['wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB',
+                          'apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB',
+			  'wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list'])
 
 #BigDFT packages
 Stage0 += label(metadata={'maintainer': 'bigdft-developers@lists.launchpad.net'})
 
 Stage0 += apt_get(ospackages=['autoconf','autotools-dev', 'automake', 'bzr',
                               'build-essential', 'libblas-dev', 'liblapack-dev',
-                              'curl', 'python-pip', 'python-dev', 'bison', 
-                              'libz-dev', 'pkg-config', 'python-setuptools', 
-                              'libpcre3-dev','libtool', 'libglib2.0-dev', 
-                              'libltdl-dev', 'gnome-common', 'ipython', 
-                              'ipython-notebook', 'python-matplotlib', 
-                              'ocl-icd-libopencl1', 'vim', 'net-tools', 
-                              'ethtool', 'perl', 'lsb-release', 'iproute2', 
-                              'pciutils', 'libnl-route-3-200', 'kmod', 
-                              'libnuma1', 'lsof', 'linux-headers-generic', 
-                              'python-libxml2', 'graphviz', 'tk', 'tcl', 
-                              'swig', 'chrpath', 'dpatch', 'flex', 'cmake', 
-                              'libxml2-dev', 'ssh', 'gdb', 'strace'])
+                              'curl', 'python-pip', 'python-dev', 'bison',
+                              'libz-dev', 'pkg-config', 'python-setuptools',
+                              'libpcre3-dev','libtool', 'libglib2.0-dev',
+                              'libltdl-dev', 'gnome-common', 'ipython',
+                              'ipython-notebook', 'python-matplotlib','python3-pip','python3-setuptools',
+                              'ocl-icd-libopencl1', 'vim', 'net-tools','intltool',
+                              'ethtool', 'perl', 'lsb-release', 'iproute2',
+                              'pciutils', 'libopenbabel-dev', 'libnl-route-3-200', 'kmod',
+                              'libnuma1', 'lsof', 'linux-headers-generic',
+                              'python-libxml2', 'graphviz', 'tk', 'tcl','libgtk-3-dev',
+                              'swig', 'chrpath', 'dpatch', 'flex', 'cmake','gtk-doc-tools',
+                              'libxml2-dev', 'ssh', 'gdb', 'strace','intelpython2','libglu1-mesa-dev'])
 
 #SHELL ["/bin/bash", "-c"]
 Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')
 Stage0 += environment(variables={'SHELL': '/bin/bash'})
 #install jupyter
 #upgrade pip to avoid annoying message
-Stage0 += shell(commands=['pip install scipy jupyter'])
+Stage0 += shell(commands=['pip3 install scipy jupyter nglview ase jupyterlab'])
+Stage0 += shell(commands=['pip2 install ipython==5.5 ipykernel==4.10 scipy matplotlib==2.1.1'])
+Stage0 += shell(commands=['python2 -m ipykernel install'])
 
 Stage0 += raw(docker='EXPOSE 8888')
 
@@ -96,27 +103,28 @@ Stage0 += environment(variables={'NVIDIA_VISIBLE_DEVICES': 'all'})
 Stage0 += environment(variables={'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility'})
 
 
-#packages for v_sim
-Stage0 += comment("v_sim build", reformat=False)
-Stage0 += apt_get(ospackages=['libglu1-mesa-dev', 'libglib2.0-dev', 
-                              'libnetcdf-dev', 'libopenbabel-dev', 'intltool', 
-                              'libtool', 'gtk-doc-tools', 'libgtk-3-dev', 
-                              'python-gobject-dev', 'libyaml-dev', 
+do_v_sim=USERARG.get('v_sim-builtin','yes')
+if do_v_sim=='yes':
+	#packages for v_sim
+	Stage0 += comment("v_sim build", reformat=False)
+	Stage0 += apt_get(ospackages=['libnetcdf-dev', 'intltool',
+                              'gtk-doc-tools', 'libgtk-3-dev',
+                              'python-gobject-dev', 'libyaml-dev',
                               'libgirepository1.0-dev'])
 
-Stage0 += workdir(directory='/opt/v_sim-dev')
+	Stage0 += workdir(directory='/opt/v_sim-dev')
 
-#hack around to get the string
-command= []
-command.append(hpccm.wget().download_step(url='http://inac.cea.fr/L_Sim/V_Sim/download/v_sim-dev.tar.bz2', directory='/opt/v_sim-dev'))
+	#hack around to get the string
+	command= []
+	command.append(hpccm.wget().download_step(url='http://inac.cea.fr/L_Sim/V_Sim/download/v_sim-dev.tar.bz2', directory='/opt/v_sim-dev'))
 
-command.append(hpccm.tar().untar_step(tarball='v_sim-dev.tar.bz2'))
+	command.append(hpccm.tar().untar_step(tarball='v_sim-dev.tar.bz2'))
 
-cm = hpccm.ConfigureMake(opts=['--with-abinit', '--with-archives', '--with-openbabel', '--with-cube', '--without-strict-cflags'])
-command.append( cm.configure_step(directory='v_sim*/'))
-command.append( cm.build_step())
-command.append( cm.install_step())
-Stage0 += shell(commands=command)
+	cm = hpccm.ConfigureMake(opts=['--with-abinit', '--with-archives', '--with-openbabel', '--with-cube', '--without-strict-cflags'])
+	command.append( cm.configure_step(directory='v_sim*/'))
+	command.append( cm.build_step())
+	command.append( cm.install_step())
+	Stage0 += shell(commands=command)
 
 
 Stage0 += comment("MKL install", reformat=False)
@@ -164,7 +172,7 @@ Stage0 += environment(variables={"PATH": "/bigdft/bin:/usr/local/mpi/bin:${PATH}
 Stage0 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf',
                           'echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'ldconfig'])
-                          
+
 Stage0 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
 Stage0 += shell(commands=['useradd -ms /bin/bash bigdft'])
@@ -196,7 +204,7 @@ Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/
 Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1'])
 Stage1 += raw(docker='USER bigdft')
 Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:${LD_LIBRARY_PATH}"})
-Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
+Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                           'cat ../rcfiles/container.rc >> buildrc',
                           'sed -i "s/configuration()\:/configuration\(\)\:\\n    import os\\n    mkl=os.environ[\'MKLROOT\']/g" ./buildrc',
                           'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -O2 -fPIC -fopenmp"|g\' ./buildrc ',
@@ -204,12 +212,12 @@ Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                           ])
 #                                                    'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc'
                                                    #'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
-#Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
+#Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
 #                          'cat ../rcfiles/container_mkl.rc >> buildrc'])
 
 Stage1 += shell(commands=['../Installer.py autogen -y'])
 
-Stage1 += shell(commands=['../Installer.py build -y -a babel -v',
+Stage1 += shell(commands=['../Installer.py build -y -a babel,vsim -v',
                           'ls /usr/local/bigdft/bin/bigdft'])
 
 
@@ -218,11 +226,11 @@ Stage1 += shell(commands=['../Installer.py build -y -a babel -v',
 ## Runtime image
 #######
 
-image = 'nvidia/cuda:{}-runtime'.format(cuda_version)
+image = 'nvidia/cuda:{}-runtime-ubuntu16.04'.format(cuda_version)
 stages.append(Stage())
 Stage2 = stages[2]
 Stage2.baseimage(image)
-
+Stage2.name = 'runtime'
 Stage2 += comment("Runtime stage", reformat=False)
 
 ## Python (use upstream)
@@ -231,11 +239,11 @@ Stage2 += apt_get(ospackages=['python'])
 ## Compiler runtime (use upstream)
 Stage2 += gnu.runtime()
 
-Stage2 += apt_get(ospackages=['ocl-icd-libopencl1', 
+Stage2 += apt_get(ospackages=['ocl-icd-libopencl1',
                               'opensm', 'flex', 'libblas3', 'liblapack3',
-                              'python-pip', 'python-dev', 'ipython', 
-                              'ipython-notebook', 'python-setuptools', 
-                              'build-essential', 'libpcre3', 
+                              'python-pip', 'python-dev', 'ipython',
+                              'ipython-notebook', 'python-setuptools',
+                              'build-essential', 'libpcre3',
                               'python-matplotlib', 'ssh'])
 
 ## Mellanox OFED
@@ -300,9 +308,9 @@ Stage2 += raw(docker='EXPOSE 8888')
 
 Stage2 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
-Stage2 += shell(commands=['apt-get remove -y --purge build-essential python-setuptools', 
-                          'apt-get clean', 
-                          'apt-get autoremove -y', 
+Stage2 += shell(commands=['apt-get remove -y --purge build-essential python-setuptools',
+                          'apt-get clean',
+                          'apt-get autoremove -y',
                           'rm -rf /var/lib/apt/lists/'])
 
 
@@ -315,9 +323,8 @@ Stage2 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.con
                           'echo "/usr/local/intel/mkl/lib/intel64" >> /etc/ld.so.conf.d/intel.conf',
                           "echo '/usr/local/intel/compiler/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
                           'ldconfig'])
-                          
+
 Stage2 += shell(commands=['useradd -ms /bin/bash bigdft'])
 Stage2 += raw(docker='USER bigdft')
 Stage2 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage2 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
-
