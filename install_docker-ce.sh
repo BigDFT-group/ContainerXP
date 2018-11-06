@@ -15,6 +15,8 @@ sudo add-apt-repository \
 
 sudo apt update
 
+sudo groupadd -f docker
+
 sudo apt --yes install docker-ce
 
 sudo usermod --append --groups docker $USER
