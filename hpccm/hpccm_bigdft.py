@@ -13,7 +13,8 @@ Contents:
   BigDFT SDK
   jupyter notebook
   This recipe was generated with command line :
-$ hpccm.py --recipe hpccm_bigdft.py --userarg cuda={}""".format(USERARG.get('cuda', '9.1'))+""" mpi="""+USERARG.get('mpi', 'ompi')+""" mpi_version="""+USERARG.get('mpi_version', '3.0.0')+""" mkl="""+USERARG.get('mkl', 'yes')
+$ hpccm.py --recipe hpccm_bigdft.py --userarg cuda={}""".format(USERARG.get('cuda', '9.1'))+""" mpi="""+USERARG.get('mpi', 'ompi')+""" mpi_version="""+USERARG.get('mpi_version', '3.0.0')+\
+	""" v_sim-builtin="""+USERARG.get('v_sim-builtin','yes')
 
 #######
 ## SDK stage
@@ -48,10 +49,10 @@ mpi = USERARG.get('mpi', 'ompi')
 
 if mpi == "ompi":
   mpi_version = USERARG.get('mpi_version', '3.0.0')
-  mpi_lib = openmpi(infiniband=False, version=mpi_version)
+  mpi_lib = openmpi(infiniband=False, version=mpi_version, prefix="/usr/local/mpi")
 elif mpi in ["mvapich2", "mvapich"]:
-  mpi_version = USERARG.get('mpi_version', '2.3a')
-  mpi_lib = mvapich2_gdr(version=mpi_version, toolchain=tc, cuda_version=cuda_version)
+  mpi_version = USERARG.get('mpi_version', '2.3b')
+  mpi_lib = mvapich2(version=mpi_version, toolchain=tc, prefix="/usr/local/mpi")
   
 Stage0 += mpi_lib
 
@@ -65,25 +66,27 @@ Stage0 += label(metadata={'maintainer': 'bigdft-developers@lists.launchpad.net'}
 
 Stage0 += apt_get(ospackages=['autoconf','autotools-dev', 'automake', 'bzr',
                               'build-essential', 'libblas-dev', 'liblapack-dev',
-                              'curl', 'python-pip', 'python-dev', 'bison', 
-                              'libz-dev', 'pkg-config', 'python-setuptools', 
-                              'libpcre3-dev','libtool', 'libglib2.0-dev', 'git',
-                              'libltdl-dev', 'gnome-common', 'ipython', 
-                              'ipython-notebook', 'python-matplotlib', 
-                              'ocl-icd-libopencl1', 'vim', 'net-tools', 
-                              'ethtool', 'perl', 'lsb-release', 'iproute2', 
-                              'pciutils', 'libnl-route-3-200', 'kmod', 
-                              'libnuma1', 'lsof', 'linux-headers-generic', 
-                              'python-libxml2', 'graphviz', 'tk', 'tcl', 
-                              'swig', 'chrpath', 'dpatch', 'flex', 'cmake', 
-                              'libxml2-dev', 'ssh', 'gdb', 'strace'])
+                              'curl', 'python-pip', 'python-dev', 'bison',
+                              'libz-dev', 'pkg-config', 'python-setuptools',
+                              'libpcre3-dev','libtool', 'libglib2.0-dev',
+                              'libltdl-dev', 'gnome-common', 'ipython',
+                              'ipython-notebook', 'python-matplotlib','python3-pip','python3-setuptools',
+                              'ocl-icd-libopencl1', 'vim', 'net-tools','intltool',
+                              'ethtool', 'perl', 'lsb-release', 'iproute2',
+                              'pciutils', 'libopenbabel-dev', 'libnl-route-3-200', 'kmod',
+                              'libnuma1', 'lsof', 'linux-headers-generic',
+                              'python-libxml2', 'graphviz', 'tk', 'tcl','libgtk-3-dev',
+                              'swig', 'chrpath', 'dpatch', 'flex', 'cmake','gtk-doc-tools',
+                              'libxml2-dev', 'ssh', 'gdb', 'strace','intelpython2','libglu1-mesa-dev'])
 
 #SHELL ["/bin/bash", "-c"]
 Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')
 Stage0 += environment(variables={'SHELL': '/bin/bash'})
 #install jupyter
 #upgrade pip to avoid annoying message
-Stage0 += shell(commands=['pip install scipy jupyter'])
+Stage0 += shell(commands=['pip3 install scipy jupyter nglview ase jupyterlab'])
+Stage0 += shell(commands=['pip2 install ipython==5.5 ipykernel==4.10 scipy matplotlib==2.1.1'])
+Stage0 += shell(commands=['python2 -m ipykernel install'])
 
 Stage0 += raw(docker='EXPOSE 8888')
 
@@ -119,19 +122,15 @@ command.append( cm.install_step())
 Stage0 += shell(commands=command)
 
 
+Stage0 += comment("MKL install", reformat=False)
 
-use_mkl = USERARG.get('mkl', 'yes')
-
-if use_mkl == 'yes':
-  Stage0 += comment("MKL install", reformat=False)
-
-  Stage0 += apt_get(ospackages=['cpio'])
-  Stage0 += workdir(directory='/opt/mkl')
-  command= []
-  command.append(hpccm.wget().download_step(url='http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/12725/l_mkl_2018.2.199.tgz', directory='/opt/mkl'))
-  command.append(hpccm.tar().untar_step(tarball='l_mkl_2018.2.199.tgz'))
-  Stage0 += shell(commands=command)
-  command=['cd l_mkl_2018.2.199',
+Stage0 += apt_get(ospackages=['cpio'])
+Stage0 += workdir(directory='/opt/mkl')
+command= []
+command.append(hpccm.wget().download_step(url='http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/12414/l_mkl_2018.1.163.tgz', directory='/opt/mkl'))
+command.append(hpccm.tar().untar_step(tarball='l_mkl_2018.1.163.tgz'))
+Stage0 += shell(commands=command)
+command=['cd l_mkl_2018.1.163',
                 hpccm.sed().sed_step(file='silent.cfg',
                 patterns=[r's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/g',
                           r's/ARCH_SELECTED=ALL/ARCH_SELECTED=INTEL64/g',
@@ -139,26 +138,24 @@ if use_mkl == 'yes':
 "./install.sh -s silent.cfg",
 "cd ..",
 "rm -rf *",
-"rm -rf /opt/intel/.*.log /opt/intel/compilers_and_libraries_2018.2.199/licensing",
+"rm -rf /opt/intel/.*.log /opt/intel/compilers_and_libraries_2018.1.163/licensing",
 "echo '/opt/intel/mkl/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
 "echo '/opt/intel/compiler/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
 "ldconfig",
 "echo 'source /opt/intel/mkl/bin/mklvars.sh intel64' >> /etc/bash.bashrc "]
-  Stage0 += shell(commands=command)
+Stage0 += shell(commands=command)
 
 
 
-  Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
+Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl"})
 
-  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/tel64_lin:/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
-"NLSPATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
-"CPATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/include:${CPATH}",
-"PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
+"NLSPATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
+"CPATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/include:${CPATH}",
+"PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
 
-
-
-Stage0 += environment(variables={"PATH": "/bigdft/bin:${PATH}",
+Stage0 += environment(variables={"PATH": "/bigdft/bin:/usr/local/mpi/bin:${PATH}",
 "LD_LIBRARY_PATH": "/bigdft/lib:${LD_LIBRARY_PATH}",
 "PYTHONPATH": "/bigdft/lib/python2.7/site-packages:${PYTHONPATH}",
 "PKG_CONFIG_PATH": "/bigdft/lib/pkgconfig:${PKG_CONFIG_PATH}",
@@ -167,22 +164,16 @@ Stage0 += environment(variables={"PATH": "/bigdft/bin:${PATH}",
 "GI_TYPELIB_PATH": "/bigdft/lib/girepository-1.0:${GI_TYPELIB_PATH}"})
 
 #update ldconfig as /usr/local/lib may not be in the path
-Stage0 += shell(commands=['echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
+Stage0 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf',
+                          'echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'ldconfig'])
-
-#clone example files and recipes
-
-
 
 Stage0 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
 Stage0 += shell(commands=['useradd -ms /bin/bash bigdft'])
-Stage0 += shell(commands=['mkdir /ContainerXp',
-                          'chmod -R 777 /ContainerXp'])
 
 Stage0 += raw(docker='USER bigdft')
 
-Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/ContainerXp')])
 Stage0 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage0 += workdir(directory='/opt/bigdft')
 Stage0 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
@@ -208,21 +199,16 @@ Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/
 Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1'])
 Stage1 += raw(docker='USER bigdft')
 Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:${LD_LIBRARY_PATH}"})
-if use_mkl == "yes":
-  Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
+Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                           'cat ../rcfiles/container.rc >> buildrc',
                           'sed -i "s/configuration()\:/configuration\(\)\:\\n    import os\\n    mkl=os.environ[\'MKLROOT\']/g" ./buildrc',
-                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
-                          'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
-                          'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc'
-                          ])
-else:
-  Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
-                          'cat ../rcfiles/container.rc >> buildrc',
                           'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -O2 -fPIC -fopenmp"|g\' ./buildrc ',
-                          'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
+                          'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc'
                           ])
-
+#                                                    'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc'
+                                                   #'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
+#Stage1 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
+#                          'cat ../rcfiles/container_mkl.rc >> buildrc'])
 
 Stage1 += shell(commands=['../Installer.py autogen -y'])
 
@@ -275,28 +261,26 @@ Stage2 += copy(_from="sdk", src="/usr/local/cuda/lib64/stubs/libcuda.so", dest="
 Stage2 += copy(_from="sdk", src="/usr/local/cuda/lib64/stubs/libnvidia-ml.so", dest="/usr/local/lib/libnvidia-ml.so.1")
 
 #Stage2 += copy(_from="build", src="/opt/intel", dest="/opt/intel")
+Stage2 += copy(_from="build", src="/usr/local/mpi", dest="/usr/local/mpi")
 Stage2 += copy(_from="build", src="/usr/local/bigdft", dest="/usr/local/bigdft")
-Stage2 += copy(_from="build", src="/ContainerXp", dest="/ContainerXp")
-Stage2 += shell(commands=['chmod -R 777 /ContainerXp'])
 
-if use_mkl == "yes":
-  mklroot="/opt/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
-  mklroot_out="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/"
+mklroot="/opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/"
+mklroot_out="/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/"
 
-  Stage2 += copy(_from="build", src=mklroot+"libmkl_gf_lp64.so" , dest=mklroot_out+"libmkl_gf_lp64.so")
-  Stage2 += copy(_from="build", src=mklroot+"libmkl_gnu_thread.so" , dest=mklroot_out+"libmkl_gnu_thread.so")
-  Stage2 += copy(_from="build", src=mklroot+"libmkl_core.so" , dest=mklroot_out+"libmkl_core.so")
-  Stage2 += copy(_from="build", src=mklroot+"libmkl_avx2.so" , dest=mklroot_out+"libmkl_avx2.so")
-  Stage2 += copy(_from="build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
-  Stage2 += copy(_from="build", src="/opt/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin/libiomp5.so")
+Stage2 += copy(_from="build", src=mklroot+"libmkl_gf_lp64.so" , dest=mklroot_out+"libmkl_gf_lp64.so")
+Stage2 += copy(_from="build", src=mklroot+"libmkl_gnu_thread.so" , dest=mklroot_out+"libmkl_gnu_thread.so")
+Stage2 += copy(_from="build", src=mklroot+"libmkl_core.so" , dest=mklroot_out+"libmkl_core.so")
+Stage2 += copy(_from="build", src=mklroot+"libmkl_avx2.so" , dest=mklroot_out+"libmkl_avx2.so")
+Stage2 += copy(_from="build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
+Stage2 += copy(_from="build", src="/opt/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin/libiomp5.so")
 
-  Stage2 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl"})
+Stage2 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl"})
 
-  Stage2 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
-"NLSPATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
-"CPATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/include:${CPATH}",
-"PKG_CONFIG_PATH": "/usr/local/intel/compilers_and_libraries_2018.2.199/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+Stage2 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/compiler/lib/intel64_lin:/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
+"NLSPATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
+"CPATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/include:${CPATH}",
+"PKG_CONFIG_PATH": "/usr/local/intel/compilers_and_libraries_2018.1.163/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
 
 Stage2 += environment(variables={"PATH": "/usr/local/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/usr/local/bigdft/lib:${LD_LIBRARY_PATH}",
@@ -329,7 +313,8 @@ Stage2 += shell(commands=['apt-get remove -y --purge build-essential python-setu
 Stage2 += shell(commands=["rm -rf $(find / | perl -ne 'print if /[^[:ascii:]]/')"])
 
 #update ldconfig as /usr/local/lib may not be in the path
-Stage2 += shell(commands=['echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
+Stage2 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf',
+                          'echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'echo "/usr/local/intel/mkl/lib/intel64" >> /etc/ld.so.conf.d/intel.conf',
                           "echo '/usr/local/intel/compiler/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
                           'ldconfig'])
@@ -338,6 +323,4 @@ Stage2 += shell(commands=['useradd -ms /bin/bash bigdft'])
 Stage2 += raw(docker='USER bigdft')
 Stage2 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage2 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
-
-
 

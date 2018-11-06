@@ -1,0 +1,198 @@
+chess:
+  foe:
+    ef_interpol_chargediff: 1.0
+    eval_range_foe: [-1.0, 1.0]
+    fscale: 0.05
+dft:
+  disablesym: true
+  gnrm_cv: 1.0e-05
+  hgrids: 0.55
+  idsx: 6
+  inputpsiid: linear
+  itermax: 50
+  ixc: PBE (ABINIT)
+  ncong: 5
+  nrepmax: 10
+  qcharge: -1.0
+  rmult: [5.0, 7.0]
+lin_basis: {alpha_diis: 0.5, alpha_sd: 0.5, correction_orthoconstraint: 0, deltae_cv: 0.0001,
+  fix_basis: 1.0e-12, gnrm_cv: 0.002, gnrm_ig: 0.1, idsx: 8, min_gnrm_for_dynamic: 0.004,
+  nit: 8, nstep_prec: 6}
+lin_basis_params:
+  C: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Cl: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 6.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  H: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 5.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Hw: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 5.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  K: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 7.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  N: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Na: {ao_confinement: -1.0, confinement: -1.0, nbasis: 1, rloc: 7.2, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  O: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Os: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  Ow: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 5.5, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  P: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 6.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+  S: {ao_confinement: -1.0, confinement: -1.0, nbasis: 4, rloc: 6.0, rloc_kernel: 10.0,
+    rloc_kernel_foe: 12.0}
+lin_general: {calc_dipole: true, calc_quadrupole: true, charge_multipoles: 1, hybrid: true,
+  max_inversion_error: 5.0e-08, nit: 50, output_mat: 4, output_wf: 1, rpnrm_cv: 1.0e-11,
+  taylor_order: 1020}
+lin_kernel:
+  alphamix: 0.2
+  idsx: 4
+  idsx_coeff: [6, 0]
+  linear_method: FOE
+  nit: 4
+  nstep: 10
+perf: {FOE_restart: 1, calculate_KS_residue: false, check_matrix_compression: false,
+  check_overlap: 0, check_sumrho: 0, correction_co_contra: true, experimental_mode: true,
+  foe_gap: true, hamapp_radius_incr: 6, kappa_conv: 0.1, loewdin_charge_analysis: true,
+  mixing_after_inputguess: 1, store_index: false, wf_extent_analysis: true}
+posinp:
+  abc:
+  - [28.0, 0.0, 0.0]
+  - [1.7145055188062944e-15, 28.0, 0.0]
+  - [1.7145055188062944e-15, 1.7145055188062944e-15, 28.0]
+  alpha: 90.0
+  beta: 90.0
+  cell: [28.0, 28.0, 28.0]
+  gamma: 90.0
+  positions:
+  - Cl: [14.324, 0.084, 30.58]
+    frag: [CLA, 568]
+  - O: [15.142, -2.412, 31.883]
+    frag: [WAT, 406]
+  - H: [14.718, -2.237, 32.723]
+    frag: [WAT, 406]
+  - H: [15.021, -1.607, 31.381]
+    frag: [WAT, 406]
+  - O: [14.037, 2.879, 31.57]
+    frag: [WAT, 473]
+  - H: [14.229, 1.971, 31.333]
+    frag: [WAT, 473]
+  - H: [13.435, 3.181, 30.89]
+    frag: [WAT, 473]
+  - O: [12.622, -2.5, 30.271]
+    frag: [WAT, 445]
+  - H: [13.206, -1.777, 30.499]
+    frag: [WAT, 445]
+  - H: [12.424, -2.365, 29.344]
+    frag: [WAT, 445]
+  - O: [13.369, 4.613, 6.391]
+    frag: [WAT, 47]
+  - H: [14.129, 4.136, 6.056]
+    frag: [WAT, 47]
+  - H: [13.7, 5.084, 7.156]
+    frag: [WAT, 47]
+  - O: [15.938, 3.629, 5.141]
+    frag: [WAT, 77]
+  - H: [15.356, 3.326, 4.444]
+    frag: [WAT, 77]
+  - H: [16.504, 2.878, 5.324]
+    frag: [WAT, 77]
+  - O: [11.982, 3.385, 1.836]
+    frag: [WAT, 81]
+  - H: [11.354, 2.732, 2.146]
+    frag: [WAT, 81]
+  - H: [11.49, 4.205, 1.824]
+    frag: [WAT, 81]
+  - O: [16.515, -1.283, 6.624]
+    frag: [WAT, 134]
+  - H: [15.63, -1.132, 6.29]
+    frag: [WAT, 134]
+  - H: [16.586, -2.235, 6.695]
+    frag: [WAT, 134]
+  - O: [15.174, 2.078, 0.241]
+    frag: [WAT, 135]
+  - H: [14.715, 1.402, 0.74]
+    frag: [WAT, 135]
+  - H: [14.503, 2.456, -0.326]
+    frag: [WAT, 135]
+  - O: [11.955, 1.925, 5.513]
+    frag: [WAT, 161]
+  - H: [12.282, 2.817, 5.397]
+    frag: [WAT, 161]
+  - H: [11.475, 1.739, 4.706]
+    frag: [WAT, 161]
+  - O: [12.696, 5.896, 3.985]
+    frag: [WAT, 179]
+  - H: [13.508, 6.389, 3.863]
+    frag: [WAT, 179]
+  - H: [12.903, 5.258, 4.668]
+    frag: [WAT, 179]
+  - O: [16.41, 4.187, 1.952]
+    frag: [WAT, 190]
+  - H: [15.691, 4.417, 2.54]
+    frag: [WAT, 190]
+  - H: [16.08, 3.443, 1.449]
+    frag: [WAT, 190]
+  - O: [12.368, 28.316, -0.041]
+    frag: [WAT, 263]
+  - H: [12.377, 28.61, 0.869]
+    frag: [WAT, 263]
+  - H: [12.184, 27.378, 0.011]
+    frag: [WAT, 263]
+  - O: [10.762, 23.574, 3.963]
+    frag: [WAT, 277]
+  - H: [10.899, 24.51, 3.816]
+    frag: [WAT, 277]
+  - H: [11.079, 23.423, 4.853]
+    frag: [WAT, 277]
+  - O: [16.866, 23.167, 3.204]
+    frag: [WAT, 302]
+  - H: [16.779, 22.249, 2.946]
+    frag: [WAT, 302]
+  - H: [15.969, 23.453, 3.378]
+    frag: [WAT, 302]
+  - O: [13.82, 23.001, 2.697]
+    frag: [WAT, 305]
+  - H: [13.599, 22.964, 1.766]
+    frag: [WAT, 305]
+  - H: [13.805, 23.934, 2.91]
+    frag: [WAT, 305]
+  - O: [18.473, 25.328, 3.935]
+    frag: [WAT, 342]
+  - H: [17.974, 24.59, 3.585]
+    frag: [WAT, 342]
+  - H: [18.307, 25.304, 4.878]
+    frag: [WAT, 342]
+  - O: [17.715, 28.043, 2.684]
+    frag: [WAT, 345]
+  - H: [17.724, 27.193, 3.124]
+    frag: [WAT, 345]
+  - H: [16.795, 28.306, 2.688]
+    frag: [WAT, 345]
+  - O: [39.399, 25.754, -0.237]
+    frag: [WAT, 353]
+  - H: [39.517, 25.512, -1.155]
+    frag: [WAT, 353]
+  - H: [38.58, 25.33, 0.02]
+    frag: [WAT, 353]
+  - O: [13.593, -0.927, 34.089]
+    frag: [WAT, 386]
+  - H: [13.512, -0.482, 33.245]
+    frag: [WAT, 386]
+  - H: [13.475, -0.233, 34.738]
+    frag: [WAT, 386]
+  - O: [15.149, -1.548, 27.762]
+    frag: [WAT, 470]
+  - H: [14.948, -0.935, 28.469]
+    frag: [WAT, 470]
+  - H: [15.881, -1.144, 27.295]
+    frag: [WAT, 470]
+  - O: [13.423, 23.779, 26.514]
+    frag: [WAT, 529]
+  - H: [14.184, 23.897, 25.945]
+    frag: [WAT, 529]
+  - H: [13.544, 24.423, 27.212]
+    frag: [WAT, 529]
+  units: angstroem
