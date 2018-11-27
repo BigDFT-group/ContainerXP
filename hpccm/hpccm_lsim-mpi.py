@@ -42,7 +42,7 @@ tc = gnu.toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
 
 # FFTW
-fftw = fftw(version='3.3.7', toolchain=tc)
+fftw = fftw(version='3.3.8',baseurl="http://fftw.org/", toolchain=tc)
 Stage0 += fftw
 
 #BigDFT packages
@@ -92,7 +92,7 @@ Stage0 += apt_get(ospackages=ospack)
 Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')
 Stage0 += environment(variables={'SHELL': '/bin/bash'})
 
-Stage0 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
+#Stage0 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
 Stage0 += environment(variables={"PATH": "/opt/intel/intelpython2/bin/:${PATH}",
                                  "LD_LIBRARY_PATH": "/opt/intel/intelpython2/lib/:/opt/intel/intelpython2/lib/gobject-introspection/:/opt/intel/intelpython2/lib/libfabric:${LD_LIBRARY_PATH}",
                                  "LIBRARY_PATH": "/opt/intel/intelpython2/lib/:/opt/intel/intelpython2/lib/gobject-introspection/:/opt/intel/intelpython2/lib/libfabric:${LIBRARY_PATH}"})

@@ -27,7 +27,7 @@ Stage0.baseimage(image)
 Stage0 += workdir(directory='/opt/')
 Stage0 += shell(commands=['rm -rf /opt/bigdft'])
 Stage0 += shell(commands=['bzr branch -Ossl.cert_reqs=none lp:bigdft'])
-Stage0 += shell(commands=['chmod -R 777 /opt/bigdft', 'mkdir /usr/local/bigdft', 'chmod -R 777 /usr/local/bigdft'])
+Stage0 += shell(commands=['chown -R lsim:lsim /opt/bigdft','chmod -R 777 /opt/bigdft', 'mkdir /usr/local/bigdft', 'chmod -R 777 /usr/local/bigdft'])
 
 Stage0 += workdir(directory='/opt/bigdft/build')
 Stage0 += shell(commands=['chmod -R 777 /opt/bigdft/build'])
@@ -235,7 +235,7 @@ Stage1 += shell(commands=['echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigd
                           
 Stage1 += shell(commands=['useradd -ms /bin/bash bigdft'])
 Stage1 += raw(docker='USER bigdft')
-Stage1 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
+#Stage1 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
 
