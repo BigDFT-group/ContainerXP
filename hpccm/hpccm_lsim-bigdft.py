@@ -24,9 +24,11 @@ Stage0 += comment(doc, reformat=False)
 Stage0.name = 'bigdft_build'
 Stage0.baseimage(image)
 
+Stage0 += raw(docker='USER root')
 Stage0 += workdir(directory='/opt/')
 Stage0 += shell(commands=['rm -rf /opt/bigdft'])
-Stage0 += shell(commands=['bzr branch -Ossl.cert_reqs=none lp:bigdft'])
+#Stage0 += shell(commands=['bzr branch -Ossl.cert_reqs=none lp:bigdft'])
+Stage0 += shell(commands=['git clone https://gitlab.com/l_sim/bigdft-suite.git ./bigdft'])
 Stage0 += shell(commands=['chown -R lsim:lsim /opt/bigdft','chmod -R 777 /opt/bigdft', 'mkdir /usr/local/bigdft', 'chmod -R 777 /usr/local/bigdft'])
 
 Stage0 += workdir(directory='/opt/bigdft/build')
@@ -39,7 +41,8 @@ Stage0 += shell(commands=['mkdir /docker',
                           'mkdir /opt/bigdft/build/avx2',
                           'chmod -R 777 /opt/bigdft/build/avx2',
                           'mkdir /opt/bigdft/build/noavx',
-                          'chmod -R 777 /opt/bigdft/build/noavx'])
+                          'chmod -R 777 /opt/bigdft/build/noavx',
+                          '/opt/intel/intelpython2/bin/activate'])
                           
 Stage0 += raw(docker='USER lsim')
 Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
@@ -50,8 +53,8 @@ Stage0 += workdir(directory='/opt/bigdft/build/noavx')
 if use_mkl == "yes":
   Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries/linux/mkl"})
 
-  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries/linux/compiler/lib/tel64_lin:/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
+  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries/linux/compiler/lib/tel64_lin:/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
 "NLSPATH": "/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
 "CPATH": "/opt/intel/compilers_and_libraries/linux/mkl/include:${CPATH}",
 "PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
@@ -63,13 +66,12 @@ if use_mkl == "yes":
                           'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-fPIC -O2 -fopenmp/g" ./buildrc',
                           'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc',
                           'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
+                          'sed -i "s/\'psolver\'\: env_configuration(),/\'psolver\': env_configuration(),\\n\'atlab\': env_configuration(),/g" ./buildrc',
                           'echo "module_cmakeargs.update({\'openbabel\': \'-DZLIB_INCLUDE_DIR=\"/usr/include\"\'})" >> buildrc'
                           ])
 else:
   Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                             'cat ../../rcfiles/container.rc >> buildrc',
-                            'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-O2 -fPIC -fopenmp"|g\' ./buildrc ',
-                            'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-fPIC -O2 -fopenmp/g" ./buildrc',
                             'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
                             'echo "module_cmakeargs.update({\'openbabel\': \'-DZLIB_INCLUDE_DIR=\"/usr/include\"\'})" >> buildrc'
                           ])
@@ -88,6 +90,7 @@ if use_mkl == "yes":
                           'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
                           'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc',
                           'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
+                          'sed -i "s/\'psolver\'\: env_configuration(),/\'psolver\': env_configuration(),\\n\'atlab\': env_configuration(),/g" ./buildrc',
                           'echo "module_cmakeargs.update({\'openbabel\': \'-DZLIB_INCLUDE_DIR=\"/usr/include\"\'})" >> buildrc'
                           ])
 else:
@@ -133,12 +136,13 @@ tc = gnu().toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
 Stage1 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
 
-Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', 
+Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', 'libopenbabel4v5',
                               'opensm', 'flex', 'libblas3', 'liblapack3',
-                              'build-essential', 'libpcre3', 'ssh'])
+                              'build-essential', 'libpcre3', 'ssh', 'libxnvctrl0'])
 
 ## Mellanox OFED
-Stage1 += mlnx_ofed(version='3.4-1.0.0.0').runtime(_from='mpi')
+ofed_version='4.5'
+Stage1 += mlnx_ofed().runtime(_from='mpi')
 
 mpi = USERARG.get('mpi', 'ompi')
 if mpi == "ompi":
@@ -189,28 +193,6 @@ if use_mkl == "yes":
   Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
   Stage1 += copy(_from="bigdft_build", src="/opt/intel/compilers_and_libraries/linux/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin/libiomp5.so")
 
-  Stage1 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries/linux/mkl"})
-
-  Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin:/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin:/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
-"NLSPATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
-"CPATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/include:${CPATH}",
-"PKG_CONFIG_PATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
-
-Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin:/usr/local/bigdft/bin:${PATH}",
-"LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/usr/local/bigdft/lib:${LD_LIBRARY_PATH}",
-"PYTHONPATH": "/usr/local/bigdft/lib/python2.7/site-packages:${PYTHONPATH}",
-"PKG_CONFIG_PATH": "/usr/local/bigdft/lib/pkgconfig:${PKG_CONFIG_PATH}",
-"CHESS_ROOT": "/usr/local/bigdft/bin",
-"BIGDFT_ROOT": "/usr/local/bigdft/bin",
-"GI_TYPELIB_PATH": "/usr/local/bigdft/lib/girepository-1.0:${GI_TYPELIB_PATH}"})
-
-Stage1 += environment(variables={"MV2_USE_GPUDIRECT_GDRCOPY": "0",
-                                 "MV2_SMP_USE_CMA": "0",
-                                 "MV2_ENABLE_AFFINITY": "0",
-                                 "MV2_CPU_BINDING_POLICY": "scatter",
-                                 "MV2_CPU_BINDING_LEVEL": "socket"})
-
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/root/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
 
@@ -236,6 +218,29 @@ Stage1 += shell(commands=['echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigd
 Stage1 += shell(commands=['useradd -ms /bin/bash bigdft'])
 Stage1 += raw(docker='USER bigdft')
 #Stage1 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
+Stage1 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries/linux/mkl"})
+
+Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin:/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin:/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
+"NLSPATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
+"CPATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/include:${CPATH}",
+"PKG_CONFIG_PATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+
+Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin:/usr/local/bigdft/bin:${PATH}",
+"LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/usr/local/bigdft/lib:${LD_LIBRARY_PATH}",
+"PYTHONPATH": "/usr/local/bigdft/lib/python2.7/site-packages:${PYTHONPATH}",
+"PKG_CONFIG_PATH": "/usr/local/bigdft/lib/pkgconfig:${PKG_CONFIG_PATH}",
+"CHESS_ROOT": "/usr/local/bigdft/bin",
+"BIGDFT_ROOT": "/usr/local/bigdft/bin",
+"GI_TYPELIB_PATH": "/usr/local/bigdft/lib/girepository-1.0:${GI_TYPELIB_PATH}"})
+
+Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
+                                 "MV2_USE_GPUDIRECT_GDRCOPY": "0",
+                                 "MV2_SMP_USE_CMA": "0",
+                                 "MV2_ENABLE_AFFINITY": "0",
+                                 "MV2_CPU_BINDING_POLICY": "scatter",
+                                 "MV2_CPU_BINDING_LEVEL": "socket"})
+                                 
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
 

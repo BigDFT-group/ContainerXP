@@ -82,7 +82,7 @@ ospack=['swig', 'chrpath', 'dpatch', 'flex', 'cmake','gtk-doc-tools',
         'libxml2-dev', 'ssh', 'gdb', 'strace','libglu1-mesa-dev',
         'libnetcdf-dev','libgirepository1.0-dev','cpio']
 Stage0 += apt_get(ospackages=ospack)
-ospack=['intel-mkl-64bit-2019.0-045']
+ospack=['intel-mkl-64bit-2019.3-062']
 Stage0 += apt_get(ospackages=ospack)
 ospack=['intelpython2', 'intelpython3']
 Stage0 += apt_get(ospackages=ospack)
@@ -126,32 +126,42 @@ Stage1 += comment("mpi", reformat=False)
 Stage1 += raw(docker='USER root')
 
 # Mellanox OFED
-ofed_version='3.4'
-ofed = mlnx_ofed(version='3.4-1.0.0.0')
+ofed_version='4.5'
+ofed = mlnx_ofed()
 Stage1 += ofed
 
-# MPI libraries : default ompi, v 3.0.0
+# MPI libraries : default ompi, v 4.0.0
 mpi = USERARG.get('mpi', 'ompi')
 
 if mpi == "ompi":
-  mpi_version = USERARG.get('mpi_version', '3.0.0')
+  mpi_version = USERARG.get('mpi_version', '4.0.0')
   mpi_lib = openmpi(infiniband=False, version=mpi_version, prefix="/usr/local/mpi")
+  Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
+                                   "PATH": "/usr/local/mpi/bin/:${PATH}",
+                                   "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
 elif mpi in ["mvapich2", "mvapich"]:
-  Stage1 += apt_get(ospackages=['alien'])
+  gdrcopy=gdrcopy()
   mpi_version = USERARG.get('mpi_version', '2.3')
   if cuda_version == "8.0":
     gnu_version="5.4.0"
   else:
-    gnu_version="6.3.0"
-  mpi_lib=shell(commands=['curl -O http://mvapich.cse.ohio-state.edu/download/mvapich/gdr/{}/mofed{}/mvapich2-gdr-mcast.cuda{}.mofed{}.gnu{}-2.3-1.el7.x86_64.rpm && alien -c *.rpm '.format(mpi_version,ofed_version,cuda_version,ofed_version,gnu_version),
-'mkdir /usr/local/mpi',
-'dpkg --install *.deb',
-'rm -f *.rpm *.deb',
-'cp -r /opt/mvapich2/gdr/{}/mcast/no-openacc/cuda{}/mofed{}/mpirun/gnu{}/* /usr/local/mpi'.format(mpi_version,cuda_version,ofed_version,gnu_version),
-'apt-get remove alien -y',
-'apt-get clean -y',
-'apt-get autoclean -y',
-'apt-get autoremove -y'])
+    gnu_version="4.8.5"
+  mpi_lib= mvapich2_gdr(version=mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=cuda_version)
+  Stage1 += apt_get(ospackages=['libxnvctrl-dev'])
+#  Stage1 += apt_get(ospackages=['alien'])
+#  if cuda_version == "8.0":
+#    gnu_version="5.4.0"
+#  else:
+#    gnu_version="6.3.0"
+#  mpi_lib=shell(commands=['curl -O http://mvapich.cse.ohio-state.edu/download/mvapich/gdr/{}/mofed{}/mvapich2-gdr-mcast.cuda{}.mofed{}.gnu{}-2.3-1.el7.x86_64.rpm && alien -c *.rpm '.format(mpi_version,ofed_version,cuda_version,ofed_version,gnu_version),
+#'mkdir /usr/local/mpi',
+#'dpkg --install *.deb',
+#'rm -f *.rpm *.deb',
+#'cp -r /opt/mvapich2/gdr/{}/mcast/no-openacc/cuda{}/mofed{}/mpirun/gnu{}/* /usr/local/mpi'.format(mpi_version,cuda_version,ofed_version,gnu_version),
+#'apt-get remove alien -y',
+#'apt-get clean -y',
+#'apt-get autoclean -y',
+#'apt-get autoremove -y'])
   Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin/:${PATH}",
                                  "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}",
                                  "MV2_USE_GPUDIRECT_GDRCOPY": "0",
@@ -164,11 +174,16 @@ elif mpi == 'impi':
 
 Stage1 += mpi_lib
 
+#Workaround missing install on mvapich_gdr in hpccm
+if mpi in ["mvapich2", "mvapich"]:
+  Stage1 += shell(commands=['mkdir /usr/local/mpi/',
+                            'cp -r /opt/mvapich2/gdr/{}/mcast/no-openacc/cuda{}/mofed{}/mpirun/gnu{}/* /usr/local/mpi'.format(mpi_version,cuda_version,ofed_version,gnu_version)])
+
 #update ldconfig as /usr/local/lib may not be in the path
 Stage1 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf',
                           'echo "/usr/local/mpi/lib64" >> /etc/ld.so.conf.d/mpi.conf',
                           'echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'ldconfig'])
 
-
+Stage1 += raw(docker='USER lsim')
 
