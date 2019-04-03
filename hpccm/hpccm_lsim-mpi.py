@@ -137,6 +137,8 @@ if mpi == "ompi":
   mpi_version = USERARG.get('mpi_version', '4.0.0')
   mpi_lib = openmpi(infiniband=False, version=mpi_version, prefix="/usr/local/mpi")
   Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
+                                   "OMPI_MCA_rmaps_base_mapping_policy":"core",
+                                   "OMPI_MCA_hwloc_base_binding_policy":"none",
                                    "PATH": "/usr/local/mpi/bin/:${PATH}",
                                    "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
 elif mpi in ["mvapich2", "mvapich"]:

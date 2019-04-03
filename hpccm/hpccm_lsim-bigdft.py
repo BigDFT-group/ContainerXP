@@ -234,13 +234,17 @@ Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin:/usr/local/bigdft/b
 "BIGDFT_ROOT": "/usr/local/bigdft/bin",
 "GI_TYPELIB_PATH": "/usr/local/bigdft/lib/girepository-1.0:${GI_TYPELIB_PATH}"})
 
-Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
-                                 "MV2_USE_GPUDIRECT_GDRCOPY": "0",
-                                 "MV2_SMP_USE_CMA": "0",
-                                 "MV2_ENABLE_AFFINITY": "0",
-                                 "MV2_CPU_BINDING_POLICY": "scatter",
-                                 "MV2_CPU_BINDING_LEVEL": "socket"})
-                                 
+if mpi == "ompi":
+  Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
+                                   "OMPI_MCA_rmaps_base_mapping_policy":"core",
+                                   "OMPI_MCA_hwloc_base_binding_policy":"none"})
+elif mpi in ["mvapich2", "mvapich"]:
+  Stage1 += environment(variables={"MV2_USE_GPUDIRECT_GDRCOPY": "0",
+                                   "MV2_SMP_USE_CMA": "0",
+                                   "MV2_ENABLE_AFFINITY": "0",
+                                   "MV2_CPU_BINDING_POLICY": "scatter",
+                                   "MV2_CPU_BINDING_LEVEL": "socket"})
+
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
 
