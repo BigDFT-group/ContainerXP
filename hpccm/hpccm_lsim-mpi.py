@@ -86,7 +86,8 @@ ospack=['intel-mkl-64bit-2019.3-062']
 Stage0 += apt_get(ospackages=ospack)
 ospack=['intelpython2', 'intelpython3']
 Stage0 += apt_get(ospackages=ospack)
-
+ospack=['ninja-build']
+Stage0 += apt_get(ospackages=ospack)
 
 #SHELL ["/bin/bash", "-c"]
 Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')

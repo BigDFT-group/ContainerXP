@@ -45,7 +45,6 @@ Stage0 += shell(commands=['mkdir /docker',
                           '/opt/intel/intelpython2/bin/activate'])
                           
 Stage0 += raw(docker='USER lsim')
-Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
 Stage0 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"})
 Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/cuda/lib64:${LIBRARY_PATH}"})
 use_mkl = USERARG.get('mkl', 'yes')
@@ -108,6 +107,7 @@ Stage0 += shell(commands=['../../Installer.py build -y -v',
 
 Stage0 += workdir(directory='/home/lsim')
 
+Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
 
 #######
 ## Runtime image
@@ -138,7 +138,7 @@ Stage1 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
 
 Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', 'libopenbabel4v5',
                               'opensm', 'flex', 'libblas3', 'liblapack3',
-                              'build-essential', 'libpcre3', 'ssh', 'libxnvctrl0'])
+                              'build-essential', 'libpcre3', 'openssh-client', 'libxnvctrl0'])
 
 ## Mellanox OFED
 ofed_version='4.5'
@@ -151,7 +151,7 @@ if mpi == "ompi":
   Stage1 += mpi_lib.runtime(_from='bigdft_build')
 elif mpi in ["mvapich2", "mvapich"]:
   mpi_version = USERARG.get('mpi_version', '2.3')
-  Stage1 += apt_get(ospackages=['libpciaccess-dev openssh-client'])
+  Stage1 += apt_get(ospackages=['libpciaccess-dev'])
   Stage1 += copy(_from="bigdft_build", src="/usr/local/mpi", dest="/usr/local/mpi")
 #  mpi_lib = mvapich2_gdr(version=mpi_version, toolchain=tc, prefix="/usr/local/mpi", cuda_version=cuda_version)
   Stage1 += environment(variables={"MV2_USE_GPUDIRECT_GDRCOPY": "0",
