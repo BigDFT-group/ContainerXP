@@ -7,7 +7,7 @@ Contents:
   FFTW version 3.3.7
   MKL
   GNU compilers (upstream)
-  Python 2 and 3 (upstream)
+  Python 3 (intel)
   jupyter notebook and jupyter lab
   v_sim-dev in the optional target
 
@@ -21,17 +21,21 @@ $ hpccm.py --recipe hpccm_lsim-mpi.py --userarg cuda={}""".format(USERARG.get('c
 cuda_version = USERARG.get('cuda', '10.0')
 if cuda_version == "8.0":
   ubuntu_version = "16.04"
+  distro = 'ubuntu16'
 else:
-  ubuntu_version = USERARG.get('ubuntu', '16.04')
+  ubuntu_version = USERARG.get('ubuntu', '18.04')
+
+if ubuntu_version == "18.04" or ubuntu_version == "18.04-rc":
+  distro = 'ubuntu18'
+else:
+  distro = 'ubuntu'
+
 image = 'nvidia/cuda:{}-devel-ubuntu{}'.format(cuda_version,ubuntu_version)
 
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'sdk'
-Stage0.baseimage(image)
+Stage0.baseimage(image,_distro=distro)
 Stage0 += comment("SDK stage", reformat=False)
-# Python
-#python = python(python3=True)
-#Stage0 += python
 
 # GNU compilers
 gnu = gnu()
@@ -60,11 +64,8 @@ Stage0 += shell(commands=command)
 #intel python distribution GPG
 Stage0 += shell(commands=['wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB',
                           'apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB',
-                          'wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list',
-                          " sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list' ",
-                          " sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mpi.list' ",
-                          " sh -c 'echo deb https://apt.repos.intel.com/intelpython binary/ > /etc/apt/sources.list.d/intelpython.list' "])
-
+                          'wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list'
+                          ])
 ospack=['autoconf','autotools-dev', 'automake','git','build-essential', 'libblas-dev', 'liblapack-dev',
         'curl', 'bison',
         'libz-dev', 'pkg-config']
@@ -82,23 +83,22 @@ ospack=['swig', 'chrpath', 'dpatch', 'flex', 'cmake','gtk-doc-tools',
         'libxml2-dev', 'ssh', 'gdb', 'strace','libglu1-mesa-dev',
         'libnetcdf-dev','libgirepository1.0-dev','cpio']
 Stage0 += apt_get(ospackages=ospack)
-ospack=['intel-mkl-64bit-2019.3-062']
-Stage0 += apt_get(ospackages=ospack)
-ospack=['intelpython2', 'intelpython3']
-Stage0 += apt_get(ospackages=ospack)
-ospack=['ninja-build']
+ospack=['ninja-build locales libmount-dev']
 Stage0 += apt_get(ospackages=ospack)
 
 #SHELL ["/bin/bash", "-c"]
 Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')
-Stage0 += environment(variables={'SHELL': '/bin/bash'})
+Stage0 += environment(variables={'SHELL': '/bin/bash',
+                                  "PATH":  '/usr/local/anaconda/bin:$PATH' })
 
-#Stage0 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
-Stage0 += environment(variables={"PATH": "/opt/intel/intelpython2/bin/:${PATH}",
-                                 "LD_LIBRARY_PATH": "/opt/intel/intelpython2/lib/:/opt/intel/intelpython2/lib/gobject-introspection/:/opt/intel/intelpython2/lib/libfabric:${LD_LIBRARY_PATH}",
-                                 "LIBRARY_PATH": "/opt/intel/intelpython2/lib/:/opt/intel/intelpython2/lib/gobject-introspection/:/opt/intel/intelpython2/lib/libfabric:${LIBRARY_PATH}"})
 
-Stage0 += shell(commands=['conda install -c tacaswell bzr', 'conda install -c conda-forge gobject-introspection glib jupyterlab ipython ipykernel pandas', 'conda clean -a'])
+#conda install
+Stage0 += conda(version='latest', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
+               packages=[ 'glib', 'jupyterlab', 'ipython', 'ipykernel', 'intelpython3_core=2020.1','numpy', 'scipy', 'setuptools', 'six', 'yaml', 'matplotlib', 'mkl-devel'])
+#overcome multiple issues with anaconda ...
+Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
+                          'mv /usr/local/anaconda/include/iconv.h /usr/local/anaconda/include/iconv_save.h',
+                          'pip install pygobject'])
 
 Stage0 += raw(docker='EXPOSE 8888')
 
@@ -113,7 +113,17 @@ Stage0 += raw(docker='CMD jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.to
 
 Stage0 += shell(commands=['useradd -ms /bin/bash lsim'])
 
+# Set the locale
+Stage0 += shell(commands=['sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen','locale-gen'])
+
+
+
 Stage0 += raw(docker='USER lsim')
+
+Stage0 += environment(variables={"LANG": "en_US.UTF-8",
+                                 "LANGUAGE": "en_US.UTF-8",
+                                 "LC_ALL": "en_US.UTF-8",
+                                  })
 
 Stage0 += environment(variables={"XDG_CACHE_HOME": "/home/lsim/.cache/"})
 Stage0 += workdir(directory='/home/lsim')
@@ -121,28 +131,31 @@ Stage0 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"']
 
 # v_sim build stage
 Stage1.name = 'mpi'
-Stage1.baseimage(image='sdk')
+Stage1.baseimage(image='sdk',_distro=distro)
 Stage1 += comment("mpi", reformat=False)
 
 Stage1 += raw(docker='USER root')
-
-# Mellanox OFED
-ofed_version='4.5'
-ofed = mlnx_ofed()
-Stage1 += ofed
 
 # MPI libraries : default ompi, v 4.0.0
 mpi = USERARG.get('mpi', 'ompi')
 
 if mpi == "ompi":
+  #normal OFED 
+  Stage1 += ofed()
   mpi_version = USERARG.get('mpi_version', '4.0.0')
-  mpi_lib = openmpi(infiniband=False, version=mpi_version, prefix="/usr/local/mpi")
+  mpi_lib = openmpi(infiniband=True, version=mpi_version, prefix="/usr/local/mpi")
   Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
                                    "OMPI_MCA_rmaps_base_mapping_policy":"core",
                                    "OMPI_MCA_hwloc_base_binding_policy":"none",
+                                   "OMPI_MCA_btl_openib_cuda_async_recv":"false",
+                                   "OMPI_MCA_mpi_leave_pinned":"true",
+                                   "OMPI_MCA_opal_warn_on_missing_libcuda":"false",
                                    "PATH": "/usr/local/mpi/bin/:${PATH}",
                                    "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
 elif mpi in ["mvapich2", "mvapich"]:
+  # Mellanox OFED
+  ofed_version='4.5'
+  Stage1 += mlnx_ofed()
   gdrcopy=gdrcopy()
   mpi_version = USERARG.get('mpi_version', '2.3')
   if cuda_version == "8.0":
@@ -150,21 +163,8 @@ elif mpi in ["mvapich2", "mvapich"]:
   else:
     gnu_version="4.8.5"
   mpi_lib= mvapich2_gdr(version=mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=cuda_version)
-  Stage1 += apt_get(ospackages=['libxnvctrl-dev'])
-#  Stage1 += apt_get(ospackages=['alien'])
-#  if cuda_version == "8.0":
-#    gnu_version="5.4.0"
-#  else:
-#    gnu_version="6.3.0"
-#  mpi_lib=shell(commands=['curl -O http://mvapich.cse.ohio-state.edu/download/mvapich/gdr/{}/mofed{}/mvapich2-gdr-mcast.cuda{}.mofed{}.gnu{}-2.3-1.el7.x86_64.rpm && alien -c *.rpm '.format(mpi_version,ofed_version,cuda_version,ofed_version,gnu_version),
-#'mkdir /usr/local/mpi',
-#'dpkg --install *.deb',
-#'rm -f *.rpm *.deb',
-#'cp -r /opt/mvapich2/gdr/{}/mcast/no-openacc/cuda{}/mofed{}/mpirun/gnu{}/* /usr/local/mpi'.format(mpi_version,cuda_version,ofed_version,gnu_version),
-#'apt-get remove alien -y',
-#'apt-get clean -y',
-#'apt-get autoclean -y',
-#'apt-get autoremove -y'])
+  Stage1 += apt_get(ospackages=['libxnvctrl-dev libibmad5'])
+
   Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin/:${PATH}",
                                  "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}",
                                  "MV2_USE_GPUDIRECT_GDRCOPY": "0",

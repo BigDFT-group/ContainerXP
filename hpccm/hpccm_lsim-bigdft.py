@@ -7,7 +7,7 @@ Contents:
   FFTW version 3.3.7
   MKL
   GNU compilers (upstream)
-  Python 2 and 3 (upstream)
+  Python 3 (intel)
   jupyter notebook and jupyter lab
   v_sim-dev in the optional target
 
@@ -41,14 +41,22 @@ Stage0 += shell(commands=['mkdir /docker',
                           'mkdir /opt/bigdft/build/avx2',
                           'chmod -R 777 /opt/bigdft/build/avx2',
                           'mkdir /opt/bigdft/build/noavx',
-                          'chmod -R 777 /opt/bigdft/build/noavx',
-                          '/opt/intel/intelpython2/bin/activate'])
+                          'chmod -R 777 /opt/bigdft/build/noavx'])
                           
 Stage0 += raw(docker='USER lsim')
 Stage0 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"})
 Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/cuda/lib64:${LIBRARY_PATH}"})
+Stage0 += environment(variables={"PYTHON": "python"})
+
+
+mpi = USERARG.get('mpi', 'ompi')
 use_mkl = USERARG.get('mkl', 'yes')
 Stage0 += workdir(directory='/opt/bigdft/build/noavx')
+
+#due to a bug in mvapich <= 2.3.2, aligned_alloc causes segfaults. Default to posix_memalign
+#if mpi in ["mvapich2", "mvapich"]:
+#  Stage0 += shell(commands=['sed -i "s/AC_CHECK_FUNCS(\[aligned_alloc\])//g" ../../futile/configure.ac'])
+
 if use_mkl == "yes":
   Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries/linux/mkl"})
 
@@ -123,33 +131,39 @@ Stage1.baseimage(image)
 
 Stage1 += comment("Runtime stage", reformat=False)
 
-Stage1 += copy(_from="bigdft_build", src="/opt/intel/intelpython2", dest="/opt/intel/intelpython2")
-Stage1 += copy(_from="bigdft_build", src="/opt/intel/intelpython3", dest="/opt/intel/intelpython3")
+Stage1 += copy(_from="bigdft_build", src="/usr/local/anaconda", dest="/usr/local/anaconda")
 
-Stage1 += environment(variables={"LD_LIBRARY_PATH": "/opt/intel/intelpython2/lib/:/opt/intel/intelpython2/lib/gobject-introspection/:/opt/intel/intelpython2/lib/libfabric:${LD_LIBRARY_PATH}"})
-Stage1 += environment(variables={"LIBRARY_PATH": "/opt/intel/intelpython2/lib/:/opt/intel/intelpython2/lib/gobject-introspection/:/opt/intel/intelpython2/lib/libfabric:${LIBRARY_PATH}"})
-Stage1 += environment(variables={"PATH": "/opt/intel/intelpython2/bin/:${PATH}"})
+Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib/:${LD_LIBRARY_PATH}"})
+Stage1 += environment(variables={"LIBRARY_PATH": "/usr/local/anaconda:${LIBRARY_PATH}"})
+Stage1 += environment(variables={"PATH": "/usr/local/anaconda/bin/:${PATH}"})
 
 ## Compiler runtime (use upstream)
 Stage1 += gnu().runtime()
 tc = gnu().toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
 Stage1 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
-
+Stage1 += shell(commands=["apt-get update", "apt-get dist-upgrade -y"])
 Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', 'libopenbabel4v5',
                               'opensm', 'flex', 'libblas3', 'liblapack3',
                               'build-essential', 'libpcre3', 'openssh-client', 'libxnvctrl0'])
 
-## Mellanox OFED
-ofed_version='4.5'
-Stage1 += mlnx_ofed().runtime(_from='mpi')
 
-mpi = USERARG.get('mpi', 'ompi')
 if mpi == "ompi":
+  ## normal OFED 
+  Stage1 += ofed().runtime(_from='mpi')
   mpi_version = USERARG.get('mpi_version', '3.0.0')
   mpi_lib = openmpi(infiniband=False, version=mpi_version, prefix="/usr/local/mpi")
   Stage1 += mpi_lib.runtime(_from='bigdft_build')
+  Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
+                                   "OMPI_MCA_rmaps_base_mapping_policy":"slot",
+                                   "OMPI_MCA_hwloc_base_binding_policy":"none",
+                                   "OMPI_MCA_btl_openib_cuda_async_recv":"false",
+                                   "OMPI_MCA_mpi_leave_pinned":"true",
+                                   "OMPI_MCA_opal_warn_on_missing_libcuda":"false"})
 elif mpi in ["mvapich2", "mvapich"]:
+  ## Mellanox OFED
+  ofed_version='4.5'
+  Stage1 += mlnx_ofed().runtime(_from='mpi')
   mpi_version = USERARG.get('mpi_version', '2.3')
   Stage1 += apt_get(ospackages=['libpciaccess-dev'])
   Stage1 += copy(_from="bigdft_build", src="/usr/local/mpi", dest="/usr/local/mpi")
@@ -183,15 +197,15 @@ Stage1 += copy(_from="bigdft_build", src="/docker", dest="/docker")
 Stage1 += shell(commands=['chmod -R 777 /docker'])
 
 if use_mkl == "yes":
-  mklroot="/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin/"
-  mklroot_out="/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin/"
+  mklroot="/usr/local/anaconda/lib/"
+  mklroot_out="/usr/local/anaconda/lib/"
 
   Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gf_lp64.so" , dest=mklroot_out+"libmkl_gf_lp64.so")
   Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gnu_thread.so" , dest=mklroot_out+"libmkl_gnu_thread.so")
   Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so" , dest=mklroot_out+"libmkl_core.so")
   Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so" , dest=mklroot_out+"libmkl_avx2.so")
   Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
-  Stage1 += copy(_from="bigdft_build", src="/opt/intel/compilers_and_libraries/linux/lib/intel64_lin/libiomp5.so" , dest="/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin/libiomp5.so")
+  Stage1 += copy(_from="bigdft_build", src=mklroot+"libiomp5.so" , dest=mklroot_out+"libiomp5.so")
 
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/root/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
@@ -211,39 +225,26 @@ Stage1 += shell(commands=["rm -rf $(find / | perl -ne 'print if /[^[:ascii:]]/')
 
 #update ldconfig as /usr/local/lib may not be in the path
 Stage1 += shell(commands=['echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
-                          'echo "/usr/local/intel/mkl/lib/intel64" >> /etc/ld.so.conf.d/intel.conf',
-                          "echo '/usr/local/intel/compiler/lib/intel64' >> /etc/ld.so.conf.d/intel.conf",
+                          'echo "/usr/local/anaconda/lib" >> /etc/ld.so.conf.d/conda.conf',
                           'ldconfig'])
                           
 Stage1 += shell(commands=['useradd -ms /bin/bash bigdft'])
 Stage1 += raw(docker='USER bigdft')
 #Stage1 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
-Stage1 += environment(variables={"MKLROOT": "/usr/local/intel/compilers_and_libraries/linux/mkl"})
+Stage1 += environment(variables={"MKLROOT": "/usr/local/anaconda"})
 
-Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin:/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/usr/local/intel/compilers_and_libraries/linux/lib/intel64_lin:/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
-"NLSPATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
-"CPATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/include:${CPATH}",
-"PKG_CONFIG_PATH": "/usr/local/intel/compilers_and_libraries/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/usr/local/anaconda/lib:${LIBRARY_PATH}",
+"CPATH": "/usr/local/anaconda/include:${CPATH}",
+"PKG_CONFIG_PATH": "/usr/local/anaconda/lib/pkgconfig:${PKG_CONFIG_PATH}"})
 
 Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin:/usr/local/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/usr/local/bigdft/lib:${LD_LIBRARY_PATH}",
-"PYTHONPATH": "/usr/local/bigdft/lib/python2.7/site-packages:${PYTHONPATH}",
+"PYTHONPATH": "/usr/local/bigdft/lib/python3.7/site-packages:${PYTHONPATH}",
 "PKG_CONFIG_PATH": "/usr/local/bigdft/lib/pkgconfig:${PKG_CONFIG_PATH}",
 "CHESS_ROOT": "/usr/local/bigdft/bin",
 "BIGDFT_ROOT": "/usr/local/bigdft/bin",
 "GI_TYPELIB_PATH": "/usr/local/bigdft/lib/girepository-1.0:${GI_TYPELIB_PATH}"})
-
-if mpi == "ompi":
-  Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
-                                   "OMPI_MCA_rmaps_base_mapping_policy":"core",
-                                   "OMPI_MCA_hwloc_base_binding_policy":"none"})
-elif mpi in ["mvapich2", "mvapich"]:
-  Stage1 += environment(variables={"MV2_USE_GPUDIRECT_GDRCOPY": "0",
-                                   "MV2_SMP_USE_CMA": "0",
-                                   "MV2_ENABLE_AFFINITY": "0",
-                                   "MV2_CPU_BINDING_POLICY": "scatter",
-                                   "MV2_CPU_BINDING_LEVEL": "socket"})
 
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])

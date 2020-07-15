@@ -7,7 +7,7 @@ Contents:
   FFTW version 3.3.7
   MKL
   GNU compilers (upstream)
-  Python 2 and 3 (upstream)
+  Python 3 (intel)
   jupyter notebook and jupyter lab
   v_sim-dev in the optional target
 
