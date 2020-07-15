@@ -17,8 +17,7 @@ from hpccm.templates.git import git
 #######
 ## Build bigdft - Once without avx opitimizations, once with
 #######
-tag = format(USERARG.get('tag', 'bigdft'))
-image = '{}/sdk_mpi'.format(tag)
+image = format(USERARG.get('tag', 'bigdft/sdk:latest'))
 
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'bigdft_build'
