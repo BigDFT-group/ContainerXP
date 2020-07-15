@@ -60,7 +60,7 @@ jobs:
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_sdk/Dockerfile_sdk --tag degomme/sdk_mpi:${{steps.vars.outputs.tag}} --tag degomme/sdk_mpi:latest
         -   name: Push the tagged Docker image
-            run: docker push degomme/bigdft_sdk:${{steps.vars.outputs.tag}}
+            run: docker push degomme/sdk_mpi:${{steps.vars.outputs.tag}}
     build_vsim:
         runs-on: ubuntu-latest
         needs: build_sdk
