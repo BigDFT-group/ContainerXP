@@ -23,9 +23,9 @@ jobs:
         -   name: generate docker files for openmpi
             run: |
                 source current_setup.sh
-                hpccm --recipe hpccm/hpccm_lsim-mpi.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi="ompi" mpi_version=${BIGDFT_OPENMPI_VERSION} tag="bigdft" > Dockerfile_sdk
-                hpccm --recipe hpccm/hpccm_lsim-vsim.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi="ompi" mpi_version=${BIGDFT_OPENMPI_VERSION} tag="bigdft" > Dockerfile_vsim
-                hpccm --recipe hpccm/hpccm_lsim-bigdft.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi="ompi" mpi_version=${BIGDFT_OPENMPI_VERSION} tag="bigdft" > Dockerfile_runtime
+                hpccm --recipe hpccm/hpccm_lsim-mpi.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi="ompi" mpi_version=${BIGDFT_OPENMPI_VERSION} tag="degomme" > Dockerfile_sdk
+                hpccm --recipe hpccm/hpccm_lsim-vsim.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi="ompi" mpi_version=${BIGDFT_OPENMPI_VERSION} tag="degomme" > Dockerfile_vsim
+                hpccm --recipe hpccm/hpccm_lsim-bigdft.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi="ompi" mpi_version=${BIGDFT_OPENMPI_VERSION} tag="degomme" > Dockerfile_runtime
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
@@ -58,7 +58,7 @@ jobs:
                source current_setup.sh 
                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi${BIGDFT_OPENMPI_VERSION}_${GITHUB_REF##*/})
         -   name: Build the tagged Docker image
-            run: docker build . --file dockerfile_sdk/Dockerfile_sdk --tag degomme/bigdft_sdk:${{steps.vars.outputs.tag}}
+            run: docker build . --file dockerfile_sdk/Dockerfile_sdk --tag degomme/sdk_mpi:${{steps.vars.outputs.tag}} --tag degomme/sdk_mpi:latest
         -   name: Push the tagged Docker image
             run: docker push degomme/bigdft_sdk:${{steps.vars.outputs.tag}}
     build_vsim:
@@ -78,7 +78,7 @@ jobs:
                source current_setup.sh 
                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi${BIGDFT_OPENMPI_VERSION}_${GITHUB_REF##*/})
         -   name: Build the tagged Docker image
-            run: docker build . --file dockerfile_vsim/Dockerfile_vsim --tag degomme/bigdft_vsim:${{steps.vars.outputs.tag}}
+            run: docker build . --file dockerfile_vsim/Dockerfile_vsim --tag degomme/bigdft_vsim:${{steps.vars.outputs.tag}} --tag degomme/bigdft_vsim:latest
         -   name: Push the tagged Docker image
             run: docker push degomme/bigdft_vsim:${{steps.vars.outputs.tag}}
     build_runtime:
@@ -98,6 +98,6 @@ jobs:
                source current_setup.sh 
                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi${BIGDFT_OPENMPI_VERSION}_${GITHUB_REF##*/})
         -   name: Build the tagged Docker image
-            run: docker build . --file dockerfile_runtime/Dockerfile_runtime --tag degomme/bigdft_runtime:${{steps.vars.outputs.tag}}
+            run: docker build . --file dockerfile_runtime/Dockerfile_runtime --tag degomme/bigdft_runtime:${{steps.vars.outputs.tag}} --tag degomme/bigdft_runtime:latest
         -   name: Push the tagged Docker image
             run: docker push degomme/bigdft_runtime:${{steps.vars.outputs.tag}}
