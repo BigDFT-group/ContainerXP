@@ -56,7 +56,7 @@ jobs:
             id: vars
             run: |
                source current_setup.sh 
-               echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi${BIGDFT_OPENMPI_VERSION}_${GITHUB_REF:10})
+               echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi${BIGDFT_OPENMPI_VERSION}_${GITHUB_REF##*/})
         -   name: Build the tagged Docker image
             run: docker build . --file Dockerfile --tag degomme/bigdft_sdk:${{steps.vars.outputs.tag}}
         -   name: Push the tagged Docker image
