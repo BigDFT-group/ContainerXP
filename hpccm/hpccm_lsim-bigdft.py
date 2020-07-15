@@ -57,60 +57,93 @@ Stage0 += workdir(directory='/opt/bigdft/build/noavx')
 #if mpi in ["mvapich2", "mvapich"]:
 #  Stage0 += shell(commands=['sed -i "s/AC_CHECK_FUNCS(\[aligned_alloc\])//g" ../../futile/configure.ac'])
 
-if use_mkl == "yes":
-  Stage0 += environment(variables={"MKLROOT": "/opt/intel/compilers_and_libraries/linux/mkl"})
+#hardcoded compilation for all supported cuda architectures as of cuda 11, as JIT is not supported everywhere yet (windows wsl)
+cuda_gencodes = "-arch=sm_50 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_37,code=sm_37 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_80,code=compute_80"
+#when using arch>30, shfl_down is deprecated
 
-  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries/linux/compiler/lib/tel64_lin:/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LD_LIBRARY_PATH}",
-"LIBRARY_PATH": "/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64_lin/gcc4.7:/opt/intel/compilers_and_libraries/linux/compiler/lib/intel64_lin:/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin:${LIBRARY_PATH}",
-"NLSPATH": "/opt/intel/compilers_and_libraries/linux/mkl/lib/intel64_lin/locale/%l_%t/%N",
-"CPATH": "/opt/intel/compilers_and_libraries/linux/mkl/include:${CPATH}",
-"PKG_CONFIG_PATH": "/opt/intel/compilers_and_libraries/linux/mkl/bin/pkgconfig:${PKG_CONFIG_PATH}"})
+Stage0 += shell(commands=['sed -i "s/__shfl_down(/__shfl_down_sync(0xFFFFFFFF,/g" ../../psolver/src/cufft.cu']) 
+
+if use_mkl == "yes":
+  Stage0 += environment(variables={"MKLROOT": "/usr/local/anaconda/"})
+
+  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/usr/local/anaconda/lib/:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}",
+"LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/local/anaconda/lib/:${LIBRARY_PATH}",
+"CPATH": "/usr/local/anaconda/include/:${CPATH}",
+"PKG_CONFIG_PATH": "/usr/local/anaconda/lib/pkgconfig:${PKG_CONFIG_PATH}"})
 
   Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc', 
                           'cat ../../rcfiles/container.rc >> buildrc',
                           'sed -i "s/configuration()\:/configuration\(\)\:\\n    import os\\n    mkl=os.environ[\'MKLROOT\']/g" ./buildrc',
-                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
+                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L/usr/local/mpi/lib -L"""+mkl+"""/lib -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
                           'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-fPIC -O2 -fopenmp/g" ./buildrc',
                           'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc',
                           'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
+                          'sed -i "s|NVCC_FLAGS=|NVCC_FLAGS='+cuda_gencodes+' |g" ./buildrc',
                           'sed -i "s/\'psolver\'\: env_configuration(),/\'psolver\': env_configuration(),\\n\'atlab\': env_configuration(),/g" ./buildrc',
-                          'echo "module_cmakeargs.update({\'openbabel\': \'-DZLIB_INCLUDE_DIR=\"/usr/include\"\'})" >> buildrc'
+                          'sed -i \'s/conditions.add\("python"\)//g\' ./buildrc'
                           ])
 else:
   Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                             'cat ../../rcfiles/container.rc >> buildrc',
                             'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
-                            'echo "module_cmakeargs.update({\'openbabel\': \'-DZLIB_INCLUDE_DIR=\"/usr/include\"\'})" >> buildrc'
+                            'sed -i \'s/conditions.add\("python"\)//g\' ./buildrc'
                           ])
 
 
 Stage0 += shell(commands=['../../Installer.py autogen -y'])
 
-Stage0 += shell(commands=['../../Installer.py build -y -a babel -v',
+Stage0 += shell(commands=['../../Installer.py build -y -v',
                           'ls /usr/local/bigdft/bin/bigdft'])
 
 Stage0 += workdir(directory='/opt/bigdft/build/avx2')
 if use_mkl == "yes":
   Stage0 += shell(commands=['cat ../../rcfiles/container.rc >> buildrc',
                           'sed -i "s/configuration()\:/configuration\(\)\:\\n    import os\\n    mkl=os.environ[\'MKLROOT\']/g" ./buildrc',
-                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
+                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L/usr/local/mpi/lib -L"""+mkl+"""/lib -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
                           'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
                           'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc',
                           'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
+                          'sed -i "s|NVCC_FLAGS=|NVCC_FLAGS='+cuda_gencodes+' |g" ./buildrc',
                           'sed -i "s/\'psolver\'\: env_configuration(),/\'psolver\': env_configuration(),\\n\'atlab\': env_configuration(),/g" ./buildrc',
-                          'echo "module_cmakeargs.update({\'openbabel\': \'-DZLIB_INCLUDE_DIR=\"/usr/include\"\'})" >> buildrc'
+                          'sed -i \'s/conditions.add\("python"\)//g\' ./buildrc'
                           ])
 else:
   Stage0 += shell(commands=['cat ../../rcfiles/container.rc >> buildrc',
                             'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=core-avx2 -O2 -fPIC -fopenmp"|g\' ./buildrc ',
                             'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=core-avx2 -fPIC -O2 -fopenmp/g" ./buildrc',
                             'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
-                            'echo "module_cmakeargs.update({\'openbabel\': \'-DZLIB_INCLUDE_DIR=\"/usr/include\"\'})" >> buildrc'
+                            'sed -i \'s/conditions.add\("python"\)//g\' ./buildrc'
                           ])
 
 Stage0 += shell(commands=['../../Installer.py build -y -v',
                           'ls install/bin/bigdft',
                           'cp -r install/lib /usr/local/bigdft/lib/haswell'])
+
+
+Stage0 += workdir(directory='/opt/bigdft/build/')
+if use_mkl == "yes":
+  Stage0 += shell(commands=['cat ../rcfiles/container.rc >> buildrc',
+                          'sed -i "s/configuration()\:/configuration\(\)\:\\n    import os\\n    mkl=os.environ[\'MKLROOT\']/g" ./buildrc',
+                          'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=skylake-avx512 -I"""+mkl+"""/include -O2 -fPIC -fopenmp" --with-blas=no --with-lapack=no "--with-ext-linalg=-L/usr/local/mpi/lib -L"""+mkl+"""/lib -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl"|g\' ./buildrc ',
+                          'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=skylake-avx512 -fPIC -O2 -fopenmp/g" ./buildrc',
+                          'sed -i "s/LIBS=-ldl -lstdc++ -lgfortran/LIBS=-ldl -lstdc++ -lgfortran -lgomp/g" ./buildrc',
+                          'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
+                          'sed -i "s|NVCC_FLAGS=|NVCC_FLAGS='+cuda_gencodes+' |g" ./buildrc',
+                          'sed -i "s/\'psolver\'\: env_configuration(),/\'psolver\': env_configuration(),\\n\'atlab\': env_configuration(),/g" ./buildrc',
+                          'sed -i \'s/conditions.add\("python"\)//g\' ./buildrc'
+                          ])
+else:
+  Stage0 += shell(commands=['cat ../rcfiles/container.rc >> buildrc',
+                            'sed -i \'s|"FCFLAGS=-O2 -fPIC -fopenmp"| "FCFLAGS=-march=skylake-avx512 -O2 -fPIC -fopenmp"|g\' ./buildrc ',
+                            'sed -i "s/CFLAGS=-fPIC -O2 -fopenmp/CFLAGS=-march=skylake-avx512 -fPIC -O2 -fopenmp/g" ./buildrc',
+                            'sed -i "s|PYTHON=/usr/bin/python|PYTHON=python|g" ./buildrc',
+                            'sed -i \'s/conditions.add\("python"\)//g\' ./buildrc'
+                          ])
+
+Stage0 += shell(commands=['../Installer.py build -y -v',
+                          'ls install/bin/bigdft',
+                          'cp -r install/lib /usr/local/bigdft/lib/haswell/avx512_1'])
+
 
 
 Stage0 += workdir(directory='/home/lsim')
