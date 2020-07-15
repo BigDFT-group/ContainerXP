@@ -18,8 +18,7 @@ from hpccm.templates.git import git
 ## Build v_sim
 #######
 
-tag = format(USERARG.get('tag', 'bigdft'))
-image = '{}/sdk'.format(tag)
+image = format(USERARG.get('tag', 'bigdft/sdk:latest'))
 Stage0 += raw(docker='USER root')
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'vsim'
