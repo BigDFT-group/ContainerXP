@@ -27,7 +27,7 @@ jobs:
 
         -   name: Install python dependencies
             run:
-                pip install -e .[hpccm]
+                pip install hpccm
 
         -   name: generate docker files for openmpi
             run:
