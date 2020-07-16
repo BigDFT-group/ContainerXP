@@ -107,7 +107,7 @@ jobs:
         -   name: Test Fehyb OMP
             run: |
                 cd FeHyb/NOGPU
-                docker run -v $PWD:/results -w /results degomme/bigdft_runtime:${{steps.vars.outputs.tag}} bigdft
+                sudo docker run -v $PWD:/results -w /results degomme/bigdft_runtime:${{steps.vars.outputs.tag}} bigdft
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
@@ -115,7 +115,7 @@ jobs:
                 path: log-omp
         -   name: Test Fehyb MPI
             run: |
-                docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 degomme/bigdft_runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
+                sudo docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 degomme/bigdft_runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
