@@ -2,7 +2,7 @@ name: continuous-integration
 on: [workflow_dispatch]
 jobs:
     generate:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-20.04
         steps:
         -   uses: actions/checkout@v2
         -   name: Cache python dependencies
@@ -104,5 +104,22 @@ jobs:
                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi${BIGDFT_OPENMPI_VERSION}_${GITHUB_REF##*/})
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_runtime/Dockerfile_runtime --tag degomme/bigdft_runtime:${{steps.vars.outputs.tag}} --tag degomme/bigdft_runtime:latest
+        -   name: Test Fehyb OMP
+            run: |
+                cd Fehyb/NOGPU
+                docker run -ti -v $PWD:/results -w /results degomme/bigdft_runtime:${{steps.vars.outputs.tag}} bigdft
+        -   name: Upload logfile
+            uses: actions/upload-artifact@v1
+            with:
+                name: log.yaml
+                path: log-omp
+        -   name: Test Fehyb MPI
+            run: |
+                docker run -ti -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 degomme/bigdft_runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
+        -   name: Upload logfile
+            uses: actions/upload-artifact@v1
+            with:
+                name: log.yaml
+                path: log-mpi        
         -   name: Push the tagged Docker image
             run: docker push degomme/bigdft_runtime:${{steps.vars.outputs.tag}}
