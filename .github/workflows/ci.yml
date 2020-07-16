@@ -106,7 +106,7 @@ jobs:
             run: docker build . --file dockerfile_runtime/Dockerfile_runtime --tag degomme/bigdft_runtime:${{steps.vars.outputs.tag}} --tag degomme/bigdft_runtime:latest
         -   name: Test Fehyb OMP
             run: |
-                cd Fehyb/NOGPU
+                cd FeHyb/NOGPU
                 docker run -ti -v $PWD:/results -w /results degomme/bigdft_runtime:${{steps.vars.outputs.tag}} bigdft
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
