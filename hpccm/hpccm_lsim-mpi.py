@@ -154,7 +154,7 @@ if mpi == "ompi":
                                    "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
 elif mpi in ["mvapich2", "mvapich"]:
   # Mellanox OFED
-  ofed_version='4.5'
+  ofed_version='4.7'
   Stage1 += mlnx_ofed()
   gdrcopy=gdrcopy()
   mpi_version = USERARG.get('mpi_version', '2.3')
@@ -162,7 +162,11 @@ elif mpi in ["mvapich2", "mvapich"]:
     gnu_version="5.4.0"
   else:
     gnu_version="4.8.5"
-  mpi_lib= mvapich2_gdr(version=mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=cuda_version)
+  if mpi_version == "2.3.4"
+    release = 1
+   else
+    release = 2
+  mpi_lib= mvapich2_gdr(version=mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=cuda_version, release=release)
   Stage1 += apt_get(ospackages=['libxnvctrl-dev libibmad5'])
 
   Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin/:${PATH}",
