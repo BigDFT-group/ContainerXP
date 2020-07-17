@@ -194,7 +194,7 @@ if mpi == "ompi":
                                    "OMPI_MCA_opal_warn_on_missing_libcuda":"false"})
 elif mpi in ["mvapich2", "mvapich"]:
   ## Mellanox OFED
-  ofed_version='4.5'
+  ofed_version='4.7'
   Stage1 += mlnx_ofed().runtime(_from='mpi')
   mpi_version = USERARG.get('mpi_version', '2.3')
   Stage1 += apt_get(ospackages=['libpciaccess-dev'])
