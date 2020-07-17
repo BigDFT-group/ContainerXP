@@ -107,6 +107,7 @@ jobs:
         -   name: Test Fehyb OMP
             run: |
                 cd FeHyb/NOGPU
+                chmod -R 777 .
                 sudo docker run -v $PWD:/results -w /results degomme/bigdft_runtime:${{steps.vars.outputs.tag}} bigdft
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
