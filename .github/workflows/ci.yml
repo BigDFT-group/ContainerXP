@@ -105,18 +105,19 @@ jobs:
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_runtime/Dockerfile_runtime --tag degomme/bigdft_runtime:${{steps.vars.outputs.tag}} --tag degomme/bigdft_runtime:latest
         -   name: Test Fehyb OMP
+            working-directory: FeHyb/NOGPU
             run: |
-                cd FeHyb/NOGPU
                 chmod -R 777 .
-                sudo docker run -v $PWD:/results -w /results degomme/bigdft_runtime:${{steps.vars.outputs.tag}} bigdft
+                docker run -v $PWD:/results -w /results degomme/bigdft_runtime:${{steps.vars.outputs.tag}} bigdft
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
                 name: log-omp
                 path: FeHyb/NOGPU/log.yaml
         -   name: Test Fehyb MPI
+            working-directory: FeHyb/NOGPU
             run: |
-                sudo docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 degomme/bigdft_runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
+                docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 degomme/bigdft_runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
