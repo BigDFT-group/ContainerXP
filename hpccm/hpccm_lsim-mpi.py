@@ -162,9 +162,9 @@ elif mpi in ["mvapich2", "mvapich"]:
     gnu_version="5.4.0"
   else:
     gnu_version="4.8.5"
-  if mpi_version == "2.3.4"
+  if mpi_version == "2.3.4":
     release = 1
-   else
+   else:
     release = 2
   mpi_lib= mvapich2_gdr(version=mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=cuda_version, release=release)
   Stage1 += apt_get(ospackages=['libxnvctrl-dev libibmad5'])
