@@ -200,7 +200,7 @@ elif mpi in ["mvapich2", "mvapich"]:
   ofed_version='4.7'
   Stage1 += mlnx_ofed().runtime(_from='mpi')
   mpi_version = USERARG.get('mpi_version', '2.3')
-  Stage1 += apt_get(ospackages=['libpciaccess-dev'])
+  Stage1 += apt_get(ospackages=['libpciaccess-dev', 'libnuma1'])
   Stage1 += copy(_from="bigdft_build", src="/usr/local/mpi", dest="/usr/local/mpi")
 #  mpi_lib = mvapich2_gdr(version=mpi_version, toolchain=tc, prefix="/usr/local/mpi", cuda_version=cuda_version)
   Stage1 += environment(variables={"MV2_USE_GPUDIRECT_GDRCOPY": "0",
