@@ -112,15 +112,15 @@ jobs:
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
-                name: log.yaml
-                path: log-omp
+                name: log-omp
+                path: FeHyb/NOGPU/log.yaml
         -   name: Test Fehyb MPI
             run: |
                 sudo docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 degomme/bigdft_runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
-                name: log.yaml
-                path: log-mpi        
+                name: log-mpi
+                path: FeHyb/NOGPU/log.yaml        
         -   name: Push the tagged Docker image
             run: docker push degomme/bigdft_runtime:${{steps.vars.outputs.tag}}
