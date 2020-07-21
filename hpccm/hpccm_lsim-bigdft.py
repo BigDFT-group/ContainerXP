@@ -59,11 +59,11 @@ Stage0 += workdir(directory='/opt/bigdft/build/noavx')
 
 #hardcoded compilation for all supported cuda architectures as of cuda 11, as JIT is not supported everywhere yet (windows wsl)
 cuda_version=USERARG.get('cuda', '10').split(".",1)[0]
-cuda_gencodes = "-arch=sm_50 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_37,code=sm_37 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70"
+cuda_gencodes = "-arch=sm_50\ -gencode=arch=compute_35,code=sm_35\ -gencode=arch=compute_37,code=sm_37\ -gencode=arch=compute_50,code=sm_50\ -gencode=arch=compute_52,code=sm_52\ -gencode=arch=compute_60,code=sm_60\ -gencode=arch=compute_61,code=sm_61\ -gencode=arch=compute_70,code=sm_70 "
 if cuda_version  == "10":
-  cuda_gencodes += " -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_75,code=compute_75"
+  cuda_gencodes += "-gencode=arch=compute_75,code=sm_75\ -gencode=arch=compute_75,code=compute_75\ "
 elif cuda_version  == "11":
-  cuda_gencodes += " -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_80,code=compute_80"
+  cuda_gencodes += "-gencode=arch=compute_75,code=sm_75\ -gencode=arch=compute_80,code=sm_80\ -gencode=arch=compute_80,code=compute_80\ "
 
 Stage0 += environment(variables={"CUDA_GENCODES": cuda_gencodes})
 
