@@ -94,7 +94,7 @@ Stage0 += environment(variables={'SHELL': '/bin/bash',
 
 #conda install
 Stage0 += conda(version='latest', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
-               packages=[ 'glib', 'jupyterlab', 'ipython', 'ipykernel', 'intelpython3_core=2020.2','numpy', 'scipy', 'setuptools', 'six', 'yaml', 'matplotlib', 'mkl-devel'])
+               packages=[ 'glib', 'jupyterlab', 'ipython', 'ipykernel', 'intelpython3_core', 'numpy', 'scipy', 'setuptools', 'six', 'yaml', 'matplotlib', 'mkl-devel'])
 #overcome multiple issues with anaconda ...
 Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
                           'mv /usr/local/anaconda/include/iconv.h /usr/local/anaconda/include/iconv_save.h',
