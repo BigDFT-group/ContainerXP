@@ -1,0 +1,58 @@
+#This is the configuration file for the BigDFT installer
+#This is a python script which is executed by the build suite
+#Add the condition testing to run tests and includes PyYaml
+conditions.add("testing")
+#List the module the this rcfile will build
+modules = ['spred',]
+import os
+
+#example of the potentialities of the python syntax in this file
+def env_configuration():
+    cuda_gencodes=os.environ.get('CUDA_GENCODES')
+    if cuda_gencodes is None:
+      cuda_gencodes=""
+    mkl=os.environ.get('MKLROOT')
+    if mkl is not None:
+      mklincpath=""" "-I"""+mkl+"""/include" """
+      mkllibs="""  --with-blas=no --with-lapack=no "--with-ext-linalg="-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" """
+    else:
+      mklincpath=""
+      mkllibs=""
+    flags=os.environ.get('BIGDFT_OPTFLAGS')
+    if flags is None:
+      flags=""
+    return  """  "FCFLAGS="""+flags+mklincpath+""" -O2 -fPIC -fopenmp"  "--enable-opencl" "--with-ocl-path=/usr/local/cuda" "--enable-cuda-gpu" "--with-cuda-path=/usr/local/cuda" "CFLAGS="""+flags+"""-fPIC -O2 -fopenmp" "FC=mpif90" "F77=mpif77" "FCLIBS= " "LIBS=-ldl -lstdc++ -lgfortran -lgomp" "NVCC_FLAGS="""+cuda_gencodes+"""--compiler-options -fPIC" "--enable-dynamic-libraries"  """
+#the following command sets the environment variable to give these settings
+#to all the modules
+os.environ['BIGDFT_CONFIGURE_FLAGS']=env_configuration()
+#here follow the configuration instructions for the modules built
+#we specify the configurations for the modules to customize the options if needed
+module_autogenargs.update({
+
+'libyaml': env_configuration(),
+
+'futile': env_configuration(),
+
+'psolver': env_configuration(),
+
+'atlab': env_configuration(),
+
+'chess': env_configuration(),
+
+'libxc': env_configuration(),
+
+'libABINIT': env_configuration(),
+
+'GaIn': env_configuration(),
+
+'bigdft': env_configuration()+" --with-gobject=yes ",
+
+'spred': env_configuration()+" --with-gobject=yes ",
+
+'PyYAML': "build_ext -I%(prefix)s/include -L%(prefix)s/lib --rpath=%(prefix)s/lib " % {"prefix": prefix},
+
+'pygobject': 'PYTHON=python',
+
+'v_sim-dev': '--with-abinit --with-archives --with-openbabel --with-cube --without-strict-cflags'
+
+})
