@@ -109,7 +109,7 @@ jobs:
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_vsim_${{ matrix.mpi }}/Dockerfile_vsim_${{ matrix.mpi }} --tag bigdft/vsim:${{steps.vars.outputs.tag}} --tag bigdft/vsim:latest
         -   name: Push the tagged Docker image
-            run: docker push degomme/bigdft_vsim:${{steps.vars.outputs.tag}}
+            run: docker push bigdft/vsim:${{steps.vars.outputs.tag}}
     build_runtime:
         runs-on: ubuntu-latest
         needs: build_sdk
