@@ -85,7 +85,7 @@ jobs:
                 docker push bigdft/sdk:${{steps.vars.outputs.tag}}
                 if [ ${{ matrix.mpi }} == "ompi" ]; then
                     docker push bigdft/sdk:latest 
-                else
+                fi
     build_vsim:
         runs-on: ubuntu-latest
         needs: build_sdk
@@ -117,7 +117,7 @@ jobs:
                 docker push bigdft/vsim:${{steps.vars.outputs.tag}}
                 if [ ${{ matrix.mpi }} == "ompi" ]; then
                     docker push bigdft/vsim:latest 
-                else
+                fi
     build_runtime:
         runs-on: ubuntu-latest
         needs: build_sdk
@@ -168,4 +168,4 @@ jobs:
                 docker push bigdft/runtime:${{steps.vars.outputs.tag}}
                 if [ ${{ matrix.mpi }} == "ompi" ]; then
                     docker push bigdft/runtime:latest 
-                else
+                fi
