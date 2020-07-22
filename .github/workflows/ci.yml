@@ -81,7 +81,11 @@ jobs:
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --tag bigdft/sdk:latest
         -   name: Push the tagged Docker image
-            run: docker push bigdft/sdk:${{steps.vars.outputs.tag}}
+            run: |
+                docker push bigdft/sdk:${{steps.vars.outputs.tag}}
+                if [ ${{ matrix.mpi }} == "ompi" ]; then
+                    docker push bigdft/sdk:latest 
+                else
     build_vsim:
         runs-on: ubuntu-latest
         needs: build_sdk
@@ -109,7 +113,11 @@ jobs:
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_vsim_${{ matrix.mpi }}/Dockerfile_vsim_${{ matrix.mpi }} --tag bigdft/vsim:${{steps.vars.outputs.tag}} --tag bigdft/vsim:latest
         -   name: Push the tagged Docker image
-            run: docker push bigdft/vsim:${{steps.vars.outputs.tag}}
+            run: |
+                docker push bigdft/vsim:${{steps.vars.outputs.tag}}
+                if [ ${{ matrix.mpi }} == "ompi" ]; then
+                    docker push bigdft/vsim:latest 
+                else
     build_runtime:
         runs-on: ubuntu-latest
         needs: build_sdk
@@ -156,4 +164,8 @@ jobs:
                 name: log-mpi-${{ matrix.mpi }}
                 path: FeHyb/NOGPU/log.yaml        
         -   name: Push the tagged Docker image
-            run: docker push bigdft/runtime:${{steps.vars.outputs.tag}}
+            run: |
+                docker push bigdft/runtime:${{steps.vars.outputs.tag}}
+                if [ ${{ matrix.mpi }} == "ompi" ]; then
+                    docker push bigdft/runtime:latest 
+                else
