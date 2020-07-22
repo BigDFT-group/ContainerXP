@@ -53,19 +53,6 @@ Stage0 += fftw
 Stage0 += label(metadata={'maintainer': 'bigdft-developers@lists.launchpad.net'})
 Stage0 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
 
-#Update sources.list to use fastest one when building
-#command= []
-#command.append(hpccm.wget().download_step(url='http://http.us.debian.org/debian/pool/main/n/netselect/netselect_0.3.ds1-28+b1_`dpkg --print-architecture`.deb', directory='/var/tmp', outfile='netselect.deb'))
-#command.append("dpkg -i netselect.deb")
-#command.append("rm netselect.deb")
-#command.append('sed -r -i -e "s#http://(archive|security)\.ubuntu\.com/ubuntu/?#$(netselect -v -s1 -t20 `wget -q -O- https://launchpad.net/ubuntu/+archivemirrors | grep -P -B8 \"statusUP|statusSIX\" | grep -o -P \"http://[^\\"]*\"`|grep -P -o \'http://.+$\')#g" /etc/apt/sources.list')
-#Stage0 += shell(commands=command)
-
-#intel python distribution GPG
-Stage0 += shell(commands=['wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB',
-                          'apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB',
-                          'wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list'
-                          ])
 ospack=['autoconf','autotools-dev', 'automake','git','build-essential', 'libblas-dev', 'liblapack-dev',
         'curl', 'bison',
         'libz-dev', 'pkg-config']
