@@ -57,7 +57,7 @@ jobs:
     build_sdk:
         strategy:
             matrix:
-                mpi: [ompi, mvapich]
+                mpi: [ompi]
         runs-on: ubuntu-20.04
         needs: generate
         steps:
@@ -91,7 +91,7 @@ jobs:
         needs: build_sdk
         strategy:
             matrix:
-                mpi: [ompi, mvapich]
+                mpi: [ompi]
         steps:
         -   uses: actions/checkout@v2
         -   name: Download dockerfile
@@ -123,7 +123,7 @@ jobs:
         needs: build_sdk
         strategy:
             matrix:
-                mpi: [ompi, mvapich]
+                mpi: [ompi]
         steps:
         -   uses: actions/checkout@v2
         -   name: Download dockerfile
