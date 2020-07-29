@@ -94,6 +94,9 @@ Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/loc
                           'chgrp -R conda /usr/local/anaconda/',
                           'chmod -R 770 /usr/local/anaconda/'])
 
+#update LIBRARY_PATH as well to allow building against these libs :
+Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/anaconda/lib/:${LIBRARY_PATH}"})
+
 Stage0 += raw(docker='EXPOSE 8888')
 
 #install OpenCL icd file
