@@ -80,7 +80,7 @@ Stage0 += environment(variables={'SHELL': '/bin/bash',
 
 
 #conda install
-Stage0 += conda(version='latest', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
+Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
                packages=[ 'glib', 'jupyterlab', 'ipython', 'ipykernel', 
                           'intelpython3_core','numpy', 'scipy', 'setuptools', 
                           'six', 'yaml', 'matplotlib', 'mkl-devel',
