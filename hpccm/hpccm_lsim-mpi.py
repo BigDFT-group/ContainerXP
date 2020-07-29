@@ -81,11 +81,18 @@ Stage0 += environment(variables={'SHELL': '/bin/bash',
 
 #conda install
 Stage0 += conda(version='latest', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
-               packages=[ 'glib', 'jupyterlab', 'ipython', 'ipykernel', 'intelpython3_core', 'numpy', 'scipy', 'setuptools', 'six', 'yaml', 'matplotlib', 'mkl-devel'])
+               packages=[ 'glib', 'jupyterlab', 'ipython', 'ipykernel', 
+                          'intelpython3_core','numpy', 'scipy', 'setuptools', 
+                          'six', 'yaml', 'matplotlib', 'mkl-devel',
+                          'nbval', 'cython', 'sphinx', 'sphinx_bootstrap_theme', 
+                          'watchdog', 'sphinx_rtd_theme', 'flake8'])
 #overcome multiple issues with anaconda ...
 Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
                           'mv /usr/local/anaconda/include/iconv.h /usr/local/anaconda/include/iconv_save.h',
-                          'pip install pygobject'])
+                          'pip install pygobject',
+                          'groupadd conda',
+                          'chgrp -R conda /usr/local/anaconda/',
+                          'chmod -R 770 /usr/local/anaconda/'])
 
 Stage0 += raw(docker='EXPOSE 8888')
 
@@ -98,7 +105,8 @@ Stage0 += environment(variables={'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility'
 
 Stage0 += raw(docker='CMD jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
-Stage0 += shell(commands=['useradd -ms /bin/bash lsim'])
+Stage0 += shell(commands=['useradd -ms /bin/bash lsim',
+                          'adduser lsim conda'])
 
 # Set the locale
 Stage0 += shell(commands=['sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen','locale-gen'])
