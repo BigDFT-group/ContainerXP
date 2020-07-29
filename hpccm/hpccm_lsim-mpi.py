@@ -89,7 +89,7 @@ Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'
 #overcome multiple issues with anaconda ...
 Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
                           'mv /usr/local/anaconda/include/iconv.h /usr/local/anaconda/include/iconv_save.h',
-                          'pip install pygobject',
+                          'pip install pygobject sphinx-multibuild',
                           'groupadd conda',
                           'chgrp -R conda /usr/local/anaconda/',
                           'chmod -R 770 /usr/local/anaconda/'])
