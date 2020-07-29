@@ -89,7 +89,7 @@ Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'
 #overcome multiple issues with anaconda ...
 Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
                           'mv /usr/local/anaconda/include/iconv.h /usr/local/anaconda/include/iconv_save.h',
-                          'pip install pygobject sphinx-multibuild',
+                          'pip install pygobject',
                           'groupadd conda',
                           'chgrp -R conda /usr/local/anaconda/',
                           'chmod -R 770 /usr/local/anaconda/'])
@@ -184,6 +184,7 @@ if mpi in ["mvapich2", "mvapich"]:
 #update ldconfig as /usr/local/lib may not be in the path
 Stage1 += shell(commands=['echo "/usr/local/mpi/lib" > /etc/ld.so.conf.d/mpi.conf',
                           'echo "/usr/local/mpi/lib64" >> /etc/ld.so.conf.d/mpi.conf',
+                          'echo "/usr/local/anaconda/lib" >> /etc/ld.so.conf.d/anaconda.conf',
                           'echo "/bigdft/lib" > /etc/ld.so.conf.d/bigdft.conf',
                           'ldconfig'])
 
