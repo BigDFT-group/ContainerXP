@@ -63,10 +63,9 @@ ospack=['libpcre3-dev','libtool',
 Stage0 += apt_get(ospackages=ospack)
 ospack=['ethtool', 'perl', 'lsb-release', 'iproute2',
         'pciutils', 'libopenbabel-dev', 'libnl-route-3-200', 'kmod',
-        'libnuma1', 'lsof', 'linux-headers-generic', 
-        'graphviz', 'tk', 'tcl','libgtk-3-dev']
+        'libnuma1', 'lsof', 'linux-headers-generic']
 Stage0 += apt_get(ospackages=ospack)
-ospack=['swig', 'chrpath', 'dpatch', 'flex', 'cmake','gtk-doc-tools',
+ospack=['swig', 'chrpath', 'dpatch', 'flex', 'cmake',
         'libxml2-dev', 'ssh', 'gdb', 'strace','libglu1-mesa-dev',
         'libnetcdf-dev','libgirepository1.0-dev','cpio']
 Stage0 += apt_get(ospackages=ospack)
@@ -85,7 +84,8 @@ Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'
                           'intelpython3_core','numpy', 'scipy', 'setuptools', 
                           'six', 'yaml', 'matplotlib', 'mkl-devel',
                           'nbval', 'cython', 'sphinx', 'sphinx_bootstrap_theme', 
-                          'watchdog', 'sphinx_rtd_theme', 'flake8'])
+                          'watchdog', 'sphinx_rtd_theme', 'flake8', 
+                          'gtk3', 'graphviz', 'tk', 'tcl'])
 #overcome multiple issues with anaconda ...
 Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
                           'mv /usr/local/anaconda/include/iconv.h /usr/local/anaconda/include/iconv_save.h',
