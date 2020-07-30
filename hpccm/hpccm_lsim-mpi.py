@@ -68,7 +68,7 @@ ospack=['ethtool', 'perl', 'lsb-release', 'iproute2',
 Stage0 += apt_get(ospackages=ospack)
 ospack=['swig', 'chrpath', 'dpatch', 'flex', 'cmake','gtk-doc-tools',
         'libxml2-dev', 'ssh', 'gdb', 'strace','libglu1-mesa-dev',
-        'libnetcdf-dev','libgirepository1.0-dev','cpio', 'libgtk-3-dev']]
+        'libnetcdf-dev','libgirepository1.0-dev','cpio', 'libgtk-3-dev']
 Stage0 += apt_get(ospackages=ospack)
 ospack=['ninja-build locales libmount-dev']
 Stage0 += apt_get(ospackages=ospack)
