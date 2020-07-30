@@ -68,7 +68,7 @@ ospack=['ethtool', 'perl', 'lsb-release', 'iproute2',
 Stage0 += apt_get(ospackages=ospack)
 ospack=['swig', 'chrpath', 'dpatch', 'flex', 'cmake','gtk-doc-tools',
         'libxml2-dev', 'ssh', 'gdb', 'strace','libglu1-mesa-dev',
-        'libnetcdf-dev','libgirepository1.0-dev','cpio']
+        'libnetcdf-dev','libgirepository1.0-dev','cpio', 'libgtk-3-dev']]
 Stage0 += apt_get(ospackages=ospack)
 ospack=['ninja-build locales libmount-dev']
 Stage0 += apt_get(ospackages=ospack)
@@ -82,17 +82,19 @@ Stage0 += environment(variables={'SHELL': '/bin/bash',
 #conda install
 Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
                packages=[ 'jupyterlab', 'ipython', 'ipykernel', 
-                          'intelpython3_core','numpy', 'scipy', 'setuptools', 
-                          'six', 'yaml', 'matplotlib', 'mkl-devel',
+                          'intelpython3_core=2020.2', 
+                          'six', 'matplotlib', 'mkl-devel',
                           'nbval', 'cython', 'sphinx', 'sphinx_bootstrap_theme', 
                           'watchdog', 'sphinx_rtd_theme', 'flake8'])
 #overcome multiple issues with anaconda ...
 Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
-                          'mv /usr/local/anaconda/include/iconv.h /usr/local/anaconda/include/iconv_save.h',
                           'pip install pygobject',
                           'groupadd conda',
                           'chgrp -R conda /usr/local/anaconda/',
                           'chmod -R 770 /usr/local/anaconda/'])
+
+#update LIBRARY_PATH as well to allow building against these libs :
+Stage0 += environment(variables={"LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu/:/usr/local/anaconda/lib/:${LIBRARY_PATH}"})
 
 Stage0 += raw(docker='EXPOSE 8888')
 
