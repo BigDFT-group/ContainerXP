@@ -147,6 +147,7 @@ if mpi == "ompi":
                                    "OMPI_MCA_btl_openib_cuda_async_recv":"false",
                                    "OMPI_MCA_mpi_leave_pinned":"true",
                                    "OMPI_MCA_opal_warn_on_missing_libcuda":"false",
+                                   "OMPI_MCA_rmaps_base_oversubscribe":"true",
                                    "PATH": "/usr/local/mpi/bin/:${PATH}",
                                    "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
 elif mpi in ["mvapich2", "mvapich"]:

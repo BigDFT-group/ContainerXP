@@ -147,7 +147,8 @@ if mpi == "ompi":
                                    "OMPI_MCA_hwloc_base_binding_policy":"none",
                                    "OMPI_MCA_btl_openib_cuda_async_recv":"false",
                                    "OMPI_MCA_mpi_leave_pinned":"true",
-                                   "OMPI_MCA_opal_warn_on_missing_libcuda":"false"})
+                                   "OMPI_MCA_opal_warn_on_missing_libcuda":"false",
+                                   "OMPI_MCA_rmaps_base_oversubscribe":"true"})
 elif mpi in ["mvapich2", "mvapich"]:
   ## Mellanox OFED
   ofed_version='4.7'
