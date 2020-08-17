@@ -142,7 +142,7 @@ if mpi == "ompi":
   mpi_version = USERARG.get('mpi_version', '4.0.0')
   mpi_lib = openmpi(infiniband=True, version=mpi_version, prefix="/usr/local/mpi")
   Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
-                                   "OMPI_MCA_rmaps_base_mapping_policy":"core",
+                                   "OMPI_MCA_rmaps_base_mapping_policy":"slot",
                                    "OMPI_MCA_hwloc_base_binding_policy":"none",
                                    "OMPI_MCA_btl_openib_cuda_async_recv":"false",
                                    "OMPI_MCA_mpi_leave_pinned":"true",
