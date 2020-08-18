@@ -85,7 +85,7 @@ Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'
                           'intelpython3_core=2020.2', 
                           'six', 'matplotlib', 'mkl-devel',
                           'nbval', 'cython', 'sphinx', 'sphinx_bootstrap_theme', 
-                          'watchdog', 'sphinx_rtd_theme', 'flake8'])
+                          'watchdog', 'sphinx_rtd_theme', 'flake8', 'ncurses'])
 #overcome multiple issues with anaconda ...
 Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
                           'pip install pygobject',
