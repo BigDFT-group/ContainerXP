@@ -93,6 +93,16 @@ Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/loc
                           'chgrp -R conda /usr/local/anaconda/',
                           'chmod -R 770 /usr/local/anaconda/'])
 
+#Intel python forgets to provideo ncurses https://community.intel.com/t5/Intel-Distribution-for-Python/curses-missing-on-python-3-7/m-p/1201384#M1509
+#Temporarily steal the files from conda-forge package, and use them instead, as it's used in bigdft-tool.
+Stage0 += shell(commands=['mkdir curses',
+                          'cd curses',
+                          'wget https://anaconda.org/conda-forge/python/3.7.8/download/linux-64/python-3.7.8-h6f2ec95_1_cpython.tar.bz2',
+                          'tar xjf python-3.7.8-h6f2ec95_1_cpython.tar.bz2',
+                          'cp ./lib/python3.7/lib-dynload/_curses* /usr/local/anaconda/lib/python3.7/lib-dynload/',
+                          'cd ..',
+                          'rm -rf curses'])
+
 #update LIBRARY_PATH as well to allow building against these libs :
 Stage0 += environment(variables={"LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu/:/usr/local/anaconda/lib/:${LIBRARY_PATH}"})
 
