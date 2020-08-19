@@ -4,7 +4,7 @@ jobs:
     generate:
         strategy:
             matrix:
-                mpi: [ompi]
+                mpi: [ompi, mvapich]
         runs-on: ubuntu-20.04
         steps:
         -   uses: actions/checkout@v2
@@ -57,7 +57,7 @@ jobs:
     build_sdk:
         strategy:
             matrix:
-                mpi: [ompi]
+                mpi: [ompi, mvapich]
         runs-on: ubuntu-20.04
         needs: generate
         steps:
@@ -83,15 +83,12 @@ jobs:
         -   name: Push the tagged Docker image
             run: |
                 docker push bigdft/sdk:${{steps.vars.outputs.tag}}
-                if [ ${{ matrix.mpi }} == "ompi" ]; then
-                    docker push bigdft/sdk:latest 
-                fi
     build_vsim:
         runs-on: ubuntu-latest
         needs: build_sdk
         strategy:
             matrix:
-                mpi: [ompi]
+                mpi: [ompi, mvapich]
         steps:
         -   uses: actions/checkout@v2
         -   name: Download dockerfile
@@ -115,15 +112,12 @@ jobs:
         -   name: Push the tagged Docker image
             run: |
                 docker push bigdft/vsim:${{steps.vars.outputs.tag}}
-                if [ ${{ matrix.mpi }} == "ompi" ]; then
-                    docker push bigdft/vsim:latest 
-                fi
     build_runtime:
         runs-on: ubuntu-latest
         needs: build_sdk
         strategy:
             matrix:
-                mpi: [ompi]
+                mpi: [ompi, mvapich]
         steps:
         -   uses: actions/checkout@v2
         -   name: Download dockerfile
@@ -166,6 +160,3 @@ jobs:
         -   name: Push the tagged Docker image
             run: |
                 docker push bigdft/runtime:${{steps.vars.outputs.tag}}
-                if [ ${{ matrix.mpi }} == "ompi" ]; then
-                    docker push bigdft/runtime:latest 
-                fi
