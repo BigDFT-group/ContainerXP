@@ -37,8 +37,10 @@ jobs:
             run: |
                 source current_setup.sh
                 hpccm --recipe hpccm/hpccm_lsim-mpi.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} > Dockerfile_sdk_${{ matrix.mpi }}
+                sed -i 's/xenial/focal/g' Dockerfile_sdk_${{ matrix.mpi }}
                 hpccm --recipe hpccm/hpccm_lsim-vsim.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_vsim_${{ matrix.mpi }}
                 hpccm --recipe hpccm/hpccm_lsim-bigdft.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_runtime_${{ matrix.mpi }}
+                sed -i 's/xenial/focal/g' Dockerfile_runtime_${{ matrix.mpi }}
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
