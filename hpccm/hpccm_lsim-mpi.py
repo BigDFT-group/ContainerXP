@@ -164,7 +164,7 @@ if mpi == "ompi":
 elif mpi in ["mvapich2", "mvapich"]:
   # Mellanox OFED
   ofed_version='4.6'
-  Stage1 += mlnx_ofed(version='4.6-1.0.1.1')
+  Stage1 += mlnx_ofed(version='4.6-1.0.1.1', oslabel='ubuntu18.04')
   gdrcopy=gdrcopy()
   mpi_version = USERARG.get('mpi_version', '2.3')
   if cuda_version == "8.0":
