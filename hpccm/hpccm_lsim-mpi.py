@@ -30,6 +30,8 @@ if ubuntu_version == "18.04" or ubuntu_version == "18.04-rc":
 else:
   distro = 'ubuntu'
 
+hpccm.config.g_linux_version=ubuntu_version
+
 image = 'nvidia/cuda:{}-devel-ubuntu{}'.format(cuda_version,ubuntu_version)
 
 Stage0 += comment(doc, reformat=False)
@@ -145,7 +147,6 @@ Stage1 += raw(docker='USER root')
 
 # MPI libraries : default ompi, v 4.0.0
 mpi = USERARG.get('mpi', 'ompi')
-
 if mpi == "ompi":
   #normal OFED 
   Stage1 += ofed()
