@@ -14,6 +14,8 @@ Contents:
   This recipe was generated with command line :
 $ hpccm.py --recipe hpccm_lsim-mpi.py --userarg cuda={}""".format(USERARG.get('cuda', '10.0'))+""" ubuntu={}""".format(USERARG.get('ubuntu', '16.04'))+""" mpi={}""".format(USERARG.get('mpi', 'ompi'))
 from hpccm.templates.git import git
+from distutils.version import LooseVersion, StrictVersion
+
 #######
 ## Build bigdft - Once without avx opitimizations, once with
 #######
@@ -131,7 +133,11 @@ tc = gnu().toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
 Stage1 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
 Stage1 += shell(commands=["apt-get update", "apt-get dist-upgrade -y"])
-Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', 'libopenbabel4v5',
+if ubuntu_version <= StrictVersion('20.0'):
+  openbabel='libopenbabel4v5'
+else:
+  openbabel='libopenbabel6'
+Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', openbabel,
                               'opensm', 'flex', 'libblas3', 'liblapack3',
                               'build-essential', 'libpcre3', 'openssh-client', 'libxnvctrl0'])
 
