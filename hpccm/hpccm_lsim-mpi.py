@@ -181,7 +181,7 @@ elif mpi in ["mvapich2", "mvapich"]:
   Stage1 += apt_get(ospackages=['libxnvctrl-dev libibmad5'])
 
   Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin/:${PATH}",
-                                 "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}",
+                                 "LD_LIBRARY_PATH": "/usr/local/lib/:/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}",
                                  "MV2_USE_GPUDIRECT_GDRCOPY": "0",
                                  "MV2_SMP_USE_CMA": "0",
                                  "MV2_ENABLE_AFFINITY": "0",
