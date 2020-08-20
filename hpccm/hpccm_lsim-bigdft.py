@@ -139,7 +139,8 @@ else:
   openbabel='libopenbabel6'
 Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', openbabel,
                               'opensm', 'flex', 'libblas3', 'liblapack3',
-                              'build-essential', 'libpcre3', 'openssh-client', 'libxnvctrl0'])
+                              'build-essential', 'libpcre3', 'openssh-client', 
+                              'libxnvctrl0', 'libglib2.0-0'])
 
 
 if mpi == "ompi":
