@@ -34,8 +34,6 @@ Stage0 += shell(commands=['chown -R lsim:lsim /opt/bigdft','chmod -R 777 /opt/bi
 
 Stage0 += workdir(directory='/opt/bigdft/build')
 Stage0 += shell(commands=['chmod -R 777 /opt/bigdft/build'])
-Stage0 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/lib/libcuda.so.1'])
-Stage0 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1'])
 
 Stage0 += shell(commands=['mkdir /docker',
                           'chmod -R 777 /docker',
