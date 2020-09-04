@@ -21,7 +21,7 @@ def env_configuration():
     flags=os.environ.get('BIGDFT_OPTFLAGS')
     if flags is None:
       flags=""
-    return  """  "FCFLAGS="""+flags+" "+mklincpath+""" -O2 -fPIC -fopenmp"  "--enable-opencl" "--with-ocl-path=/usr/local/cuda" "--enable-cuda-gpu" "--with-cuda-path=/usr/local/cuda" "CFLAGS="""+flags+""" -fPIC -O2 -fopenmp" "FC=mpif90" "F77=mpif77" "FCLIBS= " "LIBS=-ldl -lstdc++ -lgfortran -lgomp" "NVCC_FLAGS="""+cuda_gencodes+""" --compiler-options -fPIC" "--enable-dynamic-libraries"  """
+    return  """  "FCFLAGS="""+flags+" "+mklincpath+""" -O2 -fPIC -fopenmp"  "--enable-opencl" "--with-ocl-path=/usr/local/cuda" "--enable-cuda-gpu" "--with-cuda-path=/usr/local/cuda" "CFLAGS="""+flags+""" -fPIC -O2 -fopenmp" "FC=mpif90" "F77=mpif77" "FCLIBS= " "LIBS=-ldl -lstdc++ -lgfortran -lgomp" + mkllibs + "NVCC_FLAGS="""+cuda_gencodes+""" --compiler-options -fPIC" "--enable-dynamic-libraries"  """
 #the following command sets the environment variable to give these settings
 #to all the modules
 os.environ['BIGDFT_CONFIGURE_FLAGS']=env_configuration()
