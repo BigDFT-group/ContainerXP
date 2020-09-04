@@ -14,7 +14,7 @@ def env_configuration():
     mkl=os.environ.get('MKLROOT')
     if mkl is not None:
       mklincpath="""-I"""+mkl+"""/include"""
-      mkllibs="""  --with-blas=no --with-lapack=no "--with-ext-linalg="-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" """
+      mkllibs="""  --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" """
     else:
       mklincpath=""
       mkllibs=""
