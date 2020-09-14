@@ -13,7 +13,7 @@ fi
 PORT=${1}
 FOLDER=${2}
 TOKEN=`openssl rand -hex 32`
-IMAGE='bigdft/aiidalab-docker-latest'
+IMAGE='bigdft/aiidalab-docker:latest'
 echo "Pulling the image from the Docker Hub..."
 docker pull ${IMAGE}
 
