@@ -8,5 +8,5 @@ RUN conda install -c conda-forge biopython
 
 #test installing irene computer from yaml
 RUN git clone https://github.com/BigDFT-Group/ContainerXP.git
-RUN COPY ContainerXP/aiidalab-sshonly/irene.yml /opt/irene.yml
-RUN COPY ContainerXP/aiidalab-sshonly/my_init/setup_computer.sh /etc/my_init.d/50_setup-computer.sh
+COPY ContainerXP/aiidalab-sshonly/irene.yml /opt/irene.yml
+COPY ContainerXP/aiidalab-sshonly/my_init/setup_computer.sh /etc/my_init.d/50_setup-computer.sh
