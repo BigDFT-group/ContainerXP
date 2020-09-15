@@ -37,3 +37,19 @@ To complete irene setup:
 		* Load system host keys [True]:
 		* Key policy (RejectPolicy, WarningPolicy, AutoAddPolicy) [RejectPolicy]: AutoAddPolicy
 		* Connection cooldown time (s) [30.0]:
+
+#### Optional
+
+To align ${aiidalab_home_folder} and docker permissions :
+- on your system, edit the /etc/docker/daemon.json config file to include:\
+`
+{
+  "userns-remap": "yourusername"
+}
+`
+- then edit `/etc/subuid` and `/etc/subgid` files :
+`yourusername:0:1000`\
+`yourusername:1001:65536`
+`
+- then restart docker\
+`sudo systemctl restart docker`
