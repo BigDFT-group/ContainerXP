@@ -1,4 +1,4 @@
-label: "irene_yaml"
+label: "irene"
 description: "irene rome partition"
 shebang: "#!/bin/bash"
 hostname: "irene-amd-fr.ccc.cea.fr"
