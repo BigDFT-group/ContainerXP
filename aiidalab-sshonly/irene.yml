@@ -2,7 +2,7 @@ label: "irene"
 description: "irene rome partition"
 shebang: "#!/bin/bash"
 hostname: "irene-amd-fr.ccc.cea.fr"
-transport: sshonly
+transport: ssh_only
 scheduler: "slurm"
 work_dir: "/ccc/work/cont003/drf/{username}/aiidalab_rundir"
 mpirun_command: "ccc_mprun"
