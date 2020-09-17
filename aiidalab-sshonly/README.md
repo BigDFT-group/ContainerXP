@@ -19,7 +19,7 @@ To complete irene setup:
 
 	inside the container:
 
-`verdi computer configure sshonly irene_yaml`
+`verdi computer configure ssh_only irene_yaml`
 
 		* User name [aiida]: ireneaccount
 		* port Nr [22]:
