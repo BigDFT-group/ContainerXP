@@ -83,7 +83,7 @@ jobs:
         -   name: Push the tagged Docker image
             run: |
                 docker push bigdft/sdk:${{steps.vars.outputs.tag}}
-                if [ ${{ matrix.mpi }} == "ompi" ]; then
+                if [ ${{ matrix.mpi }} == "ompi" ] && [ ${{ matrix.arch }} == "x86_64" ]; then
                     docker push bigdft/sdk:latest 
                 fi
     build_vsim:
