@@ -63,7 +63,7 @@ jobs:
                 mpi: [ompi, mvapich]
                 arch: [x86_64, arm]
             exclude:
-                { mpi:mvapich, arch:arm }
+                { mpi: mvapich, arch: arm }
         runs-on: ubuntu-20.04
         needs: generate
         steps:
