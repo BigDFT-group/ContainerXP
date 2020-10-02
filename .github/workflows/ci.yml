@@ -41,14 +41,8 @@ jobs:
             run: |
                 source current_setup.sh
                 hpccm --recipe hpccm/hpccm_lsim-mpi.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-                sed -i 's/xenial/focal/g' Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-                sed -i 's/libgfortran3/libgfortran5/g' Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-                sed -i 's/libibcm-dev//g; s/libibcm1//g; s/libmlx4-dev//g; s/libmlx5-dev//g' Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
                 hpccm --recipe hpccm/hpccm_lsim-vsim.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_vsim_${{ matrix.mpi }}_${{ matrix.arch }}
                 hpccm --recipe hpccm/hpccm_lsim-bigdft.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
-                sed -i 's/xenial/focal/g' Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
-                sed -i 's/libibcm-dev//g; s/libibcm1//g; s/libmlx4-dev//g; s/libmlx5-dev//g' Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
-                sed -i 's/libgfortran3/libgfortran5/g' Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
