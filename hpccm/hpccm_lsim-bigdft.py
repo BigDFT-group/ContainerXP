@@ -14,6 +14,8 @@ Contents:
   This recipe was generated with command line :
 $ hpccm.py --recipe hpccm_lsim-mpi.py --userarg cuda={}""".format(USERARG.get('cuda', '10.0'))+""" ubuntu={}""".format(USERARG.get('ubuntu', '16.04'))+""" mpi={}""".format(USERARG.get('mpi', 'ompi'))
 from hpccm.templates.git import git
+from distutils.version import LooseVersion, StrictVersion
+
 #######
 ## Build bigdft - Once without avx opitimizations, once with
 #######
@@ -32,8 +34,6 @@ Stage0 += shell(commands=['chown -R lsim:lsim /opt/bigdft','chmod -R 777 /opt/bi
 
 Stage0 += workdir(directory='/opt/bigdft/build')
 Stage0 += shell(commands=['chmod -R 777 /opt/bigdft/build'])
-Stage0 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/lib/libcuda.so.1'])
-Stage0 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1'])
 
 Stage0 += shell(commands=['mkdir /docker',
                           'chmod -R 777 /docker',
@@ -131,9 +131,14 @@ tc = gnu().toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
 Stage1 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
 Stage1 += shell(commands=["apt-get update", "apt-get dist-upgrade -y"])
-Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', 'libopenbabel4v5',
+if ubuntu_version <= StrictVersion('20.0'):
+  openbabel='libopenbabel4v5'
+else:
+  openbabel='libopenbabel6'
+Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', openbabel,
                               'opensm', 'flex', 'libblas3', 'liblapack3',
-                              'build-essential', 'libpcre3', 'openssh-client', 'libxnvctrl0'])
+                              'build-essential', 'libpcre3', 'openssh-client', 
+                              'libxnvctrl0', 'libglib2.0-0'])
 
 
 if mpi == "ompi":
@@ -151,8 +156,8 @@ if mpi == "ompi":
                                    "OMPI_MCA_rmaps_base_oversubscribe":"true"})
 elif mpi in ["mvapich2", "mvapich"]:
   ## Mellanox OFED
-  ofed_version='4.7'
-  Stage1 += mlnx_ofed().runtime(_from='mpi')
+  ofed_version='4.6'
+  Stage1 += mlnx_ofed(version='4.6-1.0.1.1', oslabel='ubuntu18.04').runtime(_from='mpi')
   mpi_version = USERARG.get('mpi_version', '2.3')
   Stage1 += apt_get(ospackages=['libpciaccess-dev', 'libnuma1'])
   Stage1 += copy(_from="bigdft_build", src="/usr/local/mpi", dest="/usr/local/mpi")
