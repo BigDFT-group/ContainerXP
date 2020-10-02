@@ -103,7 +103,7 @@ jobs:
             run: docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
         -   name: Push the "latest" tagged Docker image
             run: |
-                if [ ${{ matrix.mpi }} == "ompi" ]; then
+                if [ ${{ matrix.mpi }} == "ompi" ] && [ ${{ matrix.arch }} == "x86_64" ]; then
                     docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:latest --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .                
                 fi
     build_vsim:
