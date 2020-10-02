@@ -101,7 +101,6 @@ jobs:
                     --tag bigdft/sdk:${{steps.vars.outputs.tag}} \
                     --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_ \        
                     --output type=image,push=true .
-            run: docker build . --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --tag bigdft/sdk:latest
         -   name: Push the "latest" tagged Docker image
             run: |
                 if [ ${{ matrix.mpi }} == "ompi" ]; then
