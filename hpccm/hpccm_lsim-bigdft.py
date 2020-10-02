@@ -166,9 +166,6 @@ elif mpi == 'impi':
   mpi_lib = intel_mpi(eula=True) #apt_get(ospackages=[intel-mpi])
   Stage1 += mpi_lib.runtime(_from='bigdft_build')
 
-## FFTW
-Stage1 += fftw(version='3.3.7', toolchain=tc).runtime(_from='bigdft_build')
-
 #'pip install --upgrade pip',
 #Stage1 += shell(commands=['pip install scipy jupyter'])
 Stage1 += shell(commands=['mkdir -p /etc/OpenCL/vendors',

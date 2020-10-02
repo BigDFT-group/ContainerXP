@@ -4,7 +4,6 @@ LSim SDK image
 Contents:
   Ubuntu {}""".format(USERARG.get('ubuntu', '16.04'))+"""
   CUDA {}""".format(USERARG.get('cuda', '10.0'))+"""
-  FFTW version 3.3.7
   MKL
   GNU compilers (upstream)
   Python 3 (intel)
@@ -44,10 +43,6 @@ Stage0 += gnu
 # Setup the toolchain.  Use the GNU compiler toolchain as the basis.
 tc = gnu.toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
-
-# FFTW
-fftw = fftw(version='3.3.8',baseurl="http://fftw.org/", toolchain=tc)
-Stage0 += fftw
 
 #BigDFT packages
 Stage0 += label(metadata={'maintainer': 'bigdft-developers@lists.launchpad.net'})
