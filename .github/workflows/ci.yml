@@ -96,19 +96,11 @@ jobs:
                     echo ::set-output name=docker_platform::"linux/amd64"
                 fi
         -   name: Build the tagged Docker image
-            run: docker buildx build \        
-                    --platform ${{ steps.vars.outputs.docker_platform }} \             
-                    --tag bigdft/sdk:${{steps.vars.outputs.tag}} \
-                    --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_ \        
-                    --output type=image,push=true .
+            run: docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
         -   name: Push the "latest" tagged Docker image
             run: |
                 if [ ${{ matrix.mpi }} == "ompi" ]; then
-                    docker buildx build \        
-                    --platform ${{ steps.vars.outputs.docker_platform }} \             
-                    --tag bigdft/sdk:latest \        
-                    --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_ \        
-                    --output type=image,push=true .                
+                    docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:latest --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .                
                 fi
     build_vsim:
         runs-on: ubuntu-latest
@@ -121,7 +113,7 @@ jobs:
         -   name: Download dockerfile
             uses: actions/download-artifact@v1
             with:
-                name: dockerfile_vsim_${{ matrix.mpi }}
+                name: dockerfile_vsim_${{ matrix.mpi }}_x86_64
         -   name: Login to DockerHub Registry
             run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         -   name: Get the tag and MPI version
@@ -153,7 +145,7 @@ jobs:
         -   name: Download dockerfile
             uses: actions/download-artifact@v1
             with:
-                name: dockerfile_runtime_${{ matrix.mpi }}
+                name: dockerfile_runtime_${{ matrix.mpi }}_x86_64
         -   name: Login to DockerHub Registry
             run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         -   name: Get the tag and MPI version
