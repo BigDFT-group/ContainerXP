@@ -96,11 +96,11 @@ jobs:
                     echo ::set-output name=docker_platform::"linux/amd64"
                 fi
         -   name: Build the tagged Docker image
-            run: docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+            run: docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
         -   name: Push the "latest" tagged Docker image
             run: |
                 if [ ${{ matrix.mpi }} == "ompi" ]; then
-                    docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:latest --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .                
+                    docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:latest --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .                
                 fi
     build_vsim:
         runs-on: ubuntu-latest
@@ -127,7 +127,7 @@ jobs:
                 fi          
                 echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${GITHUB_REF##*/})
         -   name: Build the tagged Docker image
-            run: docker build . --file dockerfile_vsim_${{ matrix.mpi }}/Dockerfile_vsim_${{ matrix.mpi }} --tag bigdft/vsim:${{steps.vars.outputs.tag}} --tag bigdft/vsim:latest
+            run: docker build . --file dockerfile_vsim_${{ matrix.mpi }}_x86_64/Dockerfile_vsim_${{ matrix.mpi }}_x86_64 --tag bigdft/vsim:${{steps.vars.outputs.tag}} --tag bigdft/vsim:latest
         -   name: Push the tagged Docker image
             run: |
                 docker push bigdft/vsim:${{steps.vars.outputs.tag}}
@@ -159,7 +159,7 @@ jobs:
                 fi          
                 echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${GITHUB_REF##*/})
         -   name: Build the tagged Docker image
-            run: docker build . --file dockerfile_runtime_${{ matrix.mpi }}/Dockerfile_runtime_${{ matrix.mpi }} --tag bigdft/runtime:${{steps.vars.outputs.tag}} --tag bigdft/runtime:latest
+            run: docker build . --file dockerfile_runtime_${{ matrix.mpi }}_x86_64/Dockerfile_runtime_${{ matrix.mpi }}_x86_64 --tag bigdft/runtime:${{steps.vars.outputs.tag}} --tag bigdft/runtime:latest
         -   name: Test Fehyb OMP
             working-directory: FeHyb/NOGPU
             run: |
