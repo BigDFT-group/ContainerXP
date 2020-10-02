@@ -26,7 +26,7 @@ jobs:
                 python-version: 3.8
         -   name: Install python dependencies
             run:
-                pip install hpccm
+                pip install hpccm==20.8.0
         -   name: Get the tag and MPI version
             id: vars
             run: |
