@@ -5,6 +5,9 @@ jobs:
         strategy:
             matrix:
                 mpi: [ompi, mvapich]
+                arch: [x86_64, arm]
+            exclude:
+                { mpi:mvapich, arch:arm }
         runs-on: ubuntu-20.04
         steps:
         -   uses: actions/checkout@v2
@@ -36,28 +39,31 @@ jobs:
         -   name: generate docker files for openmpi
             run: |
                 source current_setup.sh
-                hpccm --recipe hpccm/hpccm_lsim-mpi.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} > Dockerfile_sdk_${{ matrix.mpi }}
-                hpccm --recipe hpccm/hpccm_lsim-vsim.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_vsim_${{ matrix.mpi }}
-                hpccm --recipe hpccm/hpccm_lsim-bigdft.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_runtime_${{ matrix.mpi }}
+                hpccm --recipe hpccm/hpccm_lsim-mpi.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                hpccm --recipe hpccm/hpccm_lsim-vsim.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_vsim_${{ matrix.mpi }}_${{ matrix.arch }}
+                hpccm --recipe hpccm/hpccm_lsim-bigdft.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }} tag="bigdft/sdk:${{steps.vars.outputs.tag}}" > Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
-                name: dockerfile_sdk_${{ matrix.mpi }}
-                path: Dockerfile_sdk_${{ matrix.mpi }}
+                name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                path: Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Upload vsim dockerfile
             uses: actions/upload-artifact@v1
             with:
-                name: dockerfile_vsim_${{ matrix.mpi }}
-                path: Dockerfile_vsim_${{ matrix.mpi }}
+                name: dockerfile_vsim_${{ matrix.mpi }}_${{ matrix.arch }}
+                path: Dockerfile_vsim_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Upload runtime dockerfile
             uses: actions/upload-artifact@v1
             with:
-                name: dockerfile_runtime_${{ matrix.mpi }}
-                path: Dockerfile_runtime_${{ matrix.mpi }}
+                name: dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
+                path: Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
     build_sdk:
         strategy:
             matrix:
                 mpi: [ompi, mvapich]
+                arch: [x86_64, arm]
+            exclude:
+                { mpi:mvapich, arch:arm }
         runs-on: ubuntu-20.04
         needs: generate
         steps:
@@ -65,7 +71,11 @@ jobs:
         -   name: Download dockerfile
             uses: actions/download-artifact@v1
             with:
-                name: dockerfile_sdk_${{ matrix.mpi }}
+                name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+        - name: Set up Docker Buildx      
+            uses: crazy-max/ghaction-docker-buildx@v1      
+            with:        
+                version: latest
         -   name: Login to DockerHub Registry
             run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         -   name: Get the tag and MPI version
@@ -78,13 +88,26 @@ jobs:
                     echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
                 fi          
                 echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${GITHUB_REF##*/})
+                if [ ${{ matrix.arch }} == "arm" ]; then
+                    echo ::set-output name=docker_platform::"linux/arm64"
+                else
+                    echo ::set-output name=docker_platform::"linux/amd64"
+                fi
         -   name: Build the tagged Docker image
+            run: docker buildx build \        
+                    --platform ${{ steps.vars.outputs.docker_platform }} \             
+                    --tag bigdft/sdk:${{steps.vars.outputs.tag}} \
+                    --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_ \        
+                    --output type=image,push=true .
             run: docker build . --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --tag bigdft/sdk:latest
-        -   name: Push the tagged Docker image
+        -   name: Push the "latest" tagged Docker image
             run: |
-                docker push bigdft/sdk:${{steps.vars.outputs.tag}}
                 if [ ${{ matrix.mpi }} == "ompi" ]; then
-                    docker push bigdft/sdk:latest 
+                    docker buildx build \        
+                    --platform ${{ steps.vars.outputs.docker_platform }} \             
+                    --tag bigdft/sdk:latest \        
+                    --file dockerfile_sdk_${{ matrix.mpi }}/Dockerfile_sdk_${{ matrix.mpi }}_ \        
+                    --output type=image,push=true .                
                 fi
     build_vsim:
         runs-on: ubuntu-latest

@@ -4,14 +4,19 @@ LSim SDK image
 Contents:
   Ubuntu {}""".format(USERARG.get('ubuntu', '16.04'))+"""
   CUDA {}""".format(USERARG.get('cuda', '10.0'))+"""
-  MKL
+  Target architecture {}""".format(USERARG.get('target_arch', 'x86_64'))+"""
+  for architecture
+  MKL on x86_64
   GNU compilers (upstream)
-  Python 3 (intel)
+  Python 3 (intel on x86_64)
   jupyter notebook and jupyter lab
   v_sim-dev in the optional target
 
   This recipe was generated with command line :
-$ hpccm.py --recipe hpccm_lsim-mpi.py --userarg cuda={}""".format(USERARG.get('cuda', '10.0'))+""" ubuntu={}""".format(USERARG.get('ubuntu', '16.04'))+""" mpi={}""".format(USERARG.get('mpi', 'ompi'))
+$ hpccm.py --recipe hpccm_lsim-mpi.py --userarg cuda={}""".format(USERARG.get('cuda', '10.0'))+""" \
+ubuntu={}""".format(USERARG.get('ubuntu', '16.04'))+""" \
+mpi={}""".format(USERARG.get('mpi', 'ompi'))+""" \
+target_arch={}""".format(USERARG.get('target_arch', 'x86_64'))
 #######
 ## SDK stage
 #######
@@ -29,7 +34,14 @@ if ubuntu_version == "18.04" or ubuntu_version == "18.04-rc":
 else:
   distro = 'ubuntu'
 
-image = 'nvidia/cuda:{}-devel-ubuntu{}'.format(cuda_version,ubuntu_version)
+target_arch = USERARG.get('target_arch', 'x86_64')
+import hpccm.config
+hpccm.config.set_cpu_architecture(target_arch)
+
+repo="nvidia/cuda"
+if "arm" in target_arch:
+  repo+="-arm64"
+image = '{}:{}-devel-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
 
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'sdk'
@@ -70,27 +82,29 @@ Stage0 += apt_get(ospackages=ospack)
 
 #SHELL ["/bin/bash", "-c"]
 Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')
-Stage0 += environment(variables={'SHELL': '/bin/bash',
+
+if target_arch == "x86_64":
+  Stage0 += environment(variables={'SHELL': '/bin/bash',
                                   "PATH":  '/usr/local/anaconda/bin:$PATH' })
 
 
-#conda install
-Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
+  #conda install
+  Stage0 += conda(version='py37_4.8.3', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
                packages=[ 'jupyterlab', 'ipython', 'ipykernel', 
                           'intelpython3_core=2020.2', 
                           'six', 'matplotlib', 'mkl-devel',
                           'nbval', 'cython', 'sphinx', 'sphinx_bootstrap_theme', 
                           'watchdog', 'sphinx_rtd_theme', 'flake8', 'ncurses'])
-#overcome multiple issues with anaconda ...
-Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
+  #overcome multiple issues with anaconda ...
+  Stage0 += shell(commands=['ln -s /usr/local/anaconda/bin/python3-config /usr/local/anaconda/bin/python-config',
                           'pip install pygobject',
                           'groupadd conda',
                           'chgrp -R conda /usr/local/anaconda/',
                           'chmod -R 770 /usr/local/anaconda/'])
 
-#Intel python forgets to provideo ncurses https://community.intel.com/t5/Intel-Distribution-for-Python/curses-missing-on-python-3-7/m-p/1201384#M1509
-#Temporarily steal the files from conda-forge package, and use them instead, as it's used in bigdft-tool.
-Stage0 += shell(commands=['mkdir curses',
+  #Intel python forgets to provideo ncurses https://community.intel.com/t5/Intel-Distribution-for-Python/curses-missing-on-python-3-7/m-p/1201384#M1509
+  #Temporarily steal the files from conda-forge package, and use them instead, as it's used in bigdft-tool.
+  Stage0 += shell(commands=['mkdir curses',
                           'cd curses',
                           'wget https://anaconda.org/conda-forge/python/3.7.8/download/linux-64/python-3.7.8-h6f2ec95_1_cpython.tar.bz2',
                           'tar xjf python-3.7.8-h6f2ec95_1_cpython.tar.bz2',
@@ -98,8 +112,22 @@ Stage0 += shell(commands=['mkdir curses',
                           'cd ..',
                           'rm -rf curses'])
 
-#update LIBRARY_PATH as well to allow building against these libs :
-Stage0 += environment(variables={"LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu/:/usr/local/anaconda/lib/:${LIBRARY_PATH}"})
+  #update LIBRARY_PATH as well to allow building against these libs :
+  Stage0 += environment(variables={"LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu/:/usr/local/anaconda/lib/:${LIBRARY_PATH}"})
+
+else:
+  #on arm platforms miniconda is not available. Use system python and libraries
+  ospack=[
+  'python3', 'cython3', 'python3-flake8', 'python3-ipykernel',
+  'python3-ipython', 'python3-pip', 'jupyter-notebook', 'python3-matplotlib',
+  'python3-six', 'python3-sphinx', 'python3-sphinx-bootstrap-theme',
+  'python3-scipy', 'python3-numpy',
+  'python3-sphinx-rtd-theme', 'watchdog']
+  Stage0 += apt_get(ospackages=ospack)
+
+  #make python3 and pip3 default
+  Stage0 += shell(commands=['ln -s /usr/bin/python3 /usr/local/bin/python',
+                          'ln -s /usr/bin/pip3 /usr/local/bin/pip'])
 
 Stage0 += raw(docker='EXPOSE 8888')
 
@@ -112,8 +140,9 @@ Stage0 += environment(variables={'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility'
 
 Stage0 += raw(docker='CMD jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
-Stage0 += shell(commands=['useradd -ms /bin/bash lsim',
-                          'adduser lsim conda'])
+Stage0 += shell(commands=['useradd -ms /bin/bash lsim'])
+if target_arch == "x86_64":
+  Stage0 += shell(commands=['adduser lsim conda'])
 
 # Set the locale
 Stage0 += shell(commands=['sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen','locale-gen'])
