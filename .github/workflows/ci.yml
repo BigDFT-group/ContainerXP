@@ -107,7 +107,9 @@ jobs:
         steps:
         -   name: Get the tag and MPI version
             id: vars
-            run:    echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi)
+            run: |
+                source current_setup.sh 
+                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi)
         -   name: Update manifest for sdk to attach arm and x86_64 versions on a single image
             run: |
                 export DOCKER_CLI_EXPERIMENTAL=enabled
@@ -141,7 +143,7 @@ jobs:
                 else
                     echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
                 fi          
-                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${{ matrix.arch }})
+                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_vsim_${{ matrix.mpi }}_x86_64/Dockerfile_vsim_${{ matrix.mpi }}_x86_64 --tag bigdft/vsim:${{steps.vars.outputs.tag}} --tag bigdft/vsim:latest
         -   name: Push the tagged Docker image
@@ -171,7 +173,7 @@ jobs:
                 else
                     echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
                 fi          
-                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${{ matrix.arch }})
+                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})
         -   name: Build the tagged Docker image
             run: docker build . --file dockerfile_runtime_${{ matrix.mpi }}_x86_64/Dockerfile_runtime_${{ matrix.mpi }}_x86_64 --tag bigdft/runtime:${{steps.vars.outputs.tag}} --tag bigdft/runtime:latest
         -   name: Test Fehyb OMP
