@@ -4,7 +4,6 @@ LSim bigdft build + runtime
 Contents:
   Ubuntu {}""".format(USERARG.get('ubuntu', '16.04'))+"""
   CUDA {}""".format(USERARG.get('cuda', '10.0'))+"""
-  FFTW version 3.3.7
   MKL
   GNU compilers (upstream)
   Python 3 (intel)
@@ -17,7 +16,7 @@ from hpccm.templates.git import git
 from distutils.version import LooseVersion, StrictVersion
 
 #######
-## Build bigdft - Once without avx opitimizations, once with
+## Build bigdft
 #######
 image = format(USERARG.get('tag', 'bigdft/sdk:latest'))
 
@@ -36,11 +35,7 @@ Stage0 += workdir(directory='/opt/bigdft/build')
 Stage0 += shell(commands=['chmod -R 777 /opt/bigdft/build'])
 
 Stage0 += shell(commands=['mkdir /docker',
-                          'chmod -R 777 /docker',
-                          'mkdir /opt/bigdft/build/avx2',
-                          'chmod -R 777 /opt/bigdft/build/avx2',
-                          'mkdir /opt/bigdft/build/noavx',
-                          'chmod -R 777 /opt/bigdft/build/noavx'])
+                          'chmod -R 777 /docker'])
                           
 Stage0 += raw(docker='USER lsim')
 Stage0 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"})
@@ -51,7 +46,10 @@ Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT
 
 mpi = USERARG.get('mpi', 'ompi')
 use_mkl = USERARG.get('mkl', 'yes')
-Stage0 += workdir(directory='/opt/bigdft/build/noavx')
+
+target_arch = USERARG.get('target_arch', 'x86_64')
+import hpccm.config
+hpccm.config.set_cpu_architecture(target_arch)
 
 #due to a bug in mvapich <= 2.3.2, aligned_alloc causes segfaults. Default to posix_memalign
 #if mpi in ["mvapich2", "mvapich"]:
@@ -68,8 +66,10 @@ elif cuda_version  == "11":
 Stage0 += environment(variables={"CUDA_GENCODES": '"'+cuda_gencodes+'"'})
 
 #when using arch>30, shfl_down is deprecated
+Stage0 += workdir(directory='/opt/bigdft/build/')
 
-Stage0 += shell(commands=['sed -i "s/__shfl_down(/__shfl_down_sync(0xFFFFFFFF,/g" ../../psolver/src/cufft.cu']) 
+Stage0 += shell(commands=['sed -i "s/__shfl_down(/__shfl_down_sync(0xFFFFFFFF,/g" ../psolver/src/cufft.cu']) 
+
 
 if use_mkl == "yes":
   Stage0 += environment(variables={"MKLROOT": "/usr/local/anaconda/"})
@@ -78,30 +78,32 @@ if use_mkl == "yes":
 "LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/local/anaconda/lib/:${LIBRARY_PATH}",
 "CPATH": "/usr/local/anaconda/include/:${CPATH}",
 "PKG_CONFIG_PATH": "/usr/local/anaconda/lib/pkgconfig:${PKG_CONFIG_PATH}"})
+if "arm" in target_arch:
+  arches = ["-march=armv8-a"]
+  folders = ["arm"]
+else:
+  arches = [None, "-march=core-avx2", "-march=skylake-avx512"]
+  folders = ["native", "haswell", "haswell/avx512_1"]
 
-Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
-                          'cat /docker/hpccm/rcfiles/container.rc >> buildrc',
-                         '../../Installer.py autogen -y',
-                         '../../Installer.py build -y -v'])
-#test success
-Stage0 += shell(commands=['ls /usr/local/bigdft/bin/bigdft'])
 
-#AVX 2 build
-Stage0 += workdir(directory='/opt/bigdft/build/avx2')
+for i in range(len(arches)):
+  directory = '/opt/bigdft/build/'+folders[i]
+  Stage0 += workdir(directory=directory)
+  if arches[i] is not None:
+    Stage0 += environment(variables={"BIGDFT_OPTFLAGS": arches[i]})
 
-Stage0 += environment(variables={"BIGDFT_OPTFLAGS": "-march=core-avx2"})
-
-Stage0 += shell(commands=['../../Installer.py build -y -v -f /docker/hpccm/rcfiles/container.rc',
+  if i == 0:
+    #first will be fully installed, hence prefix is needed, with autogen
+    Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
+                            'cat /docker/hpccm/rcfiles/container.rc >> buildrc',
+                            '/opt/bigdft/Installer.py autogen -y',
+                            '/opt/bigdft/Installer.py build -y -v',
+                            'ls /usr/local/bigdft/bin/bigdft'])
+  else:
+    #others are not installed, so just use rcfile directly
+    Stage0 += shell(commands=['/opt/bigdft/Installer.py build -y -v -f /docker/hpccm/rcfiles/container.rc',
                           'ls install/bin/bigdft',
-                          'cp -r install/lib /usr/local/bigdft/lib/haswell'])
-
-#AVX 512 build
-Stage0 += workdir(directory='/opt/bigdft/build/')
-Stage0 += environment(variables={"BIGDFT_OPTFLAGS": "-march=skylake-avx512"})
-
-Stage0 += shell(commands=['../Installer.py build -y -v -f /docker/hpccm/rcfiles/container.rc',
-                          'ls install/bin/bigdft',
-                          'cp -r install/lib /usr/local/bigdft/lib/haswell/avx512_1'])
+                          'cp -r install/lib /usr/local/bigdft/lib/'+folders[i]])
 
 Stage0 += workdir(directory='/home/lsim')
 
@@ -113,17 +115,22 @@ if cuda_version == "8.0":
   ubuntu_version = "16.04"
 else:
   ubuntu_version = USERARG.get('ubuntu', '16.04')
-image = 'nvidia/cuda:{}-runtime-ubuntu{}'.format(cuda_version,ubuntu_version)
+
+repo = "nvidia/cuda"
+if "arm" in target_arch:
+  repo+="-arm64"
+
+image = '{}:{}-runtime-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
 Stage1.name = 'runtime'
 Stage1.baseimage(image)
 
 Stage1 += comment("Runtime stage", reformat=False)
 
-Stage1 += copy(_from="bigdft_build", src="/usr/local/anaconda", dest="/usr/local/anaconda")
-
-Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib/:${LD_LIBRARY_PATH}"})
-Stage1 += environment(variables={"LIBRARY_PATH": "/usr/local/anaconda:${LIBRARY_PATH}"})
-Stage1 += environment(variables={"PATH": "/usr/local/anaconda/bin/:${PATH}"})
+if "arm" not in target_arch:
+  Stage1 += copy(_from="bigdft_build", src="/usr/local/anaconda", dest="/usr/local/anaconda")
+  Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib/:${LD_LIBRARY_PATH}"})
+  Stage1 += environment(variables={"LIBRARY_PATH": "/usr/local/anaconda:${LIBRARY_PATH}"})
+  Stage1 += environment(variables={"PATH": "/usr/local/anaconda/bin/:${PATH}"})
 
 ## Compiler runtime (use upstream)
 Stage1 += gnu().runtime()
@@ -131,6 +138,21 @@ tc = gnu().toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
 Stage1 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
 Stage1 += shell(commands=["apt-get update", "apt-get dist-upgrade -y"])
+
+if "arm" in target_arch:
+  #on arm platforms miniconda is not available. Use system python and libraries
+  ospack=[
+  'python3', 'cython3', 'python3-flake8', 'python3-ipykernel',
+  'python3-ipython', 'python3-pip', 'jupyter-notebook', 'python3-matplotlib',
+  'python3-six', 'python3-sphinx', 'python3-sphinx-bootstrap-theme',
+  'python3-scipy', 'python3-numpy',
+  'python3-sphinx-rtd-theme', 'watchdog']
+  Stage1 += apt_get(ospackages=ospack)
+
+  #make python3 and pip3 default
+  Stage1 += shell(commands=['ln -s /usr/bin/python3 /usr/local/bin/python',
+                          'ln -s /usr/bin/pip3 /usr/local/bin/pip'])
+
 if ubuntu_version <= StrictVersion('20.0'):
   openbabel='libopenbabel4v5'
 else:
@@ -222,7 +244,8 @@ Stage1 += shell(commands=['echo "/usr/local/bigdft/lib" > /etc/ld.so.conf.d/bigd
 Stage1 += shell(commands=['useradd -ms /bin/bash bigdft'])
 Stage1 += raw(docker='USER bigdft')
 #Stage1 += shell(commands=['echo ". /opt/intel/intelpython2/bin/activate" >> ~/.bashrc '])
-Stage1 += environment(variables={"MKLROOT": "/usr/local/anaconda"})
+if use_mkl == "yes":
+  Stage1 += environment(variables={"MKLROOT": "/usr/local/anaconda"})
 
 Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib:${LD_LIBRARY_PATH}",
 "LIBRARY_PATH": "/usr/local/anaconda/lib:${LIBRARY_PATH}",
@@ -231,7 +254,7 @@ Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib:${L
 
 Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin:/usr/local/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/usr/local/bigdft/lib:${LD_LIBRARY_PATH}",
-"PYTHONPATH": "/usr/local/bigdft/lib/python3.7/site-packages:${PYTHONPATH}",
+"PYTHONPATH": "/usr/local/bigdft/lib/python3.6/site-packages:/usr/local/bigdft/lib/python3.7/site-packages::/usr/local/bigdft/lib/python3.8/site-packages:${PYTHONPATH}",
 "PKG_CONFIG_PATH": "/usr/local/bigdft/lib/pkgconfig:${PKG_CONFIG_PATH}",
 "CHESS_ROOT": "/usr/local/bigdft/bin",
 "BIGDFT_ROOT": "/usr/local/bigdft/bin",
