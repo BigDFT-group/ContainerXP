@@ -65,6 +65,9 @@ jobs:
             matrix:
                 mpi: [ompi, mvapich]
                 arch: [x86_64, arm]
+                exclude:
+                    - mpi: mvapich
+                      arch: arm
         steps:
         -   uses: actions/checkout@v2
         -   name: Download dockerfile
