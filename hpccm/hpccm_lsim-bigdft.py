@@ -45,11 +45,12 @@ Stage0 += environment(variables={"PYTHON": "python"})
 Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
 
 mpi = USERARG.get('mpi', 'ompi')
-use_mkl = USERARG.get('mkl', 'yes')
 
 target_arch = USERARG.get('target_arch', 'x86_64')
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
+
+use_mkl = USERARG.get('mkl', 'yes') if target_arch == "x86_64" else "no"
 
 #due to a bug in mvapich <= 2.3.2, aligned_alloc causes segfaults. Default to posix_memalign
 #if mpi in ["mvapich2", "mvapich"]:
