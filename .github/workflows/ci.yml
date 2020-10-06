@@ -104,8 +104,10 @@ jobs:
         -   name: Test Fehyb OMP
             working-directory: FeHyb/NOGPU
             run: |
-                chmod -R 777 .
-                docker run -v $PWD:/results -w /results bigdft/runtime:${{steps.vars.outputs.tag}} bigdft
+                if [ ${{ matrix.arch }} != "arm" ]; then
+                  chmod -R 777 .
+                  docker run -v $PWD:/results -w /results bigdft/runtime:${{steps.vars.outputs.tag}} bigdft
+                fi
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
@@ -114,7 +116,9 @@ jobs:
         -   name: Test Fehyb MPI
             working-directory: FeHyb/NOGPU
             run: |
-                docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 bigdft/runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
+                if [ ${{ matrix.arch }} != "arm" ]; then
+                  docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 bigdft/runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
+                fi
         -   name: Upload logfile
             uses: actions/upload-artifact@v1
             with:
