@@ -102,24 +102,24 @@ jobs:
         -   name: Build the tagged Docker image
             run: docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/runtime:${{steps.vars.outputs.tag}} --file dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
         -   name: Test Fehyb OMP
+            if: matrix.arch != arm
             working-directory: FeHyb/NOGPU
             run: |
-                if [ ${{ matrix.arch }} != "arm" ]; then
                   chmod -R 777 .
                   docker run -v $PWD:/results -w /results bigdft/runtime:${{steps.vars.outputs.tag}} bigdft
-                fi
         -   name: Upload logfile
+            if: matrix.arch != arm
             uses: actions/upload-artifact@v1
             with:
                 name: log-omp-${{ matrix.mpi }}
                 path: FeHyb/NOGPU/log.yaml
         -   name: Test Fehyb MPI
+            if: matrix.arch != arm
             working-directory: FeHyb/NOGPU
             run: |
-                if [ ${{ matrix.arch }} != "arm" ]; then
-                  docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 bigdft/runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
-                fi
+              docker run -v $PWD:/results -w /results -e OMP_NUM_THREADS=1 bigdft/runtime:${{steps.vars.outputs.tag}} mpirun -np 2 bigdft
         -   name: Upload logfile
+            if: matrix.arch != arm
             uses: actions/upload-artifact@v1
             with:
                 name: log-mpi-${{ matrix.mpi }}
