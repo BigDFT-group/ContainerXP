@@ -123,10 +123,7 @@ jobs:
             uses: actions/upload-artifact@v1
             with:
                 name: log-mpi-${{ matrix.mpi }}
-                path: FeHyb/NOGPU/log.yaml        
-        -   name: Push the tagged Docker image
-            run: |
-                docker push bigdft/runtime:${{steps.vars.outputs.tag}}
+                path: FeHyb/NOGPU/log.yaml
     manifest_runtime:
         runs-on: ubuntu-latest
         needs: build_runtime
