@@ -127,6 +127,10 @@ Stage1.baseimage(image)
 
 Stage1 += comment("Runtime stage", reformat=False)
 
+target_arch = USERARG.get('target_arch', 'x86_64')
+import hpccm.config
+hpccm.config.set_cpu_architecture(target_arch)
+
 if "arm" not in target_arch:
   Stage1 += copy(_from="bigdft_build", src="/usr/local/anaconda", dest="/usr/local/anaconda")
   Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib/:${LD_LIBRARY_PATH}"})
@@ -166,7 +170,7 @@ Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', openbabel,
 
 if mpi == "ompi":
   ## normal OFED 
-  Stage1 += ofed().runtime(_from='mpi')
+  Stage1 += ofed().runtime(_from='bigdft_build')
   mpi_version = USERARG.get('mpi_version', '3.0.0')
   mpi_lib = openmpi(infiniband=False, version=mpi_version, prefix="/usr/local/mpi")
   Stage1 += mpi_lib.runtime(_from='bigdft_build')
@@ -180,7 +184,7 @@ if mpi == "ompi":
 elif mpi in ["mvapich2", "mvapich"]:
   ## Mellanox OFED
   ofed_version='4.6'
-  Stage1 += mlnx_ofed(version='4.6-1.0.1.1', oslabel='ubuntu18.04').runtime(_from='mpi')
+  Stage1 += mlnx_ofed(version='4.6-1.0.1.1', oslabel='ubuntu18.04').runtime(_from='bigdft_build')
   mpi_version = USERARG.get('mpi_version', '2.3')
   Stage1 += apt_get(ospackages=['libpciaccess-dev', 'libnuma1'])
   Stage1 += copy(_from="bigdft_build", src="/usr/local/mpi", dest="/usr/local/mpi")
@@ -233,6 +237,8 @@ Stage1 += shell(commands=['apt-get remove -y --purge build-essential',
                           'apt-get autoremove -y', 
                           'rm -rf /var/lib/apt/lists/'])
 
+if "arm" in target_arch:
+  Stage1 += arm_allinea_studio(eula=True, microarchitectures=['generic', 'thunderx2t99', 'generic-sve']).runtime(_from='bigdft_build')
 
 #As of 14/03/18, shifter has a bug with non-ascii characters in files
 Stage1 += shell(commands=["rm -rf $(find / | perl -ne 'print if /[^[:ascii:]]/')"])

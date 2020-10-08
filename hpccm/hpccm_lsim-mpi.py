@@ -6,8 +6,8 @@ Contents:
   CUDA {}""".format(USERARG.get('cuda', '10.0'))+"""
   Target architecture {}""".format(USERARG.get('target_arch', 'x86_64'))+"""
   for architecture
-  MKL on x86_64
-  GNU compilers (upstream)
+  MKL on x86_64, ARMPL on aarch64
+  GNU compilers (upstream) and ARM compilers on aarch64
   Python 3 (intel on x86_64)
   jupyter notebook and jupyter lab
   v_sim-dev in the optional target
@@ -35,9 +35,6 @@ else:
   distro = 'ubuntu'
 
 target_arch = USERARG.get('target_arch', 'x86_64')
-import hpccm.config
-hpccm.config.set_cpu_architecture(target_arch)
-hpccm.config.g_linux_version=ubuntu_version
 
 repo="nvidia/cuda"
 if "arm" in target_arch:
@@ -49,6 +46,10 @@ Stage0.name = 'sdk'
 Stage0.baseimage(image,_distro=distro)
 Stage0 += comment("SDK stage", reformat=False)
 
+import hpccm.config
+hpccm.config.set_cpu_architecture(target_arch)
+hpccm.config.g_linux_version=ubuntu_version
+
 # GNU compilers
 gnu = gnu()
 Stage0 += gnu
@@ -56,6 +57,13 @@ Stage0 += gnu
 # Setup the toolchain.  Use the GNU compiler toolchain as the basis.
 tc = gnu.toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
+
+if "arm" in target_arch:
+  Stage0 += arm_allinea_studio(eula=True, microarchitectures=['generic', 'thunderx2t99', 'generic-sve'])
+  #TODO: find a way to not depend on versions here...
+  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_9.2.0_aarch64-linux/lib:${LD_LIBRARY_PATH}",
+                                   "LIBRARY_PATH": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_9.2.0_aarch64-linux/lib:${LIBRARY_PATH}", 
+                                   "ARMPL": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_9.2.0_aarch64-linux"})
 
 #BigDFT packages
 Stage0 += label(metadata={'maintainer': 'bigdft-developers@lists.launchpad.net'})
