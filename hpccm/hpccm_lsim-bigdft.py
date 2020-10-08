@@ -1,3 +1,4 @@
+print("# syntax=docker/dockerfile:experimental")
 doc="""
 LSim bigdft build + runtime 
 
