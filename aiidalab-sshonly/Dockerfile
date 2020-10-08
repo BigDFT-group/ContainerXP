@@ -1,5 +1,7 @@
 FROM aiidalab/aiidalab-docker-stack:latest
 
+#jupyternotify is useful for notebooks submitting batches of asynchronous jobs.
+RUN pip install jupyternotify
 # protect against pip uninstalling conda packages to put older ones instead...
 RUN pip install --no-dependencies aiida-sshonly
 RUN reentry scan
