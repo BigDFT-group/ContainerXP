@@ -43,6 +43,8 @@ Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/cuda/lib64:${LIBRAR
 Stage0 += environment(variables={"PYTHON": "python"})
 
 Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
+Stage0 += copy(_src="./hpccm/rcfiles/container.rc", dest="/tmp/container.rc")
+
 
 mpi = USERARG.get('mpi', 'ompi')
 
@@ -99,13 +101,13 @@ for i in range(len(arches)):
   if i == 0:
     #first will be fully installed, hence prefix is needed, with autogen
     Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
-                            'cat /docker/hpccm/rcfiles/container.rc >> buildrc',
+                            'cat /tmp/container.rc >> buildrc',
                             '/opt/bigdft/Installer.py autogen -y',
                             '/opt/bigdft/Installer.py build -y -v',
                             'ls /usr/local/bigdft/bin/bigdft'])
   else:
     #others are not installed, so just use rcfile directly
-    Stage0 += shell(commands=['/opt/bigdft/Installer.py build -y -v -f /docker/hpccm/rcfiles/container.rc',
+    Stage0 += shell(commands=['/opt/bigdft/Installer.py build -y -v -f /tmp/container.rc',
                           'ls install/bin/bigdft',
                           'cp -r install/lib /usr/local/bigdft/lib/'+folders[i]])
 
