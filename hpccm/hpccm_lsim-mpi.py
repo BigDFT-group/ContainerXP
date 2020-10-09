@@ -61,9 +61,9 @@ tc.CUDA_HOME = '/usr/local/cuda'
 if "arm" in target_arch:
   Stage0 += arm_allinea_studio(eula=True, microarchitectures=['generic', 'thunderx2t99', 'generic-sve'])
   #TODO: find a way to not depend on versions here...
-  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_9.2.0_aarch64-linux/lib:${LD_LIBRARY_PATH}",
-                                   "LIBRARY_PATH": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_9.2.0_aarch64-linux/lib:${LIBRARY_PATH}", 
-                                   "ARMPL": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_9.2.0_aarch64-linux"})
+  Stage0 += environment(variables={"LD_LIBRARY_PATH": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux/lib:${LD_LIBRARY_PATH}",
+                                   "LIBRARY_PATH": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux/lib:${LIBRARY_PATH}", 
+                                   "ARMPL": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux"})
 
 #BigDFT packages
 Stage0 += label(metadata={'maintainer': 'bigdft-developers@lists.launchpad.net'})
