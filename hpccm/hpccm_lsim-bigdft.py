@@ -82,9 +82,9 @@ if use_mkl == "yes":
 "CPATH": "/usr/local/anaconda/include/:${CPATH}",
 "PKG_CONFIG_PATH": "/usr/local/anaconda/lib/pkgconfig:${PKG_CONFIG_PATH}"})
 if "arm" in target_arch:
-  Stage0 += shell(commands=["export LD_LIBRARY_PATH=$(echo /opt/arm/armpl*gcc*/lib):$LD_LIBRARY_PATH",
-                            "export LIBRARY_PATH=$(echo /opt/arm/armpl*gcc*/lib):$LIBRARY_PATH",
-                            "export ARMPL=$(echo /opt/arm/armpl*gcc*)"])
+  Stage0 += shell(commands=["export LD_LIBRARY_PATH=$(echo /opt/arm/armpl*Generic-AArch*gcc*/lib):$LD_LIBRARY_PATH",
+                            "export LIBRARY_PATH=$(echo /opt/arm/armpl*Generic-AArch*gcc*/lib):$LIBRARY_PATH",
+                            "export ARMPL=$(echo /opt/arm/armpl*Generic-AArch*gcc*)"])
   arches = ["-march=armv8-a"]
   folders = ["arm"]
 else:
