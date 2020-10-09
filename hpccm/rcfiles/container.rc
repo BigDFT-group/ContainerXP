@@ -19,7 +19,7 @@ def env_configuration():
       lininc=""
       linalgs=""
     armpl=os.environ.get('ARMPL')
-     if mkl is not None:
+     if armpl is not None:
       lininc="""-I"""+armpl+"""/include"""
       linalgs="""  --with-blas=no --with-lapack=no  "--with-ext-linalg=-L"""+armpl+"""/lib -larmpl -lgfortran -lamath -lm -ldl" """
     else:
