@@ -80,9 +80,9 @@ if use_mkl == "yes":
 "CPATH": "/usr/local/anaconda/include/:${CPATH}",
 "PKG_CONFIG_PATH": "/usr/local/anaconda/lib/pkgconfig:${PKG_CONFIG_PATH}"})
 if "arm" in target_arch:
-  Stage0 += shell(commands=["export LD_LIBRARY_PATH=$(echo /opt/arm/armpl*compiler*/lib):$LD_LIBRARY_PATH",
-                            "export LIBRARY_PATH=$(echo /opt/arm/armpl*compiler*/lib):$LIBRARY_PATH",
-                            "export ARMPL=$(echo /opt/arm/armpl*compiler*)"])
+  Stage0 += shell(commands=["export LD_LIBRARY_PATH=$(echo /opt/arm/armpl*gcc*/lib):$LD_LIBRARY_PATH",
+                            "export LIBRARY_PATH=$(echo /opt/arm/armpl*gcc*/lib):$LIBRARY_PATH",
+                            "export ARMPL=$(echo /opt/arm/armpl*gcc*)"])
   arches = ["-march=armv8-a"]
   folders = ["arm"]
 else:
@@ -241,7 +241,9 @@ Stage1 += shell(commands=['apt-get remove -y --purge build-essential',
                           'rm -rf /var/lib/apt/lists/'])
 
 if "arm" in target_arch:
-  Stage1 += copy(_from="bigdft_build", src="/opt/arm/", dest="/opt/arm/")
+  Stage1 += copy(_from="bigdft_build", src="/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux", dest="/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux")
+  Stage1 += copy(_from="bigdft_build", src="/opt/arm/armpl-20.3.0_ThunderX2CN99_Ubuntu-16.04_gcc_aarch64-linux", dest="/opt/arm/armpl-20.3.0_ThunderX2CN99_Ubuntu-16.04_gcc_aarch64-linux")
+  Stage1 += environment(variables={"LD_LIBRARY_PATH": "/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux/lib:${LD_LIBRARY_PATH}"})
 #  Stage1 += arm_allinea_studio(eula=True, microarchitectures=['generic', 'thunderx2t99', 'generic-sve']).runtime(_from='bigdft_build')
 
 #As of 14/03/18, shifter has a bug with non-ascii characters in files
