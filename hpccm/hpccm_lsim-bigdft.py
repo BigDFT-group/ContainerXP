@@ -239,7 +239,9 @@ Stage1 += shell(commands=['apt-get remove -y --purge build-essential',
                           'rm -rf /var/lib/apt/lists/'])
 
 if "arm" in target_arch:
-  Stage1 += arm_allinea_studio(eula=True, microarchitectures=['generic', 'thunderx2t99', 'generic-sve']).runtime(_from='bigdft_build')
+  Stage1 += copy(_from="bigdft_build", src="/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_arm-linux-compiler_20.3_aarch64-linux/lib", dest="/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_arm-linux-compiler_20.3_aarch64-linux/lib")
+  Stage1 += environment(variables={"LD_LIBRARY_PATH":"/opt/arm/arm-linux-compiler-20.3_Generic-AArch64_Ubuntu-16.04_aarch64-linux/lib:/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_arm-linux-compiler_20.3_aarch64-linux/lib:/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_9.2.0_aarch64-linux/lib:/opt/arm/armpl-20.3.0_ThunderX2CN99_Ubuntu-16.04_arm-linux-compiler_20.3_aarch64-linux/lib:/opt/arm/armpl-20.3.0_ThunderX2CN99_Ubuntu-16.04_gcc_9.2.0_aarch64-linux/lib:/opt/arm/armpl-20.3.0_Generic-SVE_Ubuntu-16.04_arm-linux-compiler_20.3_aarch64-linux/lib:/opt/arm/armpl-20.3.0_Generic-SVE_Ubuntu-16.04_gcc_9.2.0_aarch64-linux/lib:$LD_LIBRARY_PATH"})
+#  Stage1 += arm_allinea_studio(eula=True, microarchitectures=['generic', 'thunderx2t99', 'generic-sve']).runtime(_from='bigdft_build')
 
 #As of 14/03/18, shifter has a bug with non-ascii characters in files
 Stage1 += shell(commands=["rm -rf $(find / | perl -ne 'print if /[^[:ascii:]]/')"])
