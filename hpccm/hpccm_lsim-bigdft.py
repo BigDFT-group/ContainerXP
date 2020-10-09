@@ -43,7 +43,7 @@ Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/cuda/lib64:${LIBRAR
 Stage0 += environment(variables={"PYTHON": "python"})
 
 Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
-Stage0 += copy(_src="./hpccm/rcfiles/container.rc", dest="/tmp/container.rc")
+Stage0 += copy(src="./hpccm/rcfiles/container.rc", dest="/tmp/container.rc")
 
 
 mpi = USERARG.get('mpi', 'ompi')
