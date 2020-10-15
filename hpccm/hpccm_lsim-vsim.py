@@ -7,7 +7,7 @@ Contents:
   FFTW version 3.3.7
   MKL
   GNU compilers (upstream)
-  Python 2 and 3 (upstream)
+  Python 3 (intel)
   jupyter notebook and jupyter lab
   v_sim-dev in the optional target
 
@@ -18,8 +18,7 @@ from hpccm.templates.git import git
 ## Build v_sim
 #######
 
-tag = format(USERARG.get('tag', 'bigdft'))
-image = '{}/sdk'.format(tag)
+image = format(USERARG.get('tag', 'bigdft/sdk:latest'))
 Stage0 += raw(docker='USER root')
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'vsim'
