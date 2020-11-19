@@ -103,8 +103,10 @@ jobs:
                 fi
         -   name: Build the tagged Docker image
             run: |
-              if [ ${{ matrix.mpi }} == "ompi" &&  ${{ matrix.arch }} == "x86_64" ]; then
+              if [[ ${{ matrix.mpi }} == "ompi" &&  ${{ matrix.arch }} == "x86_64" ]]; then
+                  echo "Generating SDK without MPI"
                   docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk_nompi:latest --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+                  echo "Generated SDK without MPI"
               fi
               docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
     manifest:
