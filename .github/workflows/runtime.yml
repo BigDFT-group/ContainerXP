@@ -54,7 +54,7 @@ jobs:
                 path: Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}
     build_runtime:
         runs-on: ubuntu-latest
-        needs: manifest
+        needs: generate
         strategy:
             matrix:
                 mpi: [ompi, mvapich]
