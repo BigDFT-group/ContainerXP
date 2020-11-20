@@ -94,7 +94,11 @@ else:
 
 for i in range(len(arches)):
   directory = '/opt/bigdft/build/'+folders[i]
+  Stage0 += raw(docker='USER root')
   Stage0 += workdir(directory=directory)
+  Stage0 += shell(commands=['chown -R lsim:lsim .','chmod -R 777 .'])
+  Stage0 += raw(docker='USER lsim')
+
   if arches[i] is not None:
     Stage0 += environment(variables={"BIGDFT_OPTFLAGS": arches[i]})
 
@@ -169,7 +173,7 @@ else:
   openbabel='libopenbabel6'
 Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', openbabel,
                               'opensm', 'flex', 'libblas3', 'liblapack3',
-                              'build-essential', 'libpcre3', 'openssh-client', 
+                              'libpcre3', 'openssh-client', 
                               'libxnvctrl0', 'libglib2.0-0'])
 
 
@@ -236,11 +240,6 @@ Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"']
 Stage1 += raw(docker='EXPOSE 8888')
 
 Stage1 += raw(docker='CMD jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', singularity='%runscript\n jupyter-notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
-
-Stage1 += shell(commands=['apt-get remove -y --purge build-essential', 
-                          'apt-get clean', 
-                          'apt-get autoremove -y', 
-                          'rm -rf /var/lib/apt/lists/'])
 
 if "arm" in target_arch:
   Stage1 += copy(_from="bigdft_build", src="/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux", dest="/opt/arm/armpl-20.3.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux")
