@@ -100,7 +100,7 @@ if target_arch == "x86_64":
   #conda install
   Stage0 += conda(version='4.8.3', python_subversion='py37', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
                packages=[ 'jupyterlab', 'ipython', 'ipykernel', 
-                          'intelpython3_core=2020.2', 
+                          'intelpython3_core=2020.4',
                           'six', 'matplotlib', 'mkl-devel',
                           'nbval', 'cython', 'sphinx', 'sphinx_bootstrap_theme', 
                           'watchdog', 'sphinx_rtd_theme', 'flake8', 'ncurses'])
