@@ -151,7 +151,6 @@ Stage1 += gnu().runtime()
 tc = gnu().toolchain
 tc.CUDA_HOME = '/usr/local/cuda'
 Stage1 += environment(variables={'DEBIAN_FRONTEND': 'noninteractive'})
-Stage1 += shell(commands=["apt-get update", "apt-get dist-upgrade -y"])
 
 if "arm" in target_arch:
   #on arm platforms miniconda is not available. Use system python and libraries
