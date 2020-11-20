@@ -32,9 +32,7 @@ jobs:
                 python-version: 3.8
         -   name: Install python dependencies
             run: |
-                #pip install hpccm==20.8.0
-                git clone https://github.com/NVIDIA/hpc-container-maker.git
-                pip install -e hpc-container-maker
+                pip install hpccm
         -   name: Get the tag and MPI version
             id: vars
             run: |
