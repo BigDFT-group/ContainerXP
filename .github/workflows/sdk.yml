@@ -1,0 +1,156 @@
+name: sdk
+on: [push, workflow_dispatch]
+jobs:
+    generate:
+        strategy:
+            matrix:
+                mpi: [ompi, mvapich]
+                arch: [x86_64, arm]
+                exclude:
+                    - mpi: mvapich
+                      arch: arm
+        runs-on: ubuntu-20.04
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Cache python dependencies
+            id: cache-pip
+            uses: actions/cache@v1
+            with:
+                path: ~/.cache/pip
+                key: pip-pre-commit-${{ hashFiles('**/setup.json') }}
+                restore-keys:
+                    pip-pre-commit-
+        -   name: Set up Python
+            uses: actions/setup-python@v1
+            with:
+                python-version: 3.8
+        -   name: Install python dependencies
+            run: |
+                #pip install hpccm==20.8.0
+                git clone https://github.com/NVIDIA/hpc-container-maker.git
+                pip install -e hpc-container-maker
+        -   name: Get the tag and MPI version
+            id: vars
+            run: |
+                source current_setup.sh 
+                if [ ${{ matrix.mpi }} == "mvapich" ]; then
+                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION) 
+                else
+                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
+                fi          
+                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})
+        -   name: generate docker files for openmpi
+            run: |
+                source current_setup.sh
+                hpccm --recipe hpccm/hpccm_lsim-mpi.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                hpccm --recipe hpccm/hpccm_lsim-vsim.py --userarg cuda=${BIGDFT_CUDA_VERSION} ubuntu=${BIGDFT_UBUNTU_VERSION} mpi=${{ matrix.mpi }} mpi_version=${{steps.vars.outputs.version}} target_arch=${{ matrix.arch }} tag="bigdft/sdk:${{steps.vars.outputs.tag}}_${{ matrix.arch }}" > Dockerfile_vsim_${{ matrix.mpi }}_${{ matrix.arch }}
+        -   name: Upload sdk dockerfile
+            uses: actions/upload-artifact@v1
+            with:
+                name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                path: Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+        -   name: Upload vsim dockerfile
+            uses: actions/upload-artifact@v1
+            with:
+                name: dockerfile_vsim_${{ matrix.mpi }}_${{ matrix.arch }}
+                path: Dockerfile_vsim_${{ matrix.mpi }}_${{ matrix.arch }}
+    build_sdk:
+        strategy:
+            matrix:
+                mpi: [ompi, mvapich]
+                arch: [x86_64, arm]
+                exclude:
+                    - mpi: mvapich
+                      arch: arm
+        runs-on: ubuntu-20.04
+        needs: generate
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Download dockerfile
+            uses: actions/download-artifact@v1
+            with:
+                name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+        -   name: Set up QEMU
+            uses: docker/setup-qemu-action@v1
+            with:
+                platforms: all
+        -   name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v1
+            with:
+                version: latest
+        -   name: Login to DockerHub Registry
+            run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        -   name: Get the tag and MPI version
+            id: vars
+            run: |
+                source current_setup.sh 
+                if [ ${{ matrix.mpi }} == "mvapich" ]; then
+                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION) 
+                else
+                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
+                fi
+                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${{ matrix.arch }})
+                if [ ${{ matrix.arch }} == "arm" ]; then
+                    echo ::set-output name=docker_platform::"linux/arm64"
+                else
+                    echo ::set-output name=docker_platform::"linux/amd64"
+                fi
+        -   name: Build the tagged Docker image
+            run: |
+              if [[ ${{ matrix.mpi }} == "ompi" &&  ${{ matrix.arch }} == "x86_64" ]]; then
+                  echo "Generating SDK without MPI"
+                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk_nompi:latest --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+                  echo "Generated SDK without MPI"
+              fi
+              docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+    manifest:
+        runs-on: ubuntu-latest
+        needs: build_sdk
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Login to DockerHub Registry
+            run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        -   name: Get the tag and MPI version
+            id: vars
+            run: |
+                source current_setup.sh 
+                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi)
+        -   name: Update manifest for sdk to attach arm and x86_64 versions on a single image
+            run: |
+                export DOCKER_CLI_EXPERIMENTAL=enabled
+                docker manifest create --amend bigdft/sdk:${{steps.vars.outputs.tag}} bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64
+                docker manifest push --purge bigdft/sdk:${{steps.vars.outputs.tag}}
+                docker manifest create --amend bigdft/sdk:${{steps.vars.outputs.tag}}${BIGDFT_OPENMPI_VERSION} bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64
+                docker manifest push --purge bigdft/sdk:${{steps.vars.outputs.tag}}${BIGDFT_OPENMPI_VERSION}
+                docker manifest create --amend bigdft/sdk:latest bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64
+                docker manifest push --purge bigdft/sdk:latest
+    build_vsim:
+        runs-on: ubuntu-latest
+        needs: manifest
+        strategy:
+            matrix:
+                mpi: [ompi, mvapich]
+                arch: [x86_64]
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Download dockerfile
+            uses: actions/download-artifact@v1
+            with:
+                name: dockerfile_vsim_${{ matrix.mpi }}_x86_64
+        -   name: Login to DockerHub Registry
+            run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        -   name: Get the tag and MPI version
+            id: vars
+            run: |
+                source current_setup.sh 
+                if [ ${{ matrix.mpi }} == "mvapich" ]; then
+                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION) 
+                else
+                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
+                fi
+                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})
+        -   name: Build the tagged Docker image
+            run: docker build . --file dockerfile_vsim_${{ matrix.mpi }}_x86_64/Dockerfile_vsim_${{ matrix.mpi }}_x86_64 --tag bigdft/vsim:${{steps.vars.outputs.tag}} --tag bigdft/vsim:latest
+        -   name: Push the tagged Docker image
+            run: |
+                docker push bigdft/vsim:${{steps.vars.outputs.tag}}
