@@ -13,15 +13,23 @@ def env_configuration():
       cuda_gencodes=""
     mkl=os.environ.get('MKLROOT')
     if mkl is not None:
-      mklincpath="""-I"""+mkl+"""/include"""
-      mkllibs="""  --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" """
+      lininc="""-I"""+mkl+"""/include"""
+      linalgs="""  --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" """
     else:
-      mklincpath=""
-      mkllibs=""
+      lininc=""
+      linalgs=""
+    armpl=os.environ.get('ARMPL')
+    if armpl is not None:
+      lininc="""-I"""+armpl+"""/include"""
+      linalgs="""  --with-blas=no --with-lapack=no  "--with-ext-linalg=-L"""+armpl+"""/lib -larmpl -lgfortran -lamath -lm -ldl" """
+    else:
+      lininc=""
+      linalgs=""   
+
     flags=os.environ.get('BIGDFT_OPTFLAGS')
     if flags is None:
       flags=""
-    return  """  "FCFLAGS="""+flags+" "+mklincpath+""" -O2 -fPIC -fopenmp"  "--enable-opencl" "--with-ocl-path=/usr/local/cuda" "--enable-cuda-gpu" "--with-cuda-path=/usr/local/cuda" "CFLAGS="""+flags+""" -fPIC -O2 -fopenmp" "FC=mpif90" "F77=mpif77" "FCLIBS= " "LIBS=-ldl -lstdc++ -lgfortran -lgomp" """+ mkllibs +""" "NVCC_FLAGS="""+cuda_gencodes+""" --compiler-options -fPIC" "--enable-dynamic-libraries"  """
+    return  """  "FCFLAGS="""+flags+" "+lininc+""" -O2 -fPIC -fopenmp"  "--enable-opencl" "--with-ocl-path=/usr/local/cuda" "--enable-cuda-gpu" "--with-cuda-path=/usr/local/cuda" "CFLAGS="""+flags+""" -fPIC -O2 -fopenmp" "FC=mpif90" "F77=mpif77" "FCLIBS= " "LIBS=-ldl -lstdc++ -lgfortran -lgomp" """+ linalgs +""" "NVCC_FLAGS="""+cuda_gencodes+""" --compiler-options -fPIC" "--enable-dynamic-libraries"  """
 #the following command sets the environment variable to give these settings
 #to all the modules
 os.environ['BIGDFT_CONFIGURE_FLAGS']=env_configuration()
