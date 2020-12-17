@@ -89,6 +89,7 @@ jobs:
                     echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
                 fi
                 echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${{ matrix.arch }})
+                echo ::set-output name=nompitag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_nompi${{steps.vars.outputs.version}}_${{ matrix.arch }})
                 if [ ${{ matrix.arch }} == "arm" ]; then
                     echo ::set-output name=docker_platform::"linux/arm64"
                 else
@@ -98,7 +99,10 @@ jobs:
             run: |
               if [[ ${{ matrix.mpi }} == "ompi" &&  ${{ matrix.arch }} == "x86_64" ]]; then
                   echo "Generating SDK without MPI"
-                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk_nompi:latest --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.nompitag}}  --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+                  export DOCKER_CLI_EXPERIMENTAL=enabled
+                  docker manifest create --amend bigdft/sdk:nompi_latest bigdft/sdk:${{steps.vars.outputs.nompitag}}
+                  docker manifest push --purge bigdft/sdk:nompi_latest
                   echo "Generated SDK without MPI"
               fi
               docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
