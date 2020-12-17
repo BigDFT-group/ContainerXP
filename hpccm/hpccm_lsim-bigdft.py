@@ -226,12 +226,12 @@ if use_mkl == "yes":
   mklroot="/usr/local/anaconda/lib/"
   mklroot_out="/usr/local/anaconda/lib/"
 
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gf_lp64.so" , dest=mklroot_out+"libmkl_gf_lp64.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gnu_thread.so" , dest=mklroot_out+"libmkl_gnu_thread.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so" , dest=mklroot_out+"libmkl_core.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so" , dest=mklroot_out+"libmkl_avx2.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so" , dest=mklroot_out+"libmkl_def.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libiomp5.so" , dest=mklroot_out+"libiomp5.so")
+  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gf_lp64.so.1" , dest=mklroot_out+"libmkl_gf_lp64.so")
+  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gnu_thread.so.1" , dest=mklroot_out+"libmkl_gnu_thread.so")
+  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so.1" , dest=mklroot_out+"libmkl_core.so")
+  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so.1" , dest=mklroot_out+"libmkl_avx2.so")
+  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so.1" , dest=mklroot_out+"libmkl_def.so")
+  Stage1 += copy(_from="bigdft_build", src=mklroot+"libiomp5.so.1" , dest=mklroot_out+"libiomp5.so")
 
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/root/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
