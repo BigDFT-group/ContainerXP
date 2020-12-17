@@ -194,17 +194,17 @@ if mpi == "ompi":
                                    "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
 elif mpi in ["mvapich2", "mvapich"]:
   # Mellanox OFED
-  ofed_version='4.6'
-  Stage1 += mlnx_ofed(version='4.6-1.0.1.1', oslabel='ubuntu18.04')
+  ofed_version='5.0'
+  Stage1 += mlnx_ofed(version='5.0-2.1.8.0', oslabel='ubuntu18.04')
   gdrcopy=gdrcopy()
   mpi_version = USERARG.get('mpi_version', '2.3')
   if cuda_version == "8.0":
     gnu_version="5.4.0"
-  elif cuda_version == "11.0":
+  elif cuda_version == "11.0" and mpi_version=="2.3.4":
     gnu_version="9.3.0"
   else:
     gnu_version="4.8.5"
-  if mpi_version == "2.3.4":
+  if mpi_version == "2.3.4" or mpi_version=="2.3.5":
     release = 1
   else:
     release = 2

@@ -191,8 +191,8 @@ if mpi == "ompi":
                                    "OMPI_MCA_rmaps_base_oversubscribe":"true"})
 elif mpi in ["mvapich2", "mvapich"]:
   ## Mellanox OFED
-  ofed_version='4.6'
-  Stage1 += mlnx_ofed(version='4.6-1.0.1.1', oslabel='ubuntu18.04').runtime(_from='bigdft_build')
+  ofed_version='5.0'
+  Stage1 += mlnx_ofed(version='5.0-2.1.8.0', oslabel='ubuntu18.04').runtime(_from='bigdft_build')
   mpi_version = USERARG.get('mpi_version', '2.3')
   Stage1 += apt_get(ospackages=['libpciaccess-dev', 'libnuma1'])
   Stage1 += copy(_from="bigdft_build", src="/usr/local/mpi", dest="/usr/local/mpi")
@@ -263,7 +263,8 @@ if use_mkl == "yes":
 Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib:${LD_LIBRARY_PATH}",
 "LIBRARY_PATH": "/usr/local/anaconda/lib:${LIBRARY_PATH}",
 "CPATH": "/usr/local/anaconda/include:${CPATH}",
-"PKG_CONFIG_PATH": "/usr/local/anaconda/lib/pkgconfig:${PKG_CONFIG_PATH}"})
+"PKG_CONFIG_PATH": "/usr/local/anaconda/lib/pkgconfig:${PKG_CONFIG_PATH}",
+"PATH": "/usr/local/anaconda/bin:${PATH}"})
 
 Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin:/usr/local/bigdft/bin:${PATH}",
 "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:/usr/local/bigdft/lib:${LD_LIBRARY_PATH}",
