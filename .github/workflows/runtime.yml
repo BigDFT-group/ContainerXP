@@ -10,7 +10,7 @@ jobs:
     generate:
         strategy:
             matrix:
-                mpi: [ompi, mvapich]
+                mpi: [ompi]
                 arch: [x86_64, arm]
                 exclude:
                     - mpi: mvapich
