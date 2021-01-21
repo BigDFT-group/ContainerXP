@@ -107,11 +107,13 @@ for i in range(len(arches)):
     Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                             'cat /tmp/container.rc >> buildrc',
                             '/opt/bigdft/Installer.py autogen -y',
+                            '/opt/bigdft/bundler/jhbuild.y --no-interact --exit-on-error build pspio',
                             '/opt/bigdft/Installer.py build -y -v',
                             'ls /usr/local/bigdft/bin/bigdft'])
   else:
     #others are not installed, so just use rcfile directly
-    Stage0 += shell(commands=['/opt/bigdft/Installer.py build -y -v -f /tmp/container.rc',
+    Stage0 += shell(commands=['/opt/bigdft/bundler/jhbuild.y --no-interact --exit-on-error build pspio',
+                          '/opt/bigdft/Installer.py build -y -v -f /tmp/container.rc',
                           'ls install/bin/bigdft',
                           'cp -r install/lib /usr/local/bigdft/lib/'+folders[i]])
 
