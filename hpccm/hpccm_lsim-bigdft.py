@@ -95,6 +95,7 @@ else:
 for i in range(len(arches)):
   directory = '/opt/bigdft/build/'+folders[i]
   Stage0 += raw(docker='USER root')
+  Stage0 += apt_get(ospackages=['libgsl-dev'])
   Stage0 += workdir(directory=directory)
   Stage0 += shell(commands=['chown -R lsim:lsim .','chmod -R 777 .'])
   Stage0 += raw(docker='USER lsim')
@@ -104,7 +105,6 @@ for i in range(len(arches)):
 
   if i == 0:
     #first will be fully installed, hence prefix is needed, with autogen
-    Stage0 += apt_get(ospackages=['libgsl-dev'])
     Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                             'cat /tmp/container.rc >> buildrc',
                             '/opt/bigdft/Installer.py autogen -y',
