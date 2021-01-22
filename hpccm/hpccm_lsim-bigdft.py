@@ -109,7 +109,7 @@ for i in range(len(arches)):
                             'cat /tmp/container.rc >> buildrc',
                             '/opt/bigdft/Installer.py autogen -y',
                             '/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error update pspio',
-                            'sed -i "s/enable-fortran/enable-fortran --enable-shared=yes/" /opt/bigdft/bigdft.modules'
+                            'sed -i "s/enable-fortran/enable-fortran --enable-shared=yes/" /opt/bigdft/bigdft.modules',
                             'cd /opt/bigdft/pspio',
                             'sed -i "s/file/open/g" fortran/scripts/make-fortran-constants.py',
                             'git config --global user.email "a@a.com"',
