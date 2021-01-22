@@ -104,9 +104,19 @@ for i in range(len(arches)):
 
   if i == 0:
     #first will be fully installed, hence prefix is needed, with autogen
+    Stage0 += apt_get(ospackages=['libgsl-dev'])
     Stage0 += shell(commands=['echo "prefix=\'/usr/local/bigdft\' " > ./buildrc',
                             'cat /tmp/container.rc >> buildrc',
                             '/opt/bigdft/Installer.py autogen -y',
+                            '/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error update pspio',
+                            'sed -i "s/enable-fortran/enable-fortran --enable-shared=yes/" /opt/bigdft/bigdft.modules'
+                            'cd /opt/bigdft/pspio',
+                            'sed -i "s/file/open/g" fortran/scripts/make-fortran-constants.py',
+                            'git config --global user.email "a@a.com"',
+                            'git config --global user.name "docker"',
+                            'git add fortran/scripts/make-fortran-constants.py',
+                            'git commit -m "empty"',
+                            'cd -',
                             '/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error build pspio',
                             '/opt/bigdft/Installer.py build -y -v',
                             'ls /usr/local/bigdft/bin/bigdft'])
@@ -175,7 +185,7 @@ else:
 Stage1 += apt_get(ospackages=['ocl-icd-libopencl1', openbabel,
                               'opensm', 'flex', 'libblas3', 'liblapack3',
                               'libpcre3', 'openssh-client', 
-                              'libxnvctrl0', 'libglib2.0-0'])
+                              'libxnvctrl0', 'libglib2.0-0', 'libgsl123'])
 
 
 if mpi == "ompi":
