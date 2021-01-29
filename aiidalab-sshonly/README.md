@@ -19,7 +19,7 @@ To complete irene setup:
 
 	inside the container:
 
-`verdi computer configure ssh_only irene_yaml`
+`verdi computer configure ssh_only irene`
 
 		* User name [aiida]: ireneaccount
 		* port Nr [22]:
@@ -28,7 +28,7 @@ To complete irene setup:
 		* Connection timeout in s [60]:
 		* Allow ssh agent [True]:
 		* If bouncing is needed :
-		* SSH proxy command []: ssh -i /home/aiida/.ssh/id_rsa account@proxy -W irene-amd-fr.ccc.cea.fr:22
+		* SSH proxy command []: ssh -i /home/aiida/.ssh/id_rsa account@proxy.full.address.fr -W irene-amd-fr.ccc.cea.fr:22
 		* Compress file transfers [True]:
 		* GSS auth [False]:
 		* GSS kex [False]:
