@@ -1,4 +1,6 @@
-FROM aiidalab/aiidalab-docker-stack:latest
+#FROM aiidalab/aiidalab-docker-stack:latest
+FROM aiidalab/aiidalab-docker-stack:20.12.0
+
 
 #jupyternotify is useful for notebooks submitting batches of asynchronous jobs.
 RUN pip install jupyternotify
