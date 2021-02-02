@@ -119,13 +119,15 @@ for i in range(len(arches)):
                             'cd -',
                             '/opt/bigdft/bundler/jhbuild.py -f ./buildrc --no-interact --exit-on-error build pspio',
                             '/opt/bigdft/Installer.py build -y -v',
-                            'ls /usr/local/bigdft/bin/bigdft'])
+                            'ls /usr/local/bigdft/bin/bigdft',
+                            'rm -rf .'])
   else:
     #others are not installed, so just use rcfile directly
     Stage0 += shell(commands=['/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error build pspio',
                           '/opt/bigdft/Installer.py build -y -v -f /tmp/container.rc',
                           'ls install/bin/bigdft',
-                          'cp -r install/lib /usr/local/bigdft/lib/'+folders[i]])
+                          'cp -r install/lib /usr/local/bigdft/lib/'+folders[i],
+                          'rm -rf .'])
 
 Stage0 += workdir(directory='/home/lsim')
 
