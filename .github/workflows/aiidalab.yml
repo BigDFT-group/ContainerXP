@@ -14,4 +14,4 @@ jobs:
                 docker build . --file Dockerfile --tag bigdft/aiidalab-docker:latest --tag bigdft/aiidalab-docker:$d
         -   name: Push the tagged Docker image
             run: |
-                docker push -a bigdft/aiidalab-docker
+                docker image push --all-tags bigdft/aiidalab-docker
