@@ -9,7 +9,9 @@ jobs:
             run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         -   name: Build the Docker image
             working-directory: aiidalab-sshonly
-            run: docker build . --file Dockerfile --tag bigdft/aiidalab-docker:latest
+            run: |
+                d=$(date +%Y-%m-%d--%H-%M-%S)
+                docker build . --file Dockerfile --tag bigdft/aiidalab-docker:latest --tag bigdft/aiidalab-docker:$d
         -   name: Push the tagged Docker image
             run: |
-                docker push bigdft/aiidalab-docker:latest
+                docker push -a bigdft/aiidalab-docker
