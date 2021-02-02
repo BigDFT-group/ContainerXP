@@ -5,7 +5,6 @@ on:
         workflows: ["sdk"]
         types:
             - completed
-            - requested
 jobs:
     generate:
         strategy:
