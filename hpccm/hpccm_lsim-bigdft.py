@@ -117,7 +117,7 @@ for i in range(len(arches)):
                             'git add fortran/scripts/make-fortran-constants.py',
                             'git commit -m "empty"',
                             'cd -',
-                            '/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error build pspio',
+                            '/opt/bigdft/bundler/jhbuild.py -f ./buildrc --no-interact --exit-on-error build pspio',
                             '/opt/bigdft/Installer.py build -y -v',
                             'ls /usr/local/bigdft/bin/bigdft'])
   else:
