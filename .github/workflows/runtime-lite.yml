@@ -35,28 +35,26 @@ jobs:
             run: |
                 if [ ${{ matrix.arch }} == "linux/arm64" ]; then
                     echo ::set-output name=tag::$(echo "latest_arm")
+                    echo ::set-output name=image::$(echo "bigdft/runtime-lite:latest_arm")
                 else
                     echo ::set-output name=tag::$(echo "latest_amd64")
+                    echo ::set-output name=image::$(echo "localhost:5000/bigdft/runtime-slim:latest_amd64")
                 fi   
         -   name: Build image and send it to local repo
             uses: docker/build-push-action@v2
             with:
                 push: true
-                tags: localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}}
+                tags: ${{steps.tag.outputs.image}}
                 context: Dockerfiles
                 file: Dockerfiles/Dockerfile
                 platforms: ${{ matrix.arch }}
         -   name: Build the Docker image
             run: |
-                docker images
-                docker pull localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}}
-                docker images
                 if [ ${{ matrix.arch }} == "linux/amd64" ]; then
+                  docker pull localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}}
                   ./docker-slim/docker-slim build --target localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}} --tag bigdft/runtime-lite:${{steps.tag.outputs.tag}} --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
-                else
-                  docker tag bigdft/runtime-slim:${{steps.tag.outputs.tag}} bigdft/runtime-lite:${{steps.tag.outputs.tag}}
+                  docker push bigdft/runtime-lite:${{steps.tag.outputs.tag}}
                 fi
-                docker push bigdft/runtime-lite:${{steps.tag.outputs.tag}}
     manifest:
         runs-on: ubuntu-20.04
         needs: build
