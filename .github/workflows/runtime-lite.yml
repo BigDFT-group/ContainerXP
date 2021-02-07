@@ -65,5 +65,5 @@ jobs:
         -   name: Update manifest for bigdft-lite to attach arm and x86_64 versions on a single image
             run: |
                 export DOCKER_CLI_EXPERIMENTAL=enabled
-                docker manifest create --amend bigdft/runtime-lite:latest bigdft/runtime-lite:latest_arm bigdft/runtime-lite:latest_x86_64
+                docker manifest create --amend bigdft/runtime-lite:latest bigdft/runtime-lite:latest_arm bigdft/runtime-lite:latest_amd64
                 docker manifest push --purge bigdft/runtime-lite:latest
