@@ -51,8 +51,8 @@ jobs:
         -   name: Build the Docker image
             run: |
                 if [ ${{ matrix.arch }} == "linux/amd64" ]; then
-                  docker pull localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}}
-                  ./docker-slim/docker-slim build --target localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}} --tag bigdft/runtime-lite:${{steps.tag.outputs.tag}} --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
+                  docker pull ${{steps.tag.outputs.image}}
+                  ./docker-slim/docker-slim build --target ${{steps.tag.outputs.image}} --tag bigdft/runtime-lite:${{steps.tag.outputs.tag}} --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
                   docker push bigdft/runtime-lite:${{steps.tag.outputs.tag}}
                 fi
     manifest:
@@ -65,5 +65,5 @@ jobs:
         -   name: Update manifest for bigdft-lite to attach arm and x86_64 versions on a single image
             run: |
                 export DOCKER_CLI_EXPERIMENTAL=enabled
-                docker manifest create --amend localhost:5000/bigdft/runtime-lite:latest localhost:5000/bigdft/runtime-lite:latest_arm localhost:5000/bigdft/runtime-lite:latest_x86_64
-                docker manifest push --purge localhost:5000/bigdft/runtime-lite:latest
+                docker manifest create --amend bigdft/runtime-lite:latest bigdft/runtime-lite:latest_arm bigdft/runtime-lite:latest_x86_64
+                docker manifest push --purge bigdft/runtime-lite:latest
