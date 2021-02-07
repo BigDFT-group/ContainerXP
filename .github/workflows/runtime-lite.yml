@@ -3,7 +3,7 @@ on: [workflow_dispatch, push]
 jobs:
     build:
         runs-on: ubuntu-20.04
-        if: "!contains(github.event.head_commit.message, 'ci skip')"
+        if: "!contains(github.event.head_commit.message, 'ci skip all')"
         strategy:
             matrix:
                 arch: [linux/arm64, linux/amd64]
@@ -25,7 +25,7 @@ jobs:
                     mv dist_linux_arm64 docker-slim
                 else
                     wget https://downloads.dockerslim.com/releases/1.34.0/dist_linux.tar.gz
-                    tar xzf dist_linux_arm64.tar.gz
+                    tar xzf dist_linux.tar.gz
                     mv dist_linux docker-slim
                 fi
         -   name: Login to DockerHub Registry
