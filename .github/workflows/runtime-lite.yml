@@ -30,22 +30,30 @@ jobs:
                 mv dist_linux docker-slim
         -   name: Login to DockerHub Registry
             run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-        -   name: Build the Docker image
-            working-directory: Dockerfiles
+        -   name: Build the tag
+            id: tag
             run: |
                 if [ ${{ matrix.arch }} == "linux/arm64" ]; then
-                    tag="latest_arm"
+                    echo ::set-output name=tag::$(echo "latest_arm")
                 else
-                    tag="latest_amd64"
-                fi
-                docker buildx build --platform ${{ matrix.arch }} --tag bigdft/runtime-slim:$tag --output type=image,push=true,name=localhost:5000/bigdft/runtime-slim:$tag --file Dockerfile .
+                    echo ::set-output name=tag::$(echo "latest_amd64")
+                fi   
+        -   name: Build image and send it to local repo
+            uses: docker/build-push-action@v2
+            with:
+                push: true
+                tags: bigdft/runtime-slim:${{steps.tag.outputs.tag}}
+                context: Dockerfiles
+                file: business/Dockerfile
+        -   name: Build the Docker image
+            run: |
                 docker images
                 if [ ${{ matrix.arch }} == "linux/amd64" ]; then
-                  ../docker-slim/docker-slim build --target bigdft/runtime-slim:$tag --tag bigdft/runtime-lite:$tag --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
+                  ../docker-slim/docker-slim build --target localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}} --tag localhost:5000/bigdft/runtime-lite:${{steps.tag.outputs.tag}} --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
                 else
-                  docker tag bigdft/runtime-slim:$tag bigdft/runtime-lite:$tag
+                  docker tag localhost:5000/bigdft/runtime-slim:$tag localhost:5000/bigdft/runtime-lite:$tag
                 fi
-                docker push bigdft/runtime-lite:$tag
+                docker push localhost:5000/bigdft/runtime-lite:$tag
     manifest:
         runs-on: ubuntu-20.04
         needs: build
@@ -56,5 +64,5 @@ jobs:
         -   name: Update manifest for bigdft-lite to attach arm and x86_64 versions on a single image
             run: |
                 export DOCKER_CLI_EXPERIMENTAL=enabled
-                docker manifest create --amend bigdft/runtime-lite:latest bigdft/sdk:latest_arm bigdft/sdk:latest_x86_64
-                docker manifest push --purge bigdft/runtime-lite:latest
+                docker manifest create --amend localhost:5000/bigdft/runtime-lite:latest localhost:5000/bigdft/runtime-lite:latest_arm localhost:5000/bigdft/runtime-lite:latest_x86_64
+                docker manifest push --purge localhost:5000/bigdft/runtime-lite:latest
