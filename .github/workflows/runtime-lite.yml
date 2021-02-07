@@ -44,7 +44,7 @@ jobs:
                 push: true
                 tags: bigdft/runtime-slim:${{steps.tag.outputs.tag}}
                 context: Dockerfiles
-                file: business/Dockerfile
+                file: Dockerfiles/Dockerfile
         -   name: Build the Docker image
             run: |
                 docker images
