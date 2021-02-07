@@ -45,15 +45,18 @@ jobs:
                 tags: bigdft/runtime-slim:${{steps.tag.outputs.tag}}
                 context: Dockerfiles
                 file: Dockerfiles/Dockerfile
+                platforms: ${{ matrix.arch }}
         -   name: Build the Docker image
             run: |
                 docker images
+                docker pull localhost:5000/bigdft/runtime-slim:$tag
+                docker images
                 if [ ${{ matrix.arch }} == "linux/amd64" ]; then
-                  ../docker-slim/docker-slim build --target localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}} --tag localhost:5000/bigdft/runtime-lite:${{steps.tag.outputs.tag}} --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
+                  ../docker-slim/docker-slim build --target bigdft/runtime-slim:${{steps.tag.outputs.tag}} --tag bigdft/runtime-lite:${{steps.tag.outputs.tag}} --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
                 else
-                  docker tag localhost:5000/bigdft/runtime-slim:$tag localhost:5000/bigdft/runtime-lite:$tag
+                  docker tag bigdft/runtime-slim:$tag bigdft/runtime-lite:$tag
                 fi
-                docker push localhost:5000/bigdft/runtime-lite:$tag
+                docker push bigdft/runtime-lite:$tag
     manifest:
         runs-on: ubuntu-20.04
         needs: build
