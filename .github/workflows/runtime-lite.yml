@@ -1,8 +1,9 @@
-name: aiidalab
-on: [workflow_dispatch]
+name: runtime-lite
+on: [workflow_dispatch, push]
 jobs:
     build:
         runs-on: ubuntu-20.04
+        if: "!contains(github.event.head_commit.message, 'ci skip')"
         strategy:
             matrix:
                 arch: [linux/arm64, linux/amd64]
