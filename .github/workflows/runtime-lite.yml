@@ -42,7 +42,7 @@ jobs:
             uses: docker/build-push-action@v2
             with:
                 push: true
-                tags: bigdft/runtime-slim:${{steps.tag.outputs.tag}}
+                tags: localhost:5000/bigdft/runtime-slim:${{steps.tag.outputs.tag}}
                 context: Dockerfiles
                 file: Dockerfiles/Dockerfile
                 platforms: ${{ matrix.arch }}
