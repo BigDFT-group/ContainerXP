@@ -39,6 +39,7 @@ jobs:
                     tag="latest_amd64"
                 fi
                 docker buildx build --platform ${{ matrix.arch }} --tag bigdft/runtime-slim:$tag --output type=image,push=false,name=bigdft/runtime-slim:$tag --file Dockerfile .
+                docker images
                 ../docker-slim/docker-slim build --target bigdft/runtime-slim:$tag --tag bigdft/runtime-lite:$tag --http-probe=false --continue-after 1 --include-bin /usr/bin/rsh --include-bin /usr/bin/mpirun --include-path=/usr/share/openmpi --include-path /usr/lib/x86_64-linux-gnu/openmpi/lib/openmpi3/
                 docker push bigdft/runtime-lite:$tag
     manifest:
