@@ -30,7 +30,7 @@ RUN git clone --depth 1 --branch 1.9.1 https://gitlab.com/l_sim/bigdft-suite.git
 RUN cd bigdft-suite && \
     mkdir build && \
     cd build && \
-    echo "prefix='/usr/local/bigdft' " > ./buildrc && cat ../rcfiles/ubuntu_MPI.rc >> buildrc
+    echo "prefix='/usr/local/bigdft' " > ./buildrc && cat ../rcfiles/ubuntu_MPI.rc >> buildrc && sed -i 's/-m64//' ./buildrc
 WORKDIR /home/bigdft/bigdft-suite/build
 RUN python3 ../Installer.py autogen -y && \
 	python3 ../Installer.py build -y -v
