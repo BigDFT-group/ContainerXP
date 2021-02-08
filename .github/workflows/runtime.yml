@@ -17,7 +17,6 @@ jobs:
         runs-on: ubuntu-20.04
         steps:
         -   uses: actions/checkout@v2
-        -   uses: ahmadnassri/action-workflow-run-wait@v1
         -   name: Cache python dependencies
             id: cache-pip
             uses: actions/cache@v1
