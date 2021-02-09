@@ -161,16 +161,18 @@ if "arm" not in target_arch:
   Stage1 += environment(variables={"PATH": "/usr/local/anaconda/bin/:${PATH}"})
   #only keep bits of mkl we need for bigdft
   if use_mkl == "yes":
-    Stage1 += shell(commands=['rm -rf /usr/local/anaconda/lib/libmkl*'])
-    mklroot="/usr/local/anaconda/lib/"
-    mklroot_out="/usr/local/anaconda/lib/"
-    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gf_lp64.so.1" , dest=mklroot_out+"libmkl_gf_lp64.so")
-    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gnu_thread.so.1" , dest=mklroot_out+"libmkl_gnu_thread.so")
-    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so.1" , dest=mklroot_out+"libmkl_core.so")
-    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so.1" , dest=mklroot_out+"libmkl_avx2.so")
-    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so.1" , dest=mklroot_out+"libmkl_def.so")
-    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_rt.so" , dest=mklroot_out+"libmkl_rt.so")
-    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_rt.so.1" , dest=mklroot_out+"libmkl_rt.so.1")
+    Stage1 += workdir(directory='/usr/local/anaconda/lib/')
+    Stage1 += shell(commands=['rm -rf libmkl*'])
+    Stage1 += copy(_from="bigdft_build", 
+                   src=["libmkl_gf_lp64.so.1", "libmkl_gnu_thread.so.1", "libmkl_core.so.1",
+                        "libmkl_avx2.so.1", "libmkl_def.so.1", "libmkl_rt.so.1"] ,
+                   dest=mklroot_out+"libmkl_gf_lp64.so.1")
+    Stage1 += shell(commands=['ln -s libmkl_gf_lp64.so.1 libmkl_gf_lp64.so', 
+                             'ln -s libmkl_gnu_thread.so.1 libmkl_gnu_thread.so',
+                             'ln -s libmkl_core.so.1 libmkl_core.so',
+                             'ln -s libmkl_avx2.so.1 libmkl_avx2.so',
+                             'ln -s libmkl_def.1 libmkl_def.so',
+                             'ln -s libmkl_rt.so.1 libmkl_rt.so'])
 
 ## Compiler runtime (use upstream)
 Stage1 += gnu().runtime()
