@@ -24,6 +24,12 @@ Stage0 += comment(doc, reformat=False)
 Stage0.name = 'bigdft_build'
 Stage0.baseimage(image)
 
+
+target_arch = USERARG.get('target_arch', 'x86_64')
+import hpccm.config
+hpccm.config.set_cpu_architecture(target_arch)
+
+
 Stage0 += raw(docker='USER root')
 Stage0 += workdir(directory='/opt/')
 Stage0 += shell(commands=['rm -rf /opt/bigdft'])
@@ -31,12 +37,22 @@ Stage0 += shell(commands=['rm -rf /opt/bigdft'])
 Stage0 += shell(commands=['git clone https://gitlab.com/l_sim/bigdft-suite.git ./bigdft'])
 Stage0 += shell(commands=['chown -R lsim:lsim /opt/bigdft','chmod -R 777 /opt/bigdft', 'mkdir /usr/local/bigdft', 'chmod -R 777 /usr/local/bigdft'])
 
+use_mkl = USERARG.get('mkl', 'yes') if target_arch == "x86_64" else "no"
+#remove mkl libraries we will not need
+if use_mkl == "yes":
+    Stage0 += workdir(directory='/usr/local/anaconda/lib')
+    Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')
+    Stage0 += shell(commands=["export GLOBIGNORE=libmkl_gf_lp64.*:libmkl_gnu_thread.*:libmkl_core.*:libmkl_avx2.*:libmkl_avx.*:libmkl_avx512.*:libmkl_def.*:libmkl_rt.*:libmkl_intel_thread.*:libmkl_intel_lp64.*",
+                        "rm -rf libmkl*",
+                        "unset GLOBIGNORE"])
+    Stage0 += raw(docker='SHELL ["/bin/sh", "-c"]')
+
 Stage0 += workdir(directory='/opt/bigdft/build')
 Stage0 += shell(commands=['chmod -R 777 /opt/bigdft/build'])
 
 Stage0 += shell(commands=['mkdir /docker',
                           'chmod -R 777 /docker'])
-                          
+
 Stage0 += raw(docker='USER lsim')
 Stage0 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"})
 Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/cuda/lib64:${LIBRARY_PATH}"})
@@ -47,12 +63,6 @@ Stage0 += copy(src="./hpccm/rcfiles/container.rc", dest="/tmp/container.rc")
 
 
 mpi = USERARG.get('mpi', 'ompi')
-
-target_arch = USERARG.get('target_arch', 'x86_64')
-import hpccm.config
-hpccm.config.set_cpu_architecture(target_arch)
-
-use_mkl = USERARG.get('mkl', 'yes') if target_arch == "x86_64" else "no"
 
 #due to a bug in mvapich <= 2.3.2, aligned_alloc causes segfaults. Default to posix_memalign
 #if mpi in ["mvapich2", "mvapich"]:
@@ -131,6 +141,7 @@ for i in range(len(arches)):
 
 Stage0 += workdir(directory='/home/lsim')
 
+
 #######
 ## Runtime image
 #######
@@ -159,24 +170,6 @@ if "arm" not in target_arch:
   Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib/:${LD_LIBRARY_PATH}"})
   Stage1 += environment(variables={"LIBRARY_PATH": "/usr/local/anaconda:${LIBRARY_PATH}"})
   Stage1 += environment(variables={"PATH": "/usr/local/anaconda/bin/:${PATH}"})
-  #only keep bits of mkl we need for bigdft
-  if use_mkl == "yes":
-    mklrootlib='/usr/local/anaconda/lib/'
-    Stage1 += workdir(directory=mklrootlib)
-    Stage1 += shell(commands=['rm -rf libmkl*'])
-    Stage1 += copy(_from="bigdft_build", 
-                   src=[mklrootlib+"libmkl_gf_lp64.so.1", mklrootlib+"libmkl_gnu_thread.so.1", mklrootlib+"libmkl_core.so.1",
-                        mklrootlib+"libmkl_avx2.so.1", mklrootlib+"libmkl_def.so.1", mklrootlib+"libmkl_rt.so.1", 
-                        mklrootlib+"libmkl_intel_thread.so.1",  mklrootlib+"libmkl_intel_lp64.so.1"] ,
-                   dest=mklrootlib)
-    Stage1 += shell(commands=['ln -s libmkl_gf_lp64.so.1 libmkl_gf_lp64.so', 
-                             'ln -s libmkl_gnu_thread.so.1 libmkl_gnu_thread.so',
-                             'ln -s libmkl_intel_lp64.so.1 libmkl_intel_lp64.so',
-                             'ln -s libmkl_intel_thread.so.1 libmkl_intel_thread.so',
-                             'ln -s libmkl_core.so.1 libmkl_core.so',
-                             'ln -s libmkl_avx2.so.1 libmkl_avx2.so',
-                             'ln -s libmkl_def.1 libmkl_def.so',
-                             'ln -s libmkl_rt.so.1 libmkl_rt.so'])
 
 ## Compiler runtime (use upstream)
 Stage1 += gnu().runtime()
