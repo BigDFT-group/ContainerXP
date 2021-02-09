@@ -159,7 +159,16 @@ if "arm" not in target_arch:
   Stage1 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/anaconda/lib/:${LD_LIBRARY_PATH}"})
   Stage1 += environment(variables={"LIBRARY_PATH": "/usr/local/anaconda:${LIBRARY_PATH}"})
   Stage1 += environment(variables={"PATH": "/usr/local/anaconda/bin/:${PATH}"})
-
+  #only keep bits of mkl we need for bigdft
+  if use_mkl == "yes":
+    Stage1 += shell(commands=['rm -rf /usr/local/anaconda/lib/libmkl*'])
+    mklroot="/usr/local/anaconda/lib/"
+    mklroot_out="/usr/local/anaconda/lib/"
+    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gf_lp64.so.1" , dest=mklroot_out+"libmkl_gf_lp64.so")
+    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gnu_thread.so.1" , dest=mklroot_out+"libmkl_gnu_thread.so")
+    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so.1" , dest=mklroot_out+"libmkl_core.so")
+    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so.1" , dest=mklroot_out+"libmkl_avx2.so")
+    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so.1" , dest=mklroot_out+"libmkl_def.so")
 ## Compiler runtime (use upstream)
 Stage1 += gnu().runtime()
 tc = gnu().toolchain
@@ -235,17 +244,6 @@ Stage1 += copy(_from="bigdft_build", src="/usr/local/cuda/lib64/stubs/libnvidia-
 Stage1 += copy(_from="bigdft_build", src="/usr/local/bigdft", dest="/usr/local/bigdft")
 Stage1 += copy(_from="bigdft_build", src="/docker", dest="/docker")
 Stage1 += shell(commands=['chmod -R 777 /docker'])
-
-if use_mkl == "yes":
-  mklroot="/usr/local/anaconda/lib/"
-  mklroot_out="/usr/local/anaconda/lib/"
-
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gf_lp64.so.1" , dest=mklroot_out+"libmkl_gf_lp64.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gnu_thread.so.1" , dest=mklroot_out+"libmkl_gnu_thread.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so.1" , dest=mklroot_out+"libmkl_core.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so.1" , dest=mklroot_out+"libmkl_avx2.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so.1" , dest=mklroot_out+"libmkl_def.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libiomp5.so" , dest=mklroot_out+"libiomp5.so")
 
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/root/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
