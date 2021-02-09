@@ -169,6 +169,9 @@ if "arm" not in target_arch:
     Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so.1" , dest=mklroot_out+"libmkl_core.so")
     Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so.1" , dest=mklroot_out+"libmkl_avx2.so")
     Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so.1" , dest=mklroot_out+"libmkl_def.so")
+    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_rt.so" , dest=mklroot_out+"libmkl_rt.so")
+    Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_rt.so.1" , dest=mklroot_out+"libmkl_rt.so.1")
+
 ## Compiler runtime (use upstream)
 Stage1 += gnu().runtime()
 tc = gnu().toolchain
