@@ -166,7 +166,7 @@ if "arm" not in target_arch:
     Stage1 += copy(_from="bigdft_build", 
                    src=["libmkl_gf_lp64.so.1", "libmkl_gnu_thread.so.1", "libmkl_core.so.1",
                         "libmkl_avx2.so.1", "libmkl_def.so.1", "libmkl_rt.so.1"] ,
-                   dest=mklroot_out+"libmkl_gf_lp64.so.1")
+                   dest="libmkl_gf_lp64.so.1")
     Stage1 += shell(commands=['ln -s libmkl_gf_lp64.so.1 libmkl_gf_lp64.so', 
                              'ln -s libmkl_gnu_thread.so.1 libmkl_gnu_thread.so',
                              'ln -s libmkl_core.so.1 libmkl_core.so',
