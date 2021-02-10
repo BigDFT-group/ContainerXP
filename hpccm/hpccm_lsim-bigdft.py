@@ -18,17 +18,29 @@ from distutils.version import LooseVersion, StrictVersion
 #######
 ## Build bigdft
 #######
-image = format(USERARG.get('tag', 'bigdft/sdk:latest'))
+image = format(USERARG.get('tag', 'bigdft/sdk_mpi:latest'))
+
+cuda_version = USERARG.get('cuda', '10.0')
+if cuda_version == "8.0":
+    ubuntu_version = "16.04"
+else:
+    ubuntu_version = USERARG.get('ubuntu', '16.04')
+
+if ubuntu_version == "18.04" or ubuntu_version == "18.04-rc":
+   distro = 'ubuntu18'
+elif ubuntu_version == "20.04":
+   distro = 'ubuntu20'
+else:
+   distro = 'ubuntu'
 
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'bigdft_build'
-Stage0.baseimage(image)
+Stage0.baseimage(image, _distro=distro)
 
 
 target_arch = USERARG.get('target_arch', 'x86_64')
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
-
 
 Stage0 += raw(docker='USER root')
 Stage0 += workdir(directory='/opt/')
@@ -59,7 +71,7 @@ Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/cuda/lib64:${LIBRAR
 Stage0 += environment(variables={"PYTHON": "python"})
 
 Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
-Stage0 += copy(src="./hpccm/rcfiles/container.rc", dest="/tmp/container.rc")
+Stage0 += copy(src="./rcfiles/container.rc", dest="/tmp/container.rc")
 
 
 mpi = USERARG.get('mpi', 'ompi')
@@ -146,18 +158,13 @@ Stage0 += workdir(directory='/home/lsim')
 ## Runtime image
 #######
 cuda_version = USERARG.get('cuda', '10.0')
-if cuda_version == "8.0":
-  ubuntu_version = "16.04"
-else:
-  ubuntu_version = USERARG.get('ubuntu', '16.04')
-
 repo = "nvidia/cuda"
 if "arm" in target_arch:
   repo+="-arm64"
 
 image = '{}:{}-runtime-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
 Stage1.name = 'runtime'
-Stage1.baseimage(image)
+Stage1.baseimage(image, _distro=distro)
 
 Stage1 += comment("Runtime stage", reformat=False)
 

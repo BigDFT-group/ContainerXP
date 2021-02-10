@@ -93,7 +93,7 @@ jobs:
                 fi
                 echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${{ matrix.arch }})
         -   name: Build the tagged Docker image
-            run: docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/runtime:${{steps.vars.outputs.tag}} --file dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+            run: docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/runtime:${{steps.vars.outputs.tag}} --file $PWD/dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_runtime_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true $PWD/hpccm
         -   name: Test Fehyb OMP
             if: matrix.arch != 'arm'
             working-directory: FeHyb/NOGPU

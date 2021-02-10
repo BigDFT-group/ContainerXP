@@ -31,6 +31,8 @@ else:
 
 if ubuntu_version == "18.04" or ubuntu_version == "18.04-rc":
   distro = 'ubuntu18'
+elif ubuntu_version == "20.04":
+  distro = 'ubuntu20'
 else:
   distro = 'ubuntu'
 
