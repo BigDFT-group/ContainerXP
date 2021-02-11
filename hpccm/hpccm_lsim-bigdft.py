@@ -162,7 +162,7 @@ repo = "nvidia/cuda"
 if "arm" in target_arch:
   repo+="-arm64"
 
-image = '{}:{}-runtime-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
+image = '{}:{}-base-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
 Stage1.name = 'runtime'
 Stage1.baseimage(image, _distro=distro)
 
@@ -171,6 +171,13 @@ Stage1 += comment("Runtime stage", reformat=False)
 target_arch = USERARG.get('target_arch', 'x86_64')
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
+
+## cuda runtime libraries, only the ones needed for bigdft
+if cuda_version >= StrictVersion('11.0'):
+  cuvers=cuda-version[:-1].replace('.','-')
+else
+  cuvers=cuda_version.replace('.','-')
+Stage1 += apt_get(ospackages=['libcublas-'+cuvers, 'libcufft-'+cuvers, 'cuda-cudart-'+cuvers, 'cuda-nvtx-'+cuvers])
 
 if "arm" not in target_arch:
   Stage1 += copy(_from="bigdft_build", src="/usr/local/anaconda", dest="/usr/local/anaconda")
