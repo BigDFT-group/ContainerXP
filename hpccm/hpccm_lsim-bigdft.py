@@ -174,7 +174,7 @@ hpccm.config.set_cpu_architecture(target_arch)
 
 ## cuda runtime libraries, only the ones needed for bigdft
 if cuda_version >= StrictVersion('11.0'):
-  cuvers=cuda_version[:-1].replace('.','-')
+  cuvers=cuda_version[:-2].replace('.','-')
 else:
   cuvers=cuda_version.replace('.','-')
 Stage1 += apt_get(ospackages=['libcublas-'+cuvers, 'libcufft-'+cuvers, 'cuda-cudart-'+cuvers, 'cuda-nvtx-'+cuvers])
