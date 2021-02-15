@@ -1,0 +1,11 @@
+label: "irene"
+description: "irene rome partition - docker"
+shebang: "#!/bin/bash"
+hostname: "irene-amd-fr.ccc.cea.fr"
+transport: ssh_only
+scheduler: "slurm"
+work_dir: "/ccc/work/cont003/gen12049/{username}/aiidalab_rundir"
+mpirun_command: ""
+mpiprocs_per_machine: "128"
+prepend_text: ""
+append_text: ""
