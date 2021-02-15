@@ -1,0 +1,8 @@
+label: "bigdft"
+description: "bigdft devel on Docker image"
+input_plugin: "bigdft"
+on_computer: true
+remote_abs_path: "/ccc/work/cont003/gen12049/gen12049/run.sh"
+computer: "irene_docker"
+prepend_text: " "
+append_text: " "

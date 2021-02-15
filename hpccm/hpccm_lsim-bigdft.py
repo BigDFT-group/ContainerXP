@@ -18,11 +18,29 @@ from distutils.version import LooseVersion, StrictVersion
 #######
 ## Build bigdft
 #######
-image = format(USERARG.get('tag', 'bigdft/sdk:latest'))
+image = format(USERARG.get('tag', 'bigdft/sdk_mpi:latest'))
+
+cuda_version = USERARG.get('cuda', '10.0')
+if cuda_version == "8.0":
+    ubuntu_version = "16.04"
+else:
+    ubuntu_version = USERARG.get('ubuntu', '16.04')
+
+if ubuntu_version == "18.04" or ubuntu_version == "18.04-rc":
+   distro = 'ubuntu18'
+elif ubuntu_version == "20.04":
+   distro = 'ubuntu20'
+else:
+   distro = 'ubuntu'
 
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'bigdft_build'
-Stage0.baseimage(image)
+Stage0.baseimage(image, _distro=distro)
+
+
+target_arch = USERARG.get('target_arch', 'x86_64')
+import hpccm.config
+hpccm.config.set_cpu_architecture(target_arch)
 
 Stage0 += raw(docker='USER root')
 Stage0 += workdir(directory='/opt/')
@@ -31,28 +49,32 @@ Stage0 += shell(commands=['rm -rf /opt/bigdft'])
 Stage0 += shell(commands=['git clone https://gitlab.com/l_sim/bigdft-suite.git ./bigdft'])
 Stage0 += shell(commands=['chown -R lsim:lsim /opt/bigdft','chmod -R 777 /opt/bigdft', 'mkdir /usr/local/bigdft', 'chmod -R 777 /usr/local/bigdft'])
 
+use_mkl = USERARG.get('mkl', 'yes') if target_arch == "x86_64" else "no"
+#remove mkl libraries we will not need
+if use_mkl == "yes":
+    Stage0 += workdir(directory='/usr/local/anaconda/lib')
+    Stage0 += raw(docker='SHELL ["/bin/bash", "-c"]')
+    Stage0 += shell(commands=["export GLOBIGNORE=libmkl_gf_lp64.*:libmkl_gnu_thread.*:libmkl_core.*:libmkl_avx2.*:libmkl_avx.*:libmkl_avx512.*:libmkl_def.*:libmkl_rt.*:libmkl_intel_thread.*:libmkl_intel_lp64.*",
+                        "rm -rf libmkl*",
+                        "unset GLOBIGNORE"])
+    Stage0 += raw(docker='SHELL ["/bin/sh", "-c"]')
+
 Stage0 += workdir(directory='/opt/bigdft/build')
 Stage0 += shell(commands=['chmod -R 777 /opt/bigdft/build'])
 
 Stage0 += shell(commands=['mkdir /docker',
                           'chmod -R 777 /docker'])
-                          
+
 Stage0 += raw(docker='USER lsim')
 Stage0 += environment(variables={"LD_LIBRARY_PATH": "/usr/local/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"})
 Stage0 += environment(variables={"LIBRARY_PATH": "/usr/local/cuda/lib64:${LIBRARY_PATH}"})
 Stage0 += environment(variables={"PYTHON": "python"})
 
 Stage0 += shell(commands=[git().clone_step(repository='https://github.com/BigDFT-group/ContainerXP.git', directory='/docker')])
-Stage0 += copy(src="./hpccm/rcfiles/container.rc", dest="/tmp/container.rc")
+Stage0 += copy(src="./rcfiles/container.rc", dest="/tmp/container.rc")
 
 
 mpi = USERARG.get('mpi', 'ompi')
-
-target_arch = USERARG.get('target_arch', 'x86_64')
-import hpccm.config
-hpccm.config.set_cpu_architecture(target_arch)
-
-use_mkl = USERARG.get('mkl', 'yes') if target_arch == "x86_64" else "no"
 
 #due to a bug in mvapich <= 2.3.2, aligned_alloc causes segfaults. Default to posix_memalign
 #if mpi in ["mvapich2", "mvapich"]:
@@ -117,40 +139,45 @@ for i in range(len(arches)):
                             'git add fortran/scripts/make-fortran-constants.py',
                             'git commit -m "empty"',
                             'cd -',
-                            '/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error build pspio',
+                            '/opt/bigdft/bundler/jhbuild.py -f ./buildrc --no-interact --exit-on-error build pspio',
                             '/opt/bigdft/Installer.py build -y -v',
-                            'ls /usr/local/bigdft/bin/bigdft'])
+                            'ls /usr/local/bigdft/bin/bigdft',
+                            'rm -rf *'])
   else:
     #others are not installed, so just use rcfile directly
     Stage0 += shell(commands=['/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error build pspio',
                           '/opt/bigdft/Installer.py build -y -v -f /tmp/container.rc',
                           'ls install/bin/bigdft',
-                          'cp -r install/lib /usr/local/bigdft/lib/'+folders[i]])
+                          'cp -r install/lib /usr/local/bigdft/lib/'+folders[i],
+                          'rm -rf *'])
 
 Stage0 += workdir(directory='/home/lsim')
+
 
 #######
 ## Runtime image
 #######
 cuda_version = USERARG.get('cuda', '10.0')
-if cuda_version == "8.0":
-  ubuntu_version = "16.04"
-else:
-  ubuntu_version = USERARG.get('ubuntu', '16.04')
-
 repo = "nvidia/cuda"
 if "arm" in target_arch:
   repo+="-arm64"
 
-image = '{}:{}-runtime-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
+image = '{}:{}-base-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
 Stage1.name = 'runtime'
-Stage1.baseimage(image)
+Stage1.baseimage(image, _distro=distro)
 
 Stage1 += comment("Runtime stage", reformat=False)
 
 target_arch = USERARG.get('target_arch', 'x86_64')
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
+
+## cuda runtime libraries, only the ones needed for bigdft
+if cuda_version >= StrictVersion('11.0'):
+  cuvers=cuda_version[:-2].replace('.','-')
+else:
+  cuvers=cuda_version.replace('.','-')
+Stage1 += apt_get(ospackages=['libcublas-'+cuvers, 'libcufft-'+cuvers, 'cuda-cudart-'+cuvers, 'cuda-nvtx-'+cuvers])
 
 if "arm" not in target_arch:
   Stage1 += copy(_from="bigdft_build", src="/usr/local/anaconda", dest="/usr/local/anaconda")
@@ -233,17 +260,6 @@ Stage1 += copy(_from="bigdft_build", src="/usr/local/cuda/lib64/stubs/libnvidia-
 Stage1 += copy(_from="bigdft_build", src="/usr/local/bigdft", dest="/usr/local/bigdft")
 Stage1 += copy(_from="bigdft_build", src="/docker", dest="/docker")
 Stage1 += shell(commands=['chmod -R 777 /docker'])
-
-if use_mkl == "yes":
-  mklroot="/usr/local/anaconda/lib/"
-  mklroot_out="/usr/local/anaconda/lib/"
-
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gf_lp64.so.1" , dest=mklroot_out+"libmkl_gf_lp64.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_gnu_thread.so.1" , dest=mklroot_out+"libmkl_gnu_thread.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_core.so.1" , dest=mklroot_out+"libmkl_core.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_avx2.so.1" , dest=mklroot_out+"libmkl_avx2.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libmkl_def.so.1" , dest=mklroot_out+"libmkl_def.so")
-  Stage1 += copy(_from="bigdft_build", src=mklroot+"libiomp5.so" , dest=mklroot_out+"libiomp5.so")
 
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/root/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])

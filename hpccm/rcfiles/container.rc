@@ -12,20 +12,16 @@ def env_configuration():
     if cuda_gencodes is None:
       cuda_gencodes=""
     mkl=os.environ.get('MKLROOT')
+    armpl=os.environ.get('ARMPL')
     if mkl is not None:
       lininc="""-I"""+mkl+"""/include"""
-      linalgs="""  --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" """
-    else:
-      lininc=""
-      linalgs=""
-    armpl=os.environ.get('ARMPL')
-    if armpl is not None:
+      linalgs="""  --with-blas=no --with-lapack=no "--with-ext-linalg=-L"""+mkl+"""/lib/intel64 -L"""+mkl+"""/lib/ -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" """
+    elif armpl is not None:
       lininc="""-I"""+armpl+"""/include"""
       linalgs="""  --with-blas=no --with-lapack=no  "--with-ext-linalg=-L"""+armpl+"""/lib -larmpl -lgfortran -lamath -lm -ldl" """
     else:
       lininc=""
-      linalgs=""   
-
+      linalgs=""
     flags=os.environ.get('BIGDFT_OPTFLAGS')
     if flags is None:
       flags=""
