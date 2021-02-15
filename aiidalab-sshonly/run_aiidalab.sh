@@ -17,8 +17,8 @@ IMAGE='bigdft/aiidalab-docker:latest'
 echo "Pulling the image from the Docker Hub..."
 docker pull ${IMAGE}
 
-echo "Launching the container..."
-CONTAINERID=`docker run -d -p ${PORT}:8888 -e JUPYTER_TOKEN=${TOKEN} -v "${FOLDER}":/home/aiida ${IMAGE}`
+echo "Launching the container... token:" ${TOKEN}
+CONTAINERID=`docker run -d -p ${PORT}:8888 -e JUPYTER_TOKEN=${TOKEN} -v "${FOLDER}":/home/aiida ${IMAGE}` 
 
 echo "Waiting for container to start..."
 docker exec --tty ${CONTAINERID} wait-for-services
