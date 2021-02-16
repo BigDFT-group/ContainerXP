@@ -11,15 +11,16 @@ source ../current_setup.sh
 
 : ${cuda_version:=$BIGDFT_CUDA_VERSION}
 : ${ubuntu_version=$BIGDFT_UBUNTU_VERSION}
-: ${mpi="ompi"}
-: ${mpi_version=$BIGDFT_MVAPICH2_VERSION}
-if [ $mpi = "ompi" ]; then
+: ${mpi=$BIGDFT_DEFAULT_MPI_FLAVOUR}
+if [ $mpi == "ompi" ]; then
 : ${mpi_version=$BIGDFT_OPENMPI_VERSION}
+else
+: ${mpi_version=$BIGDFT_MVAPICH2_VERSION}
 fi
 : ${tag="bigdft"}
 : ${bigdft=$BIGDFT_VERSION}
 suffix=ubuntu${ubuntu_version}_cuda${cuda_version}_${mpi}${mpi_version}_${tag}
-
+echo "will generate $suffix"
 hpccm --recipe hpccm_lsim-mpi.py --userarg cuda=${cuda_version} ubuntu=${ubuntu_version} mpi=${mpi} mpi_version=${mpi_version} > Dockerfile_sdk_${suffix}
 docker build --file Dockerfile_sdk_${suffix} --tag ${tag}/sdk:${suffix} --tag ${tag}/sdk:latest --target sdk .
 docker build --file Dockerfile_sdk_${suffix} --tag ${tag}/sdk_mpi:${suffix} --tag ${tag}/sdk_mpi:latest .
