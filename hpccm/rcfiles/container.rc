@@ -60,3 +60,7 @@ module_autogenargs.update({
 'v_sim-dev': '--with-abinit --with-archives --with-openbabel --with-cube --without-strict-cflags'
 
 })
+
+module_cmakeargs.update({
+'ntpoly': "-DFORTRAN_ONLY=Yes -DBUILD_SHARED_LIBS=ON"
+})

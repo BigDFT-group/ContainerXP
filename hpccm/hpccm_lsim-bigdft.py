@@ -142,13 +142,13 @@ for i in range(len(arches)):
                             'git commit -m "empty"',
                             'cd -',
                             '/opt/bigdft/bundler/jhbuild.py -f ./buildrc --no-interact --exit-on-error build pspio',
-                            '/opt/bigdft/Installer.py build -y -v',
+                            '/opt/bigdft/Installer.py build -y -v -a ntpoly',
                             'ls /usr/local/bigdft/bin/bigdft',
                             'rm -rf *'])
   else:
     #others are not installed, so just use rcfile directly
     Stage0 += shell(commands=['/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error build pspio',
-                          '/opt/bigdft/Installer.py build -y -v -f /tmp/container.rc',
+                          '/opt/bigdft/Installer.py build -y -v -a ntpoly -f /tmp/container.rc',
                           'ls install/bin/bigdft',
                           'cp -r install/lib /usr/local/bigdft/lib/'+folders[i],
                           'rm -rf *'])
