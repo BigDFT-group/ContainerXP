@@ -20,6 +20,7 @@ target_arch={}""".format(USERARG.get('target_arch', 'x86_64'))
 #######
 ## SDK stage
 #######
+from distutils.version import LooseVersion, StrictVersion
 
 # Set the image tag based on the specified version (default to 10.0)
 cuda_version = USERARG.get('cuda', '10.0')
@@ -100,7 +101,7 @@ if target_arch == "x86_64":
 
 
   #conda install
-  Stage0 += conda(version='4.8.3', python_subversion='py37', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
+  Stage0 += conda(version='4.9.2', python_subversion='py37', channels=['conda-forge', 'nvidia', 'intel'], eula=True,
                packages=[ 'jupyterlab', 'ipython', 'ipykernel', 
                           'intelpython3_core=2020.4',
                           'six', 'matplotlib', 'mkl-devel',
@@ -161,10 +162,14 @@ Stage0 += shell(commands=['sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" 
 
 
 Stage0 += raw(docker='USER lsim')
+preload=''
+if ubuntu_version >= StrictVersion('20.04'):
+  preload = "/usr/lib/x86_64-linux-gnu/libtinfo.so.6"
 
 Stage0 += environment(variables={"LANG": "en_US.UTF-8",
                                  "LANGUAGE": "en_US.UTF-8",
                                  "LC_ALL": "en_US.UTF-8",
+                                 "LD_PRELOAD": preload
                                   })
 
 Stage0 += environment(variables={"XDG_CACHE_HOME": "/home/lsim/.cache/"})
@@ -184,7 +189,7 @@ if mpi == "ompi":
   #normal OFED 
   Stage1 += ofed()
   mpi_version = USERARG.get('mpi_version', '4.0.0')
-  mpi_lib = openmpi(infiniband=True, version=mpi_version, prefix="/usr/local/mpi")
+  mpi_lib = openmpi(infiniband=True, pmix='internal', version=mpi_version, prefix="/usr/local/mpi")
   Stage1 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
                                    "OMPI_MCA_rmaps_base_mapping_policy":"slot",
                                    "OMPI_MCA_hwloc_base_binding_policy":"none",
