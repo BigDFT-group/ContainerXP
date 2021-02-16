@@ -2,13 +2,9 @@ FROM aiidalab/aiidalab-docker-stack:latest
 
 
 #jupyternotify is useful for notebooks submitting batches of asynchronous jobs.
-RUN pip install jupyternotify
 # protect against pip uninstalling conda packages to put older ones instead...
-RUN pip install --upgrade aiida-bigdft
-RUN pip install --no-dependencies aiida-sshonly
-RUN reentry scan
-
-RUN conda install -c conda-forge biopython
+RUN pip install jupyternotify && pip install --upgrade aiida-bigdft && pip install --no-dependencies aiida-sshonly && reentry scan
+RUN conda install -c conda-forge biopython && conda install -c omnia pdbfixer 
 
 #test installing irene computer from yaml
 COPY irene.yml /opt/irene.yml
