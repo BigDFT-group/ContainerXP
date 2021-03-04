@@ -33,6 +33,8 @@ elif ubuntu_version == "20.04":
 else:
    distro = 'ubuntu'
 
+bigdft_version=USERARG.get('bigdft', 'devel')
+
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'bigdft_build'
 Stage0.baseimage(image, _distro=distro)
@@ -46,7 +48,7 @@ Stage0 += raw(docker='USER root')
 Stage0 += workdir(directory='/opt/')
 Stage0 += shell(commands=['rm -rf /opt/bigdft'])
 #Stage0 += shell(commands=['bzr branch -Ossl.cert_reqs=none lp:bigdft'])
-Stage0 += shell(commands=['git clone https://gitlab.com/l_sim/bigdft-suite.git ./bigdft'])
+Stage0 += shell(commands=['git clone --branch '+bigdft_version+' https://gitlab.com/l_sim/bigdft-suite.git ./bigdft'])
 Stage0 += shell(commands=['chown -R lsim:lsim /opt/bigdft','chmod -R 777 /opt/bigdft', 'mkdir /usr/local/bigdft', 'chmod -R 777 /usr/local/bigdft'])
 
 use_mkl = USERARG.get('mkl', 'yes') if target_arch == "x86_64" else "no"
@@ -140,13 +142,13 @@ for i in range(len(arches)):
                             'git commit -m "empty"',
                             'cd -',
                             '/opt/bigdft/bundler/jhbuild.py -f ./buildrc --no-interact --exit-on-error build pspio',
-                            '/opt/bigdft/Installer.py build -y -v',
+                            '/opt/bigdft/Installer.py build -y -v -a ntpoly',
                             'ls /usr/local/bigdft/bin/bigdft',
                             'rm -rf *'])
   else:
     #others are not installed, so just use rcfile directly
     Stage0 += shell(commands=['/opt/bigdft/bundler/jhbuild.py --no-interact --exit-on-error build pspio',
-                          '/opt/bigdft/Installer.py build -y -v -f /tmp/container.rc',
+                          '/opt/bigdft/Installer.py build -y -v -a ntpoly -f /tmp/container.rc',
                           'ls install/bin/bigdft',
                           'cp -r install/lib /usr/local/bigdft/lib/'+folders[i],
                           'rm -rf *'])
@@ -174,10 +176,16 @@ hpccm.config.set_cpu_architecture(target_arch)
 
 ## cuda runtime libraries, only the ones needed for bigdft
 if cuda_version >= StrictVersion('11.0'):
-  cuvers=cuda_version[:-2].replace('.','-')
+    cuvers='-'+cuda_version[:-2].replace('.','-')
+    libs=['libcublas'+cuvers, 'libcufft'+cuvers, 'cuda-cudart'+cuvers, 'cuda-nvtx'+cuvers]
 else:
-  cuvers=cuda_version.replace('.','-')
-Stage1 += apt_get(ospackages=['libcublas-'+cuvers, 'libcufft-'+cuvers, 'cuda-cudart-'+cuvers, 'cuda-nvtx-'+cuvers])
+    cuvers='-'+cuda_version.replace('.','-')
+    if cuda_version >= StrictVersion('10.1'):
+        cublas="libcublas10"
+    else:
+        cublas='cuda-cublas'+cuvers
+    libs=[cublas, 'cuda-cufft'+cuvers, 'cuda-cudart'+cuvers, 'cuda-nvtx'+cuvers]
+Stage1 += apt_get(ospackages=libs)
 
 if "arm" not in target_arch:
   Stage1 += copy(_from="bigdft_build", src="/usr/local/anaconda", dest="/usr/local/anaconda")
