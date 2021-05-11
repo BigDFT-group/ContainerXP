@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [[ $# -ne 2 ]]
+if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
   then
-    echo "Please provide 2 argumets: free port of your computer and a folder to mount."
+    echo "Please provide 2 or 3 arguments: free port of your computer, a folder to mount as aiida's home, and an optional key to use as password for jupyter (if absent, one is generated)"
     echo "If the folder does not exit, it will be created automatically."
     echo ''
     echo 'Example:'
@@ -12,7 +12,13 @@ fi
 
 PORT=${1}
 FOLDER=${2}
-TOKEN=`openssl rand -hex 32`
+if [ -z $3 ]
+then
+  TOKEN=`openssl rand -hex 32`
+else
+  TOKEN=$3
+fi
+
 IMAGE='bigdft/aiidalab-docker:latest'
 echo "Pulling the image from the Docker Hub..."
 docker pull ${IMAGE}
