@@ -1,0 +1,12 @@
+FROM intel/oneapi-hpckit
+LABEL maintainer bigdft-developers@lists.launchpad.net
+
+WORKDIR /opt/bigdft
+
+#install needed dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex
+
+RUN git config --global user.email "bigdft-project@gmail.com"
+RUN git config --global user.name "BigDFT developer"
