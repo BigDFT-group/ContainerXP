@@ -54,7 +54,7 @@ enable_workdir
 enable_current_user
 SRC=$(get_abspath $SOURCEDIR)
 BIN=$(get_abspath $BINARIES)
-DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:/opt/bigdft/"
+DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:/opt/bigdft/ --hostname $CONTAINER"
 DOCKER_COMMAND="docker run -ti $DOCKER_OPTIONS $CONTAINER $POSITIONAL"
 echo "$DOCKER_COMMAND"
 #docker run -ti  \
