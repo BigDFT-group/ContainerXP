@@ -46,7 +46,7 @@ case $4 in
   ;;
   *)
   echo "-$2)"
-  echo "$INDENT" $1="\$2"
+  echo "$INDENT" $1='"$2"'
   echo "$INDENT" shift
   echo "$INDENT" shift
   echo "$INDENT" ";;"
@@ -78,7 +78,7 @@ echo 'POSITIONAL=""'
 echo 'while test $# -gt 0'
 echo do
 echo 'key="$1"'
-echo 'case $key in'
+echo 'case "$key" in'
 echo '-h|--help)'
 for NAME in $ALL_OPTIONS; do
 	get_suboptions $NAME

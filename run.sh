@@ -8,6 +8,7 @@ uniopt CONTAINER i image "bigdft/sdk" "SDK Container image to deploy"
 uniopt BINARIES b binaries "\${HOME}/binaries" "Binaries directory (provide absolute path)"
 uniopt WITH_WORKDIR w workdir ASSUME_NO "Include present directory in the container"
 uniopt EMPLOY_ROOT_USER r root ASSUME_NO "Employ present user in the container"
+uniopt EXTRA_COMMANDS c extra-cmd "" "Extra commands to be provided to docker WARNING: Spaces are not tolerated, use long commands"
 
 uniopt_parser $@
 
@@ -54,7 +55,7 @@ enable_workdir
 enable_current_user
 SRC=$(get_abspath $SOURCEDIR)
 BIN=$(get_abspath $BINARIES)
-DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:/opt/bigdft/ --hostname $CONTAINER"
+DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:/opt/bigdft/ --hostname $CONTAINER $EXTRA_COMMANDS"
 DOCKER_COMMAND="docker run -ti $DOCKER_OPTIONS $CONTAINER $POSITIONAL"
 echo "$DOCKER_COMMAND"
 #docker run -ti  \
