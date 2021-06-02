@@ -7,7 +7,7 @@ Contents:
   FFTW version 3.3.7
   MKL
   GNU compilers (upstream)
-  Python 2 and 3 (upstream)
+  Python 3 (intel)
   jupyter notebook and jupyter lab
   v_sim-dev in the optional target
 
@@ -18,12 +18,24 @@ from hpccm.templates.git import git
 ## Build v_sim
 #######
 
-tag = format(USERARG.get('tag', 'bigdft'))
-image = '{}/sdk'.format(tag)
+image = format(USERARG.get('tag', 'bigdft/sdk:latest'))
 Stage0 += raw(docker='USER root')
 Stage0 += comment(doc, reformat=False)
 Stage0.name = 'vsim'
-Stage0.baseimage(image)
+cuda_version = USERARG.get('cuda', '10.0')
+if cuda_version == "8.0":
+    ubuntu_version = "16.04"
+else:
+    ubuntu_version = USERARG.get('ubuntu', '16.04')
+
+if ubuntu_version == "18.04" or ubuntu_version == "18.04-rc":
+    distro = 'ubuntu18'
+elif ubuntu_version == "20.04":
+    distro = 'ubuntu20'
+else:
+    distro = 'ubuntu'
+
+Stage0.baseimage(image, _distro=distro)
 Stage0 += comment("SDK stage", reformat=False)
 Stage0 += workdir(directory='/opt/')
 Stage0 += shell(commands=['rm -rf /opt/v_sim-dev','mkdir -p /opt/v_sim-dev'])

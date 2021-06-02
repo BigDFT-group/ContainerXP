@@ -175,7 +175,7 @@
    verbosity                           : 2 #      Verbosity of the output
    atomic_density_matrix               : None #   Dictionary of the atoms for which the atomic density matrix has to be plotted
    sdos                                : No #     Spatially-resolved density of states
-   orbitals                            : No #     Write KS orbitals in the full simulation domain (might take lot of disk space!)
+   orbitals                            : None #     Write KS orbitals in the full simulation domain (might take lot of disk space!)
    outputpsiid                         : wavefunction # basename of the output wavefunctions files written in the data directory
  kpt:
    method                              : manual # K-point sampling method
@@ -458,8 +458,8 @@
     #WARNING: PSP generated with a different XC. Input XC is "XC: PBEH (PBE0)"
   #----------------------------------------------- Atom Positions (specified and grid units)
  Atomic structure:
-   Units                               : bohr
-   Positions:
+   units                               : bohr
+   positions:
    -  {Fe: [ 7.875000000,  7.875000000,  7.875000000],  # [  17.50,  17.50,  17.50 ] 0001
  IGSpin:  4}
    Rigid Shift Applied (AU)            :  [  7.8750,  7.8750,  7.8750 ]

@@ -1,0 +1,19 @@
+name: aiidalab
+on: [push, workflow_dispatch]
+jobs:
+    build:
+        runs-on: ubuntu-20.04
+        if: "contains(github.event.head_commit.message, 'aiidalab') || github.event_name == 'workflow_dispatch'"
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Login to DockerHub Registry
+            run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        -   name: Build the Docker image
+            working-directory: aiidalab-sshonly
+            run: docker build . --file Dockerfile --tag bigdft/aiidalab-docker:latest 
+        -   name: Push the tagged Docker image
+            run: |
+                d=$(date +%Y-%m-%d--%H-%M-%S)
+                docker tag bigdft/aiidalab-docker:latest bigdft/aiidalab-docker:$d
+                docker push bigdft/aiidalab-docker:$d
+                docker push bigdft/aiidalab-docker:latest
