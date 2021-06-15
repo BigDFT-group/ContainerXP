@@ -38,7 +38,7 @@ enable_current_user()
 	    local_user=$(id -u)
 	    mkdir -p $HOMEDIR
 	    REHOME=$(get_abspath $HOMEDIR)
-            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user -v /etc/passwd:/etc/passwd:ro -v $REHOME:/home/$USER -v $HOME/.ssh:/home/$USER/.ssh"
+            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user -v /etc/passwd:/etc/passwd:ro -v $REHOME:/home/$USER -v $HOME/.ssh:/home/$USER/.ssh:ro -v $HOME/.gitconfig:/home/$USER/.gitconfig:ro"
     fi
 }
 
