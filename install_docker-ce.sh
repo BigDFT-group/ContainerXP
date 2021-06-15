@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+sudo add-apt-repository ppa:criu/ppa --yes
+
 sudo apt update
 
 sudo apt remove docker docker-engine docker.io containerd runc
@@ -9,7 +11,8 @@ sudo apt --yes install \
         ca-certificates \
         curl \
         gnupg \
-        lsb-release
+        lsb-release \
+        criu
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
