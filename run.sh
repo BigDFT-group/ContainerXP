@@ -9,6 +9,8 @@ uniopt BINARIES b binaries "\${HOME}/binaries" "Binaries directory (provide abso
 uniopt WITH_WORKDIR w workdir ASSUME_NO "Include present directory in the container"
 uniopt EMPLOY_ROOT_USER r root ASSUME_NO "Employ present user in the container"
 uniopt EXTRA_COMMANDS c extra-cmd "" "Extra commands to be provided to docker WARNING: Spaces are not tolerated, use long commands"
+uniopt HOMEDIR h homedir "/tmp/fake_home" "Directory of homedir of the container. Useful eg. to preserve history."
+uniopt PORT p port '8888' "Port to which redirect the 8888 port of the container"
 
 uniopt_parser $@
 
@@ -34,7 +36,10 @@ enable_current_user()
     if test "$EMPLOY_ROOT_USER" = "NO"; then
             dirname="$(basename $PWD)"
 	    local_user=$(id -u)
-            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user -v /etc/passwd:/etc/passwd:ro -v $HOME:/home/$USER:ro"
+	    local_group=$(id -g)
+	    mkdir -p $HOMEDIR
+	    REHOME=$(get_abspath $HOMEDIR)
+            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user:$local_group -v /etc/passwd:/etc/passwd:ro -v $REHOME:/home/$USER -v $HOME/.ssh:/home/$USER/.ssh:ro -v $HOME/.gitconfig:/home/$USER/.gitconfig:ro"
     fi
 }
 
@@ -55,13 +60,7 @@ enable_workdir
 enable_current_user
 SRC=$(get_abspath $SOURCEDIR)
 BIN=$(get_abspath $BINARIES)
-DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:/opt/bigdft/ --hostname $CONTAINER $EXTRA_COMMANDS"
+DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:/opt/bigdft/ --hostname $CONTAINER -p $PORT:8888 $EXTRA_COMMANDS"
 DOCKER_COMMAND="docker run -ti $DOCKER_OPTIONS $CONTAINER $POSITIONAL"
 echo "$DOCKER_COMMAND"
-#docker run -ti  \
-#    -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
-#    -v $1:/bigdft-suite-sources/ \
-#    -v $2:/bigdft-sdk/ \
-#    -v $PWD:/$dirname -w /$dirname \
-#    bigdft/sdk:cuda9-ompi bash
 
