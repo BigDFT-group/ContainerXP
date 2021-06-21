@@ -36,9 +36,10 @@ enable_current_user()
     if test "$EMPLOY_ROOT_USER" = "NO"; then
             dirname="$(basename $PWD)"
 	    local_user=$(id -u)
+	    local_group=$(id -g)
 	    mkdir -p $HOMEDIR
 	    REHOME=$(get_abspath $HOMEDIR)
-            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user -v /etc/passwd:/etc/passwd:ro -v $REHOME:/home/$USER -v $HOME/.ssh:/home/$USER/.ssh:ro -v $HOME/.gitconfig:/home/$USER/.gitconfig:ro"
+            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user:$local_group -v /etc/passwd:/etc/passwd:ro -v $REHOME:/home/$USER -v $HOME/.ssh:/home/$USER/.ssh:ro -v $HOME/.gitconfig:/home/$USER/.gitconfig:ro"
     fi
 }
 
