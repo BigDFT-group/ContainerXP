@@ -26,13 +26,17 @@ RUN cd /tmp/boost_1_72_0 && ./b2 --user-config=user-config.jam  install threadin
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
 
-RUN pip install jupyterlab
+RUN pip install jupyterlab py3dmol networkx
 
 EXPOSE 8888
 
-RUN apt-get install rsync --no-install-recommends
+RUN apt-get install rsync --no-install-recommends -y
 
 WORKDIR /opt/bigdft
 
+RUN echo "\n\ 
+   source /opt/bigdft/install/bin/bigdftvars.sh\n\
+   jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
+" > /bin/run_notebook.sh
 
-
+CMD bash /bin/run_notebook.sh 
