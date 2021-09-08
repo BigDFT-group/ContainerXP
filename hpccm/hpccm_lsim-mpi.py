@@ -38,10 +38,7 @@ else:
   distro = 'ubuntu'
 
 target_arch = USERARG.get('target_arch', 'x86_64')
-
 repo="nvidia/cuda"
-if "arm" in target_arch:
-  repo+="-arm64"
 image = '{}:{}-devel-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
 
 Stage0 += comment(doc, reformat=False)
@@ -51,6 +48,7 @@ Stage0 += comment("SDK stage", reformat=False)
 
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
+hpccm.config.set_cpu_target(target_arch)
 hpccm.config.g_linux_version=ubuntu_version
 
 # GNU compilers
