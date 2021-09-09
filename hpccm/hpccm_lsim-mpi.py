@@ -161,7 +161,7 @@ Stage0 += shell(commands=['sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" 
 
 Stage0 += raw(docker='USER lsim')
 preload=''
-if ubuntu_version >= StrictVersion('20.04'):
+if ubuntu_version >= StrictVersion('20.04') and target_arch == "x86_64":
   preload = "/usr/lib/x86_64-linux-gnu/libtinfo.so.6"
 
 Stage0 += environment(variables={"LANG": "en_US.UTF-8",
