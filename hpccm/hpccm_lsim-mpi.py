@@ -38,10 +38,7 @@ else:
   distro = 'ubuntu'
 
 target_arch = USERARG.get('target_arch', 'x86_64')
-
 repo="nvidia/cuda"
-if "arm" in target_arch:
-  repo+="-arm64"
 image = '{}:{}-devel-ubuntu{}'.format(repo,cuda_version,ubuntu_version)
 
 Stage0 += comment(doc, reformat=False)
@@ -51,6 +48,7 @@ Stage0 += comment("SDK stage", reformat=False)
 
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
+hpccm.config.set_cpu_target(target_arch)
 hpccm.config.g_linux_version=ubuntu_version
 
 # GNU compilers
@@ -163,7 +161,7 @@ Stage0 += shell(commands=['sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" 
 
 Stage0 += raw(docker='USER lsim')
 preload=''
-if ubuntu_version >= StrictVersion('20.04'):
+if ubuntu_version >= StrictVersion('20.04') and target_arch == "x86_64":
   preload = "/usr/lib/x86_64-linux-gnu/libtinfo.so.6"
 
 Stage0 += environment(variables={"LANG": "en_US.UTF-8",

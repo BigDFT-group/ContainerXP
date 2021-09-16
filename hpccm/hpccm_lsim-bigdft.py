@@ -43,6 +43,7 @@ Stage0.baseimage(image, _distro=distro)
 target_arch = USERARG.get('target_arch', 'x86_64')
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
+hpccm.config.set_cpu_target(target_arch)
 
 Stage0 += raw(docker='USER root')
 Stage0 += workdir(directory='/opt/')
