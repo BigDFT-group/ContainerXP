@@ -142,7 +142,7 @@ def sdk():
       Stage0 += shell(commands=['ln -s /usr/bin/python3 /usr/local/bin/python',
                               'ln -s /usr/bin/pip3 /usr/local/bin/pip',
                               'pip install jupyter ipykernel'])
-    python_path = '/usr/local'
+    python_path = '/usr/'
 
   #Install boost with the provided python
   Stage0 += shell(commands=[ 'echo "\\\n\
