@@ -76,6 +76,10 @@ jobs:
             uses: actions/download-artifact@v1
             with:
                 name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+        -   name: Download dockerfile
+            uses: actions/download-artifact@v1
+            with:
+                name: dockerfile_sdk_nompi
         -   name: Set up QEMU
             uses: docker/setup-qemu-action@v1
             with:
