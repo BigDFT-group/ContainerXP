@@ -48,8 +48,8 @@ jobs:
         -   name: generate docker files for openmpi
             run: |
                 source current_setup.sh
-                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter={BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-                hpccm/lsim_sdk/lsim_toolchain.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter={BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_nompi
+                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                hpccm/lsim_sdk/lsim_toolchain.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_nompi_${{ matrix.arch }}
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
@@ -58,8 +58,8 @@ jobs:
         -   name: Upload nompi dockerfile
             uses: actions/upload-artifact@v1
             with:
-                name: dockerfile_sdk_nompi
-                path: Dockerfile_sdk_nompi
+                name: dockerfile_sdk_nompi_${{ matrix.arch }}
+                path: Dockerfile_sdk_nompi_${{ matrix.arch }}
     build_sdk:
         strategy:
             matrix:
@@ -79,7 +79,7 @@ jobs:
         -   name: Download dockerfile
             uses: actions/download-artifact@v1
             with:
-                name: dockerfile_sdk_nompi
+                name: dockerfile_sdk_nompi_${{ matrix.arch }}
         -   name: Set up QEMU
             uses: docker/setup-qemu-action@v1
             with:
@@ -110,7 +110,7 @@ jobs:
             run: |
               if [[ ${{ matrix.mpi }} == "ompi" &&  ${{ matrix.arch }} == "x86_64" ]]; then
                   echo "Generating SDK without MPI"
-                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.nompitag}}  --file dockerfile_sdk_nompi/Dockerfile_sdk_nompi --output type=image,push=true .
+                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.nompitag}}  --file dockerfile_sdk_nompi/Dockerfile_sdk_nompi_${{ matrix.arch }} --output type=image,push=true .
                   export DOCKER_CLI_EXPERIMENTAL=enabled
                   docker manifest create --amend bigdft/sdk:nompi_latest bigdft/sdk:${{steps.vars.outputs.nompitag}}
                   docker manifest push --purge bigdft/sdk:nompi_latest
