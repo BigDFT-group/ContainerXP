@@ -110,7 +110,7 @@ jobs:
             run: |
               if [[ ${{ matrix.mpi }} == "ompi" &&  ${{ matrix.arch }} == "x86_64" ]]; then
                   echo "Generating SDK without MPI"
-                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.nompitag}}  --file dockerfile_sdk_nompi/Dockerfile_sdk_nompi_${{ matrix.arch }} --output type=image,push=true .
+                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.nompitag}}  --file dockerfile_sdk_nompi_${{ matrix.arch }}/Dockerfile_sdk_nompi_${{ matrix.arch }} --output type=image,push=true .
                   export DOCKER_CLI_EXPERIMENTAL=enabled
                   docker manifest create --amend bigdft/sdk:nompi_latest bigdft/sdk:${{steps.vars.outputs.nompitag}}
                   docker manifest push --purge bigdft/sdk:nompi_latest
