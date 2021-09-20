@@ -87,4 +87,5 @@ def toolchain():
 if __name__ == '__main__':
   from lsim_sdk import sdk
   print(sdk()) 
-  print(footer(toolchain()))
+  stage, tc = toolchain()
+  print(footer(stage))
