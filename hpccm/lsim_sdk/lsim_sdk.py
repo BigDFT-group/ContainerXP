@@ -148,7 +148,7 @@ def sdk():
   Stage0 += shell(commands=[ 'echo "\\\n\
     using python\\\n\
     : \\\n\
-    : '+python_path+'/bin/python\\\n\
+    : `which python`\\\n\
     : `dirname '+python_path+'/include/python*/..`\\\n\
     : '+python_path+'/lib\\\n\
     ;\\\n\
