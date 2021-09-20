@@ -48,8 +48,8 @@ jobs:
         -   name: generate docker files for openmpi
             run: |
                 source current_setup.sh
-                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter={BIGDFT_JUPYTER} target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-                hpccm/lsim_sdk/lsim_toolchain.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter={BIGDFT_JUPYTER} target_arch=${{ matrix.arch }}> Dockerfile_sdk_nompi
+                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter={BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                hpccm/lsim_sdk/lsim_toolchain.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter={BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_nompi
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
