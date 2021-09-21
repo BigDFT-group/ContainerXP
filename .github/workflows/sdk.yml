@@ -56,7 +56,7 @@ jobs:
                 else
                   echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN)
                   echo ::set-output name=blas::$(echo $BIGDFT_BLAS)
-                  echo ::set-output name=python::$(echo $BIGDFT_PYTHON_INTEL)
+                  echo ::set-output name=python::$(echo $BIGDFT_PYTHON)
                 fi
         -   name: generate docker files for openmpi
             run: |
