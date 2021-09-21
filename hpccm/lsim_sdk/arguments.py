@@ -24,7 +24,7 @@ def arguments():
   parser.add_argument('--jupyter', type=str, default='no',
                       help='Include jupyter server (default: no)') 
   parser.add_argument('--blas', type=str, default='default',
-                      choices=['default', 'mkl', 'openblas'],
+                      choices=['default', 'mkl', 'openblas', 'arm'],
                       help='BLAS/LAPACK flavour (default: default)') 
   parser.add_argument('--python', type=str, default='default',
                       choices=['default', 'intel'],

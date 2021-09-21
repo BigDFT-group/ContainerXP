@@ -65,7 +65,7 @@ def toolchain():
   if args.cuda != "no":
     tc.CUDA_HOME = '/usr/local/cuda'
 
-  if args.blas == 'openblas' and args.target_arch != "ppc64le":
+  if args.blas == 'openblas':
     #build and install with default optims
     Stage0+=openblas(version="0.3.17", ldconfig=True, toolchain=tc, environment=True)
     #add AVX2 and AVX512 versions
@@ -78,6 +78,10 @@ def toolchain():
       Stage0+=shell(commands=['mkdir -p /usr/local/openblas/lib/avx512_1',
                               'mv /var/tmp/avx/lib /usr/local/openblas/lib/avx512_1',
                               'rm -rf /var/tmp/avx'])
+  elif args.blas == "arm":
+    Stage0 += environment(variables={'LD_LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux/lib:${LD_LIBRARY_PATH}',
+                                     'LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux/lib:${LIBRARY_PATH}', 
+                                     'ARMPL': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux'})
   elif args.blas != 'mkl':
     apt_packages = ['libblas-dev', 'liblapack-dev']
     yum_packages = ['blas-devel', 'lapack-devel']
