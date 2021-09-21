@@ -57,7 +57,11 @@ def sdk():
   yum_packages=ospackages+['pcre-devel', 'libtool-ltdl-devel', 'redhat-lsb', 'glibc-devel', 'zlib-devel', 'zeromq-devel', 'libmount-devel', 
           'iproute', 'libnl3-devel', 'numactl-libs', 'kernel-headers', 'gtk-doc', 'libxml2-devel', 'mesa-libGLU-devel', 'netcdf-devel',
           'gobject-introspection-devel',  'gtk3-devel', 'libmount-devel', 'openssh', 'libarchive']
-
+  #boost from packages except for oneapi or intel python builds.
+  if args.target_arch != "x86_64" or not (args.python == 'intel' or args.oneapi != 'no'):
+    apt_packages+=['libboost-dev', 'libboost-python-dev']
+    yum_packages+=['boost-devel', 'boost-python3-devel']
+  
   if args.cuda != 'no':
     apt_packages += ['ocl-icd-libopencl1']
     yum_packages += ['ocl-icd']
@@ -85,6 +89,8 @@ def sdk():
     if args.python == 'intel' and args.oneapi == 'no':
       conda_packages += ['intelpython3_core']
       channels += ['intel']
+    else:
+      conda_packages += ['py-boost']
 
     if args.jupyter == 'yes':
       conda_packages += [ 'jupyterlab', 'ipykernel']
@@ -145,18 +151,19 @@ def sdk():
     python_path = '/usr/'
 
   #Install boost with the provided python
-  Stage0 += shell(commands=[ 'echo "\\\n\
-    using python\\\n\
-    : \\\n\
-    : `which python`\\\n\
-    : `dirname '+python_path+'/include/python*/..`\\\n\
-    : '+python_path+'/lib\\\n\
-    ;\\\n\
-" > /tmp/user-config.jam' ])
-  Stage0+= boost(python=args.python != 'no', 
-                 bootstrap_opts=['--with-libraries=python,serialization', '--with-python=`which python`', '--without-icu'],
-                 b2_opts=['--user-config=/tmp/user-config.jam', 'install', 'threading=multi', 'variant=release', 'link=shared', 'stage', '--with-regex', '--disable-icu', '--with-thread', '--with-serialization', '--with-iostreams', '--with-python', '--with-system', '--with-test', '-q']) 
-
+  if(args.target_arch == 'x86_64' and (args.python == 'intel' or args.oneapi != 'no')):
+    Stage0 += shell(commands=[ 'echo "\\\n\
+      using python\\\n\
+      : \\\n\
+      : `which python`\\\n\
+      : `dirname '+python_path+'/include/python*/..`\\\n\
+      : '+python_path+'/lib\\\n\
+      ;\\\n\
+  " > /tmp/user-config.jam' ])
+    Stage0+= boost(python=args.python != 'no', 
+                  bootstrap_opts=['--with-libraries=python,serialization', '--with-python=`which python`', '--without-icu'],
+                  b2_opts=['--user-config=/tmp/user-config.jam', 'install', 'threading=multi', 'variant=release', 'link=shared', 'stage', '--with-regex', '--disable-icu', '--with-thread', '--with-serialization', '--with-iostreams', '--with-python', '--with-system', '--with-test', '-q']) 
+  
   if (args.jupyter == 'yes'):
     Stage0 += raw(docker='EXPOSE 8888')
     Stage0 += raw(docker='CMD jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', 

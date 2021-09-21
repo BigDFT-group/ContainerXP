@@ -45,11 +45,16 @@ jobs:
                     echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
                 fi          
                 echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})
+                if [ ${{ matrix.arch }} == "arm" ]; then
+                  echo ::set-output name=toolchain::"arm"
+                else
+                  echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN)
+
         -   name: generate docker files for openmpi
             run: |
                 source current_setup.sh
-                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-                hpccm/lsim_sdk/lsim_toolchain.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${BIGDFT_TOOLCHAIN} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_nompi_${{ matrix.arch }}
+                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${{steps.vars.outputs.toolchain}} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                hpccm/lsim_sdk/lsim_toolchain.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${{steps.vars.outputs.toolchain}} --python=${BIGDFT_PYTHON} --blas=${BIGDFT_BLAS} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_nompi_${{ matrix.arch }}
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
