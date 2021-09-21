@@ -103,7 +103,7 @@ jobs:
                 echo ::set-output name=nompitag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_nompi${{steps.vars.outputs.version}}_${{ matrix.arch }})
                 if [ ${{ matrix.arch }} == "arm" ]; then
                     echo ::set-output name=docker_platform::"linux/arm64"
-                else if [ ${{ matrix.arch }} == "ppc64le" ]; then
+                elif [ ${{ matrix.arch }} == "ppc64le" ]; then
                     echo ::set-output name=docker_platform::"linux/ppc64le"
                 else
                     echo ::set-output name=docker_platform::"linux/amd64"
