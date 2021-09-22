@@ -112,7 +112,7 @@ jobs:
                 else
                     echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
                 fi
-                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})
+                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})_${{ matrix.arch }}
                 echo ::set-output name=nompitag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_nompi${{steps.vars.outputs.version}}_${{ matrix.arch }})
                 if [ ${{ matrix.arch }} == "arm" ]; then
                     echo ::set-output name=docker_platform::"linux/arm64"
@@ -142,14 +142,14 @@ jobs:
         -   name: Get the tag and MPI version
             id: vars
             run: |
-                source current_setup.sh 
-                echo ::set-output name=tag::$(echo ubuntu${BIGDFT_UBUNTU_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi)
+                source current_setup.sh
+                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}) 
         -   name: Update manifest for sdk to attach arm and x86_64 versions on a single image
             run: |
                 export DOCKER_CLI_EXPERIMENTAL=enabled
-                docker manifest create --amend bigdft/sdk:${{steps.vars.outputs.tag}} bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64
+                docker manifest create --amend bigdft/sdk:${{steps.vars.outputs.tag}} bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64 bigdft/sdk:${{steps.vars.outputs.tag}}_ppc64le
                 docker manifest push --purge bigdft/sdk:${{steps.vars.outputs.tag}}
-                docker manifest create --amend bigdft/sdk:${{steps.vars.outputs.tag}}${BIGDFT_OPENMPI_VERSION} bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64
+                docker manifest create --amend bigdft/sdk:${{steps.vars.outputs.tag}}${BIGDFT_OPENMPI_VERSION} bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64  bigdft/sdk:${{steps.vars.outputs.tag}}_ppc64le
                 docker manifest push --purge bigdft/sdk:${{steps.vars.outputs.tag}}${BIGDFT_OPENMPI_VERSION}
-                #docker manifest create --amend bigdft/sdk:latest bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64
+                #docker manifest create --amend bigdft/sdk:latest bigdft/sdk:${{steps.vars.outputs.tag}}_arm bigdft/sdk:${{steps.vars.outputs.tag}}_x86_64  bigdft/sdk:${{steps.vars.outputs.tag}}_ppc64le
                 #docker manifest push --purge bigdft/sdk:latest
