@@ -79,9 +79,13 @@ def toolchain():
                               'mv /var/tmp/avx/lib /usr/local/openblas/lib/avx512_1',
                               'rm -rf /var/tmp/avx'])
   elif args.blas == "arm":
-    Stage0 += environment(variables={'LD_LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux/lib:${LD_LIBRARY_PATH}',
-                                     'LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux/lib:${LIBRARY_PATH}', 
-                                     'ARMPL': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_Ubuntu-16.04_gcc_aarch64-linux'})
+    if args.system == "ubuntu":
+      system="Ubuntu-16.04"
+    else:
+      system="RHEL"+args.system_version
+    Stage0 += environment(variables={'LD_LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LD_LIBRARY_PATH}',
+                                     'LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LIBRARY_PATH}', 
+                                     'ARMPL': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux'})
   elif args.blas != 'mkl':
     apt_packages = ['libblas-dev', 'liblapack-dev']
     yum_packages = ['blas-devel', 'lapack-devel']
