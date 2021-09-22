@@ -55,9 +55,16 @@ def toolchain():
   elif args.toolchain == 'arm' and "arm" in args.target_arch:
     if args.toolchain_version is None:
       args.toolchain_version = "20.3"
+    #override cpu target as "aarch64" is needed, "arm" yielding bad results for optimization flags from archspec
+    hpccm.config.set_cpu_target("aarch64")
     arm = arm_allinea_studio(eula=True, microarchitectures=['generic', 'thunderx2t99', 'generic-sve'], version=args.toolchain_version)
     Stage0 += arm
     tc = arm.toolchain
+    if args.system == "ubuntu":
+      system="Ubuntu-16.04"
+    else:
+      system="RHEL"+args.system_version
+    Stage0 += environment(variables={'PATH': '/opt/arm/arm-linux-compiler-'+args.toolchain_version+'_Generic-AArch64_'+system+'_aarch64-linux/bin/:${PATH}'})
   elif args.toolchain == 'intel' or args.oneapi != 'no':
     tc = hpccm.toolchain(CC='icc', CXX='icpc', F77='ifort',
                                    F90='ifort', FC='ifort')
@@ -79,10 +86,6 @@ def toolchain():
                               'mv /var/tmp/avx/lib /usr/local/openblas/lib/avx512_1',
                               'rm -rf /var/tmp/avx'])
   elif args.blas == "arm":
-    if args.system == "ubuntu":
-      system="Ubuntu-16.04"
-    else:
-      system="RHEL"+args.system_version
     Stage0 += environment(variables={'LD_LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LD_LIBRARY_PATH}',
                                      'LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LIBRARY_PATH}', 
                                      'ARMPL': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux'})
