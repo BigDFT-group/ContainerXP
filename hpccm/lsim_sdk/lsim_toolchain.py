@@ -63,7 +63,7 @@ def toolchain():
     if args.system == "ubuntu":
       system="Ubuntu-16.04"
     else:
-      system="RHEL"+args.system_version
+      system="RHEL-"+args.system_version
     Stage0 += environment(variables={'PATH': '/opt/arm/arm-linux-compiler-'+args.toolchain_version+'_Generic-AArch64_'+system+'_aarch64-linux/bin/:${PATH}'})
   elif args.toolchain == 'intel' or args.oneapi != 'no':
     tc = hpccm.toolchain(CC='icc', CXX='icpc', F77='ifort',
@@ -86,6 +86,10 @@ def toolchain():
                               'mv /var/tmp/avx/lib /usr/local/openblas/lib/avx512_1',
                               'rm -rf /var/tmp/avx'])
   elif args.blas == "arm":
+    if args.system == "ubuntu":
+      system="Ubuntu-16.04"
+    else:
+      system="RHEL"+args.system_version
     Stage0 += environment(variables={'LD_LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LD_LIBRARY_PATH}',
                                      'LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LIBRARY_PATH}', 
                                      'ARMPL': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux'})
