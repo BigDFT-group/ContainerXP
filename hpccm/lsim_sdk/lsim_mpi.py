@@ -39,7 +39,7 @@ def mpi(tc):
                                       "PATH": "/usr/local/mpi/bin/:${PATH}",
                                       "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
     else:
-      Stage0 += packages(apt=['libopenmpi-dev'], yum=['openmpi-devel'], powertools=True, epel=True, release_stream=True)
+      mpi_lib = packages(apt=['libopenmpi-dev'], yum=['openmpi-devel'], powertools=True, epel=True, release_stream=True)
   elif args.mpi in ["mvapich2", "mvapich"]:
     # Mellanox OFED
     ofed_version='5.0'
@@ -76,10 +76,10 @@ def mpi(tc):
           'rm -rf /var/tmp/mvapich2-*.rpm']
         mpi_lib = shell(commands=_commands)
       else:
-        mpi_lib= mvapich2_gdr(version=args.mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=args.cuda, release=release, gnu_version=gnu_version)
+        mpi_lib = mvapich2_gdr(version=args.mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=args.cuda, release=release, gnu_version=gnu_version)
       Stage0 += packages(apt=['libxnvctrl-dev libibmad5'], yum=['libxnvctrl-devel infiniband-diags'], powertools=True, epel=True, release_stream=True)
     else:
-      mpi_lib= mvapich2(version=args.mpi_version, prefix="/usr/local/mpi", toolchain=tc)
+      mpi_lib = mvapich2(version=args.mpi_version, prefix="/usr/local/mpi", toolchain=tc)
       Stage0 += packages(apt=['libibmad5'], yum=['infiniband-diags'], powertools=True, epel=True, release_stream=True)
 
 
