@@ -27,19 +27,21 @@ def mpi(tc):
     Stage0 += ofed()
     if args.mpi_version is None:
       args.mpi_version = "4.1.1"
+    vars={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
+          "OMPI_MCA_rmaps_base_mapping_policy":"slot",
+          "OMPI_MCA_hwloc_base_binding_policy":"none",
+          "OMPI_MCA_btl_openib_cuda_async_recv":"false",
+          "OMPI_MCA_mpi_leave_pinned":"true",
+          "OMPI_MCA_opal_warn_on_missing_libcuda":"false",
+          "OMPI_MCA_rmaps_base_oversubscribe":"true"}
     if args.target_arch == "x86_64" or args.binary=="no":
       mpi_lib = openmpi(infiniband=True, pmix='internal', version=args.mpi_version , cuda = (args.cuda != 'no'), prefix="/usr/local/mpi", toolchain=tc)
-      Stage0 += environment(variables={"OMPI_MCA_btl_vader_single_copy_mechanism": "none",
-                                      "OMPI_MCA_rmaps_base_mapping_policy":"slot",
-                                      "OMPI_MCA_hwloc_base_binding_policy":"none",
-                                      "OMPI_MCA_btl_openib_cuda_async_recv":"false",
-                                      "OMPI_MCA_mpi_leave_pinned":"true",
-                                      "OMPI_MCA_opal_warn_on_missing_libcuda":"false",
-                                      "OMPI_MCA_rmaps_base_oversubscribe":"true",
-                                      "PATH": "/usr/local/mpi/bin/:${PATH}",
-                                      "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
+      vars += {"PATH": "/usr/local/mpi/bin/:${PATH}",
+               "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"}
     else:
       mpi_lib = packages(apt=['libopenmpi-dev'], yum=['openmpi-devel'], powertools=True, epel=True)
+      vars += {"PATH": "/usr/lib64/openmpi/bin:${PATH}"}
+    Stage0 += environment(variables=vars)
   elif args.mpi in ["mvapich2", "mvapich"]:
     # Mellanox OFED
     ofed_version='5.0'

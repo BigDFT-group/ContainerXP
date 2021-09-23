@@ -53,10 +53,10 @@ def sdk():
   apt_packages=ospackages+[
           'autotools-dev', 'libpcre3-dev', 'libltdl-dev', 'lsb-release', 'libz-dev', 'zlib1g-dev', 'libzmq-dev', 'libmount-dev',
           'iproute2', 'libnl-route-3-200', 'libnuma1', 'linux-headers-generic', 'gtk-doc-tools', 'libxml2-dev', 'libglu1-mesa-dev',
-          'libnetcdf-dev', 'libgirepository1.0-dev', 'dpatch', 'libgtk-3-dev', 'libmount-dev', 'locales', 'ssh']
+          'libnetcdf-dev', 'libgirepository1.0-dev', 'dpatch', 'libgtk-3-dev', 'libmount-dev', 'locales', 'ssh', 'libyaml-dev']
   yum_packages=ospackages+['pcre-devel', 'libtool-ltdl-devel', 'redhat-lsb', 'glibc-devel', 'zlib-devel', 'zeromq-devel', 'libmount-devel', 
           'iproute', 'libnl3-devel', 'numactl-libs', 'kernel-headers', 'gtk-doc', 'libxml2-devel', 'mesa-libGLU-devel', 'netcdf-devel',
-          'gobject-introspection-devel',  'gtk3-devel', 'libmount-devel', 'openssh', 'libarchive']
+          'gobject-introspection-devel',  'gtk3-devel', 'libmount-devel', 'openssh', 'libarchive', 'libyaml-devel']
   #boost from packages except for oneapi or intel python builds.
   if args.target_arch != "x86_64" or not (args.python == 'intel' or args.oneapi != 'no'):
     apt_packages+=['libboost-dev', 'libboost-python-dev']
