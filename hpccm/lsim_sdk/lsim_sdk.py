@@ -74,7 +74,7 @@ def sdk():
                               'cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/lib/libcuda.so.1',
                               'cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1'])
 
-  Stage0 += packages(apt=apt_packages, yum=yum_packages, powertools=True, epel=True)
+  Stage0 += packages(apt=apt_packages, yum=yum_packages, powertools=True, epel=True, release_stream=True)
 
   if args.target_arch == 'x86_64':
 
@@ -140,7 +140,7 @@ def sdk():
     apt=ospack+['cython3', 'python3-sphinx-rtd-theme', 'python-is-python3']
     if args.jupyter == 'yes':
       apt+=['jupyter-notebook', 'python3-ipykernel']
-    Stage0 += packages(apt=apt, yum=yum, powertools=True, epel=True)
+    Stage0 += packages(apt=apt, yum=yum, powertools=True, epel=True, release_stream=True)
 
     #somehow there is no jupyter package for centos 8.
     if args.system == 'centos' and args.jupyter == 'yes':

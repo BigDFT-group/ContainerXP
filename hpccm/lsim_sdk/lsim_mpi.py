@@ -39,7 +39,7 @@ def mpi(tc):
                                       "PATH": "/usr/local/mpi/bin/:${PATH}",
                                       "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
     else:
-      Stage0 += packages(apt=['libopenmpi-dev'], yum=['openmpi-devel'], powertools=True, epel=True)
+      Stage0 += packages(apt=['libopenmpi-dev'], yum=['openmpi-devel'], powertools=True, epel=True, release_stream=True)
   elif args.mpi in ["mvapich2", "mvapich"]:
     # Mellanox OFED
     ofed_version='5.0'
@@ -63,7 +63,7 @@ def mpi(tc):
       #Issue on mvapich gdr 2.3.6 as hpccm can't find it on the website.
       if(args.mpi_version == "2.3.6"):
         Stage0 += packages (apt=['cpio', 'libnuma1', 'libpciaccess0', 'openssh-client', 'rpm2cpio', 'libgfortran4'], 
-                            yum=['libpciaccess', 'numactl-libs', 'openssh-clients', 'libgfortran'])
+                            yum=['libpciaccess', 'numactl-libs', 'openssh-clients', 'libgfortran'], powertools=True, epel=True, release_stream=True)
         _commands=[
           'mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp http://mvapich.cse.ohio-state.edu/download/mvapich/gdr/2.3.6/mofed'+ofed_version+'/mvapich2-gdr-cuda11.2.mofed'+ofed_version+'.gnu'+gnu_version+'-2.3.6-1.el7.'+args.target_arch+'.rpm',        
           'cd / ']
@@ -77,10 +77,10 @@ def mpi(tc):
         mpi_lib = shell(commands=_commands)
       else:
         mpi_lib= mvapich2_gdr(version=args.mpi_version, prefix="/usr/local/mpi",mlnx_ofed_version=ofed_version, cuda_version=args.cuda, release=release, gnu_version=gnu_version)
-      Stage0 += packages(apt=['libxnvctrl-dev libibmad5'], yum=['libxnvctrl-devel infiniband-diags'])
+      Stage0 += packages(apt=['libxnvctrl-dev libibmad5'], yum=['libxnvctrl-devel infiniband-diags'], powertools=True, epel=True, release_stream=True)
     else:
       mpi_lib= mvapich2(version=args.mpi_version, prefix="/usr/local/mpi", toolchain=tc)
-      Stage0 += packages(apt=['libibmad5'], yum=['infiniband-diags'])
+      Stage0 += packages(apt=['libibmad5'], yum=['infiniband-diags'], powertools=True, epel=True, release_stream=True)
 
 
     Stage0 += environment(variables={"PATH": "/usr/local/mpi/bin/:${PATH}",
