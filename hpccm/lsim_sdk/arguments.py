@@ -20,25 +20,27 @@ def arguments():
                       help='Base system version (optional)')
   parser.add_argument('--target_arch', type=str, default='x86_64',
                       choices=['x86_64', 'arm', 'ppc64le'],
-                      help='Target architecture (default: x86_64)') 
+                      help='Target architecture (default: x86_64)')
   parser.add_argument('--jupyter', type=str, default='no',
-                      help='Include jupyter server (default: no)') 
+                      help='Include jupyter server (default: no)')
   parser.add_argument('--blas', type=str, default='default',
                       choices=['default', 'mkl', 'openblas', 'arm'],
-                      help='BLAS/LAPACK flavour (default: default)') 
+                      help='BLAS/LAPACK flavour (default: default)')
   parser.add_argument('--python', type=str, default='default',
                       choices=['default', 'intel'],
-                      help='Python flavour (default: default)') 
+                      help='Python flavour (default: default)')
   parser.add_argument('--toolchain', type=str, default='gnu',
                       choices=['gnu', 'intel', 'llvm', 'arm'],
-                      help='Compilation toolchain flavour (default: gnu)') 
+                      help='Compilation toolchain flavour (default: gnu)')
   parser.add_argument('--toolchain_version', type=str, default= None,
-                      help='Compilation toolchain version (optional)') 
+                      help='Compilation toolchain version (optional)')
   parser.add_argument('--mpi', type=str, default='ompi',
                       choices=['ompi', 'intel', 'mvapich'],
                       help='MPI library flavour (default: ompi (OpenMPI))')
   parser.add_argument('--mpi_version', type=str,
-                      help='MPI library version (optional)') 
+                      help='MPI library version (optional)')
+  parser.add_argument('--binary', type=str, default='yes',
+                      help='For other architectures than x86_64, install binary packages to save time (default yes) instead of cross compiling (slow)')
   args = parser.parse_args()
   #hints for hpccm
   if args.system == 'ubuntu':
@@ -54,7 +56,7 @@ def arguments():
         args.system_version = "8"
       distro = args.system + args.system_version
   else:
-      distro = None 
+      distro = None
       logging.warning('Unable to determine the Linux distribution, this may trigger issues in the build')
 
   hpccm.config.set_cpu_architecture(args.target_arch)

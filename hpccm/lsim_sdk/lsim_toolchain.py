@@ -74,15 +74,18 @@ def toolchain():
 
   if args.blas == 'openblas':
     #build and install with default optims
-    Stage0+=openblas(version="0.3.17", ldconfig=True, toolchain=tc, environment=True)
+    if args.target_arch == "x86_64" or args.binary=="no":
+      Stage0 += openblas(version="0.3.17", ldconfig=True, toolchain=tc, environment=True)
+    else:
+      Stage0 += packages(apt=['libopenblas-dev'], yum=['openblas-devel'], powertools=True, epel=True)
     #add AVX2 and AVX512 versions
     if args.target_arch == "x86_64":
-      Stage0+=openblas(version="0.3.17", ldconfig=False, toolchain=tc, environment=False, make_opts=['TARGET=HASWELL', 'USE_OPENMP=1', 'CROSS=1'], prefix='/var/tmp/haswell')
-      Stage0+=shell(commands=['mkdir -p /usr/local/openblas/lib/haswell',
+      Stage0 += openblas(version="0.3.17", ldconfig=False, toolchain=tc, environment=False, make_opts=['TARGET=HASWELL', 'USE_OPENMP=1', 'CROSS=1'], prefix='/var/tmp/haswell')
+      Stage0 += shell(commands=['mkdir -p /usr/local/openblas/lib/haswell',
                               'mv /var/tmp/haswell/lib /usr/local/openblas/lib/haswell',
                               'rm -rf /var/tmp/haswell'])
-      Stage0+=openblas(version="0.3.17", ldconfig=False, toolchain=tc, environment=False, make_opts=['TARGET=SKYLAKEX', 'USE_OPENMP=1', 'CROSS=1'], prefix='/var/tmp/avx')
-      Stage0+=shell(commands=['mkdir -p /usr/local/openblas/lib/avx512_1',
+      Stage0 += openblas(version="0.3.17", ldconfig=False, toolchain=tc, environment=False, make_opts=['TARGET=SKYLAKEX', 'USE_OPENMP=1', 'CROSS=1'], prefix='/var/tmp/avx')
+      Stage0 += shell(commands=['mkdir -p /usr/local/openblas/lib/avx512_1',
                               'mv /var/tmp/avx/lib /usr/local/openblas/lib/avx512_1',
                               'rm -rf /var/tmp/avx'])
   elif args.blas == "arm":
@@ -90,9 +93,7 @@ def toolchain():
                                      'LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LIBRARY_PATH}', 
                                      'ARMPL': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux'})
   elif args.blas != 'mkl':
-    apt_packages = ['libblas-dev', 'liblapack-dev']
-    yum_packages = ['blas-devel', 'lapack-devel']
-    Stage0 += packages(apt=apt_packages, yum=yum_packages, powertools=True, epel=True)
+    Stage0 += packages(apt= ['libblas-dev', 'liblapack-dev'], yum=['blas-devel', 'lapack-devel'], powertools=True, epel=True)
 
   return Stage0, tc
 
