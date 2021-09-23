@@ -143,7 +143,7 @@ jobs:
             id: vars
             run: |
                 source current_setup.sh
-                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}) 
+                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi)
         -   name: Update manifest for sdk to attach arm and x86_64 versions on a single image
             run: |
                 export DOCKER_CLI_EXPERIMENTAL=enabled
