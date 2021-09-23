@@ -43,7 +43,7 @@ def toolchain():
     tllvm = llvm(version=args.toolchain_version, ldconfig=True)
     Stage0 += tllvm
     tc = tllvm.toolchain
-    Stage0 += packages(ospackages=['gfortran'], powertools=True, epel=True, release_stream=True)
+    Stage0 += packages(ospackages=['gfortran'], powertools=True, epel=True)
     tc.FC = 'gfortran'
     """ elif toolchain == 'intel' and oneapi == 'no':
       intel_license = USERARG.get('intel_license', None)
@@ -77,7 +77,7 @@ def toolchain():
     if args.target_arch == "x86_64" or args.binary=="no":
       Stage0 += openblas(version="0.3.17", ldconfig=True, toolchain=tc, environment=True)
     else:
-      Stage0 += packages(apt=['libopenblas-dev'], yum=['openblas-devel'], powertools=True, epel=True, release_stream=True)
+      Stage0 += packages(apt=['libopenblas-dev'], yum=['openblas-devel'], powertools=True, epel=True)
     #add AVX2 and AVX512 versions
     if args.target_arch == "x86_64":
       Stage0 += openblas(version="0.3.17", ldconfig=False, toolchain=tc, environment=False, make_opts=['TARGET=HASWELL', 'USE_OPENMP=1', 'CROSS=1'], prefix='/var/tmp/haswell')
@@ -93,7 +93,7 @@ def toolchain():
                                      'LIBRARY_PATH': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux/lib:${LIBRARY_PATH}', 
                                      'ARMPL': '/opt/arm/armpl-'+args.toolchain_version+'.0_Generic-AArch64_'+system+'_gcc_aarch64-linux'})
   elif args.blas != 'mkl':
-    Stage0 += packages(apt= ['libblas-dev', 'liblapack-dev'], yum=['blas-devel', 'lapack-devel'], powertools=True, epel=True, release_stream=True)
+    Stage0 += packages(apt= ['libblas-dev', 'liblapack-dev'], yum=['blas-devel', 'lapack-devel'], powertools=True, epel=True)
 
   return Stage0, tc
 

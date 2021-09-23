@@ -140,7 +140,7 @@ def sdk():
     apt=ospack+['cython3', 'python3-sphinx-rtd-theme', 'python-is-python3']
     if args.jupyter == 'yes':
       apt+=['jupyter-notebook', 'python3-ipykernel']
-    Stage0 += packages(apt=apt, yum=yum, powertools=True, epel=True, release_stream=True)
+    Stage0 += packages(apt=apt, yum=yum, powertools=True, epel=True)
 
     #somehow there is no jupyter package for centos 8.
     if args.system == 'centos' and args.jupyter == 'yes':
