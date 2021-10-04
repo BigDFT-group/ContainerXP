@@ -30,7 +30,7 @@ def arguments():
                       choices=['default', 'intel'],
                       help='Python flavour (default: default)')
   parser.add_argument('--toolchain', type=str, default='gnu',
-                      choices=['gnu', 'intel', 'llvm', 'arm'],
+                      choices=['gnu', 'intel', 'llvm', 'arm', 'ibm'],
                       help='Compilation toolchain flavour (default: gnu)')
   parser.add_argument('--toolchain_version', type=str, default= None,
                       help='Compilation toolchain version (optional)')

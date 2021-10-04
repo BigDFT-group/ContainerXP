@@ -68,7 +68,23 @@ def toolchain():
   elif args.toolchain == 'intel' or args.oneapi != 'no':
     tc = hpccm.toolchain(CC='icc', CXX='icpc', F77='ifort',
                                    F90='ifort', FC='ifort')
-  
+  elif args.toolchain == 'ibm' and args.target_arch == "ppc64le":
+    xlf_url='http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le'
+    xlf_vrm='16.1.1'
+    #validate eula at container startup
+    Stage0 += shell(commands=['echo "#!/bin/bash\\\n\
+    /opt/ibm/xlf/'+xlf_vrm+'/bin/xlf_configure <<< 1 >/dev/null\\\n\
+    /opt/ibm/xlC/'+xlf_vrm+'/bin/xlc_configure <<< 1 >/dev/null\\\n\
+    exec \"\$@\"" > /usr/local/bin/entrypoint.sh',
+    'chmod 755 /usr/local/bin/entrypoint.sh'])
+    Stage0 += runscript(commands=['/usr/local/bin/entrypoint.sh'])
+    Stage0 += packages(apt_keys=[xlf_url+'/ubuntu/public.gpg'], apt_repositories=['deb '+xlf_url+'/ubuntu/ xenial main'], apt=['xlf.'+xlf_vrm, 'xlf-license-community.'+xlf_vrm, 'xlc.'+xlf_vrm, 'xlc-license-community.'+xlf_vrm],
+                       yum_keys=[xlf_url+'/rhel7/repodata/repomd.xml.key'], yum_repositories=[xlf_url+'/rhel7/ibm-xl-compiler-eval.repo'], yum=['xlf.'+xlf_vrm, 'xlf-license-community.'+xlf_vrm])
+
+
+    tc = hpccm.toolchain(CC='xlc', CXX='xlc', F77='xlf',
+                                   F90='xlf', FC='xlf')
+
   if args.cuda != "no":
     tc.CUDA_HOME = '/usr/local/cuda'
 
