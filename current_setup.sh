@@ -15,6 +15,6 @@ export BIGDFT_TOOLCHAIN_ARM="arm"
 export BIGDFT_PYTHON_ARM="default"
 export BIGDFT_BLAS_ARM="arm"
 
-export BIGDFT_TOOLCHAIN_POWER="gnu"
+export BIGDFT_TOOLCHAIN_POWER="ibm"
 export BIGDFT_PYTHON_POWER="default"
 export BIGDFT_BLAS_POWER="openblas"
