@@ -78,8 +78,8 @@ def toolchain():
     exec \"\$@\"" > /usr/local/bin/entrypoint.sh',
     'chmod 755 /usr/local/bin/entrypoint.sh'])
     Stage0 += runscript(commands=['/usr/local/bin/entrypoint.sh'])
-    Stage0 += packages(apt_keys=[xlf_url+'/ubuntu/public.gpg'], apt_repositories=['deb '+xlf_url+'/ubuntu/ xenial main'], apt=['xlf.'+xlf_vrm, 'xlf-license-community.'+xlf_vrm, 'xlc.'+xlf_vrm, 'xlc-license-community.'+xlf_vrm],
-                       yum_keys=[xlf_url+'/rhel7/repodata/repomd.xml.key'], yum_repositories=[xlf_url+'/rhel7/ibm-xl-compiler-eval.repo'], yum=['xlf.'+xlf_vrm, 'xlf-license-community.'+xlf_vrm])
+    Stage0 += packages(apt_keys=[xlf_url+'/ubuntu/public.gpg'], apt_repositories=['deb '+xlf_url+'/ubuntu/ xenial main'], ospackages=['xlf.'+xlf_vrm, 'xlf-license-community.'+xlf_vrm, 'xlc.'+xlf_vrm, 'xlc-license-community.'+xlf_vrm],
+                       yum_keys=[xlf_url+'/rhel7/repodata/repomd.xml.key'], yum_repositories=[xlf_url+'/rhel7/ibm-xl-compiler-eval.repo'])
 
 
     tc = hpccm.toolchain(CC='xlc', CXX='xlc', F77='xlf',
