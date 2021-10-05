@@ -77,11 +77,11 @@ def toolchain():
     Stage0 += packages(apt_keys=[xlf_url+'/ubuntu/public.gpg'], apt_repositories=['deb '+xlf_url+'/ubuntu/ xenial main'], ospackages=['xlf.'+xlf_vrm, 'xlf-license-community.'+xlf_vrm, 'xlc.'+xlf_vrm, 'xlc-license-community.'+xlf_vrm],
                        yum_keys=[xlf_url+'/rhel7/repodata/repomd.xml.key'], yum_repositories=[xlf_url+'/rhel7/ibm-xl-compiler-eval.repo'])
 
-    Stage0 += shell(commands=['echo "#!/bin/bash\\\n\
-    /opt/ibm/xlf/'+xlf_vrm+'/bin/xlf_configure <<< 1 >/dev/null\\\n\
-    /opt/ibm/xlC/'+xlf_vrm+'/bin/xlc_configure <<< 1 >/dev/null\\\n\
-    /opt/ibm/xlf/'+xlf_vrm+'/bin/xlf_configure -cuda null <<< 1 >/dev/null\\\n\
-    /opt/ibm/xlC/'+xlf_vrm+'/bin/xlc_configure -cuda null <<< 1 >/dev/null\\\n\
+    Stage0 += shell(commands=['echo "#!/bin/bash\\n\
+    /opt/ibm/xlf/'+xlf_vrm+'/bin/xlf_configure <<< 1 >/dev/null\\n\
+    /opt/ibm/xlC/'+xlf_vrm+'/bin/xlc_configure <<< 1 >/dev/null\\n\
+    /opt/ibm/xlf/'+xlf_vrm+'/bin/xlf_configure -cuda null <<< 1 >/dev/null\\n\
+    /opt/ibm/xlC/'+xlf_vrm+'/bin/xlc_configure -cuda null <<< 1 >/dev/null\\n\
     exec \"\$@\"" > /usr/local/bin/entrypoint.sh',
     'chmod 755 /usr/local/bin/entrypoint.sh',
     'chmod -R 777 /opt/ibm/xlf/16.1.1/lap',
