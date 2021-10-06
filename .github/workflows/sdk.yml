@@ -210,7 +210,7 @@ jobs:
               docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --cache-from "type=local,src=$GITHUB_WORKSPACE/cache" --cache-to "type=local,dest=$GITHUB_WORKSPACE/cache" --output type=image,push=true .
     manifest:
         runs-on: ubuntu-latest
-        needs: build_sdk
+        needs: build_mpi
         steps:
         -   uses: actions/checkout@v2
         -   name: Login to DockerHub Registry
