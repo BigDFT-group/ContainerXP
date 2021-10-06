@@ -38,13 +38,12 @@ jobs:
         -   name: Get the tag and MPI version
             id: vars
             run: |
-                source current_setup.sh 
+                source current_setup.sh
                 if [ ${{ matrix.mpi }} == "mvapich" ]; then
-                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION) 
+                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION)
                 else
-                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
-                fi          
-                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})
+                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION)
+                fi
                 if [ ${{ matrix.arch }} == "arm" ]; then
                   echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN_ARM)
                   echo ::set-output name=blas::$(echo $BIGDFT_BLAS_ARM)
@@ -62,17 +61,11 @@ jobs:
             run: |
                 source current_setup.sh
                 hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${{steps.vars.outputs.toolchain}} --python=${{steps.vars.outputs.python}} --blas=${{steps.vars.outputs.blas}} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-                hpccm/lsim_sdk/lsim_toolchain.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${{steps.vars.outputs.toolchain}} --python=${{steps.vars.outputs.python}} --blas=${{steps.vars.outputs.blas}} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_nompi_${{ matrix.arch }}
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
                 name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
                 path: Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-        -   name: Upload nompi dockerfile
-            uses: actions/upload-artifact@v1
-            with:
-                name: dockerfile_sdk_nompi_${{ matrix.arch }}
-                path: Dockerfile_sdk_nompi_${{ matrix.arch }}
     build_sdk:
         strategy:
             matrix:
@@ -89,10 +82,6 @@ jobs:
             uses: actions/download-artifact@v1
             with:
                 name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
-        -   name: Download dockerfile
-            uses: actions/download-artifact@v1
-            with:
-                name: dockerfile_sdk_nompi_${{ matrix.arch }}
         -   name: Set up QEMU
             uses: docker/setup-qemu-action@v1
             with:
@@ -106,11 +95,51 @@ jobs:
         -   name: Get the tag and MPI version
             id: vars
             run: |
-                source current_setup.sh 
-                if [ ${{ matrix.mpi }} == "mvapich" ]; then
-                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION) 
+                source current_setup.sh
+                if [ ${{ matrix.arch }} == "arm" ]; then
+                    echo ::set-output name=docker_platform::"linux/arm64"
+                elif [ ${{ matrix.arch }} == "ppc64le" ]; then
+                    echo ::set-output name=docker_platform::"linux/ppc64le"
                 else
-                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION) 
+                    echo ::set-output name=docker_platform::"linux/amd64"
+                fi
+        -   name: Build the tagged Docker image
+            run: |
+              docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --cache-from "type=local,src=$GITHUB_WORKSPACE/cache" --cache-to "type=local,dest=$GITHUB_WORKSPACE/cache" --output "type=image, name=bigdft/sdk_sdk:CI,push=false"  .
+    build_toolchain:
+        strategy:
+            matrix:
+                mpi: [ompi]
+                arch: [x86_64, arm, ppc64le]
+                exclude:
+                    - mpi: mvapich
+                      arch: arm
+        runs-on: ubuntu-20.04
+        needs: build_sdk
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Download dockerfile
+            uses: actions/download-artifact@v1
+            with:
+                name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+        -   name: Set up QEMU
+            uses: docker/setup-qemu-action@v1
+            with:
+                platforms: all
+        -   name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v1
+            with:
+                version: latest
+        -   name: Login to DockerHub Registry
+            run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        -   name: Get the tag and MPI version
+            id: vars
+            run: |
+                source current_setup.sh
+                if [ ${{ matrix.mpi }} == "mvapich" ]; then
+                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION)
+                else
+                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION)
                 fi
                 echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})_${{ matrix.arch }}
                 echo ::set-output name=nompitag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_nompi${{steps.vars.outputs.version}}_${{ matrix.arch }})
@@ -125,13 +154,60 @@ jobs:
             run: |
               if [[ ${{ matrix.mpi }} == "ompi" &&  ${{ matrix.arch }} == "x86_64" ]]; then
                   echo "Generating SDK without MPI"
-                  docker buildx build --target sdk --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.nompitag}}  --file dockerfile_sdk_nompi_${{ matrix.arch }}/Dockerfile_sdk_nompi_${{ matrix.arch }} --output type=image,push=true .
+                  docker buildx build --target toolchain --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.nompitag}}  --file dockerfile_sdk_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.arch }} --cache-from "type=local,src=$GITHUB_WORKSPACE/cache" --cache-to "type=local,dest=$GITHUB_WORKSPACE/cache" --output "type=image, name=bigdft/sdk_sdk:CI,push=false" --cache-from "type=local,src=$GITHUB_WORKSPACE/cache" --cache-to "type=local,dest=$GITHUB_WORKSPACE/cache" --output type=image,push=true .
                   export DOCKER_CLI_EXPERIMENTAL=enabled
                   docker manifest create --amend bigdft/sdk:nompi_latest bigdft/sdk:${{steps.vars.outputs.nompitag}}
                   docker manifest push --purge bigdft/sdk:nompi_latest
                   echo "Generated SDK without MPI"
+              else
+                  docker buildx build --target toolchain --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --cache-from "type=local,src=$GITHUB_WORKSPACE/cache" --cache-to "type=local,dest=$GITHUB_WORKSPACE/cache" --output "type=image, name=bigdft/sdk_toolchain:CI,push=false" .
               fi
-              docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --output type=image,push=true .
+    build_mpi:
+        strategy:
+            matrix:
+                mpi: [ompi]
+                arch: [x86_64, arm, ppc64le]
+                exclude:
+                    - mpi: mvapich
+                      arch: arm
+        runs-on: ubuntu-20.04
+        needs: build_toolchain
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Download dockerfile
+            uses: actions/download-artifact@v1
+            with:
+                name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+        -   name: Set up QEMU
+            uses: docker/setup-qemu-action@v1
+            with:
+                platforms: all
+        -   name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v1
+            with:
+                version: latest
+        -   name: Login to DockerHub Registry
+            run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        -   name: Get the tag and MPI version
+            id: vars
+            run: |
+                source current_setup.sh
+                if [ ${{ matrix.mpi }} == "mvapich" ]; then
+                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION)
+                else
+                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION)
+                fi
+                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})_${{ matrix.arch }}
+                if [ ${{ matrix.arch }} == "arm" ]; then
+                    echo ::set-output name=docker_platform::"linux/arm64"
+                elif [ ${{ matrix.arch }} == "ppc64le" ]; then
+                    echo ::set-output name=docker_platform::"linux/ppc64le"
+                else
+                    echo ::set-output name=docker_platform::"linux/amd64"
+                fi
+        -   name: Build the tagged Docker image
+            run: |
+              docker buildx build --platform ${{ steps.vars.outputs.docker_platform }} --tag bigdft/sdk:${{steps.vars.outputs.tag}} --file dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}/Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }} --cache-from "type=local,src=$GITHUB_WORKSPACE/cache" --cache-to "type=local,dest=$GITHUB_WORKSPACE/cache" --output type=image,push=true .
     manifest:
         runs-on: ubuntu-latest
         needs: build_sdk
