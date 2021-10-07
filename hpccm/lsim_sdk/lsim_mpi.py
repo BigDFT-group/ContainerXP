@@ -34,13 +34,19 @@ def mpi(tc):
           "OMPI_MCA_mpi_leave_pinned":"true",
           "OMPI_MCA_opal_warn_on_missing_libcuda":"false",
           "OMPI_MCA_rmaps_base_oversubscribe":"true"}
-    if args.target_arch == "x86_64" or args.toolchain!="gnu" or args.binary=="no":
+    if args.target_arch == "x86_64" or args.binary=="no":
       mpi_lib = openmpi(infiniband=True, pmix='internal', version=args.mpi_version , cuda = (args.cuda != 'no'), prefix="/usr/local/mpi", toolchain=tc)
       vars.update({"PATH": "/usr/local/mpi/bin/:${PATH}",
                "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
     else:
       mpi_lib = packages(apt=['libopenmpi-dev'], yum=['openmpi-devel'], powertools=True, epel=True)
-      vars.update( {"PATH": "/usr/lib64/openmpi/bin:${PATH}"})
+      vars.update( {"PATH": "/usr/lib64/openmpi/bin:${PATH}",
+                    "OMPI_CC": tc.CC,
+                    "OMPI_FC": tc.FC,
+                    "OMPI_F77": tc.F77,
+                    "OMPI_F90": tc.F90,
+                    "OMPI_CXX": tc.CXX
+})
     Stage0 += environment(variables=vars)
   elif args.mpi in ["mvapich2", "mvapich"]:
     # Mellanox OFED
