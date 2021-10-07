@@ -95,7 +95,7 @@ jobs:
             id: cache
             with:
                 path: /tmp/.buildx-cache
-                key: ${{ runner.os }}-buildx-${{ github.sha }}
+                key: ${{ runner.os }}-buildx-${{ github.sha }}_${{ matrix.arch }}
                 restore-keys: |
                     ${{ runner.os }}-buildx-
         -   name: Login to DockerHub Registry
@@ -143,7 +143,7 @@ jobs:
             id: cache
             with:
                 path: /tmp/.buildx-cache
-                key: ${{ runner.os }}-buildx-${{ github.sha }}
+                key: ${{ runner.os }}-buildx-${{ github.sha }}_${{ matrix.arch }}
                 restore-keys: |
                     ${{ runner.os }}-buildx-
         -   name: Login to DockerHub Registry
@@ -207,7 +207,7 @@ jobs:
             id: cache
             with:
                 path: /tmp/.buildx-cache
-                key: ${{ runner.os }}-buildx-${{ github.sha }}
+                key: ${{ runner.os }}-buildx-${{ github.sha }}_${{ matrix.arch }}
                 restore-keys: |
                     ${{ runner.os }}-buildx-
         -   name: Login to DockerHub Registry
