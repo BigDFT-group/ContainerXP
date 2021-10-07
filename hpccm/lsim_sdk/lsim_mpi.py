@@ -34,7 +34,7 @@ def mpi(tc):
           "OMPI_MCA_mpi_leave_pinned":"true",
           "OMPI_MCA_opal_warn_on_missing_libcuda":"false",
           "OMPI_MCA_rmaps_base_oversubscribe":"true"}
-    if args.target_arch == "x86_64" or (args.target_arch == "ppc64le" and args.toolchain=="ibm") or args.binary=="no":
+    if args.target_arch == "x86_64" or args.toolchain!="gnu" or args.binary=="no":
       mpi_lib = openmpi(infiniband=True, pmix='internal', version=args.mpi_version , cuda = (args.cuda != 'no'), prefix="/usr/local/mpi", toolchain=tc)
       vars.update({"PATH": "/usr/local/mpi/bin/:${PATH}",
                "LD_LIBRARY_PATH": "/usr/local/mpi/lib:/usr/local/mpi/lib64:${LD_LIBRARY_PATH}"})
