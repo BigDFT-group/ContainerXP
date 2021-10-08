@@ -1,7 +1,8 @@
 import argparse
 import hpccm
-from distutils.version import LooseVersion, StrictVersion
+from distutils.version import StrictVersion
 from hpccm.primitives import *
+import logging
 
 
 def arguments():
@@ -16,7 +17,7 @@ def arguments():
   parser.add_argument('--system', type=str, default='ubuntu',
                       choices=['ubuntu', 'centos'],
                       help='Base system (default: ubuntu). Accepted values : ubuntu, centos')
-  parser.add_argument('--system_version', type=str,
+  parser.add_argument('--system_version', type=str, default= None,
                       help='Base system version (optional)')
   parser.add_argument('--target_arch', type=str, default='x86_64',
                       choices=['x86_64', 'arm', 'ppc64le'],
@@ -29,11 +30,13 @@ def arguments():
   parser.add_argument('--python', type=str, default='default',
                       choices=['default', 'intel'],
                       help='Python flavour (default: default)')
-  parser.add_argument('--toolchain', type=str, default='gnu',
+  parser.add_argument('--toolchain', type=str, default=None,
                       choices=['gnu', 'intel', 'llvm', 'arm', 'ibm'],
-                      help='Compilation toolchain flavour (default: gnu)')
-  parser.add_argument('--toolchain_version', type=str, default= None,
+                      help='Compilation toolchain flavour (default: , or intel for oneapi image)')
+  parser.add_argument('--toolchain_version', type=str, default=None,
                       help='Compilation toolchain version (optional)')
+  parser.add_argument('--intel_license', type=str, default=None,
+                      help='Intel license file or server (optional, only for intel toolchain without oneapi)')
   parser.add_argument('--mpi', type=str, default='ompi',
                       choices=['ompi', 'intel', 'mvapich'],
                       help='MPI library flavour (default: ompi (OpenMPI))')
@@ -58,6 +61,28 @@ def arguments():
   else:
       distro = None
       logging.warning('Unable to determine the Linux distribution, this may trigger issues in the build')
+
+  #set default toolchain if none is provided (gnu, or intel from oneapi)
+  if args.toolchain == None:
+    if args.oneapi == 'no':
+      args.toolchain = 'gnu'
+    else:
+      args.toolchain = 'intel'
+
+  if args.target_arch != 'ppc64le' and args.toolchain == 'ibm':
+    logging.error('IBM toolchain is only available for ppc64le targets')
+  if args.target_arch != 'arm' and ( args.toolchain == 'arm' or args.blas == 'arm'):
+    logging.error('ARM compilers and linear algebra libraries are only available for arm platforms')
+  if args.target_arch != 'x86_64' and  args.toolchain == 'intel':
+    logging.error('Intel compilers are only available for x86_64 targets')
+  if args.target_arch != 'x86_64' and  args.oneapi != 'no':
+    logging.error('OneAPI is only available for x86_64 targets')
+  if args.target_arch != 'x86_64' and  args.blas == 'mkl':
+    logging.error('MKL is only available for x86_64 targets')
+  if args.target_arch != 'x86_64' and  args.python == 'intel':
+    logging.error('Intel Python is only available for x86_64 targets')
+  if args.target_arch != 'x86_64' and  args.mpi == 'intel':
+    logging.error('Intel MPI is only available for x86_64 targets')
 
   hpccm.config.set_cpu_architecture(args.target_arch)
   hpccm.config.set_cpu_target(args.target_arch)

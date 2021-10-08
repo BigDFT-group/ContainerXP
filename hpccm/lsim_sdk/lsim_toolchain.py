@@ -38,20 +38,14 @@ def toolchain():
 
     Stage0 += tgnu
     tc = tgnu.toolchain
+
   elif args.toolchain == 'llvm':
-  
     tllvm = llvm(version=args.toolchain_version, ldconfig=True)
     Stage0 += tllvm
     tc = tllvm.toolchain
     Stage0 += packages(ospackages=['gfortran'], powertools=True, epel=True)
     tc.FC = 'gfortran'
-    """ elif toolchain == 'intel' and oneapi == 'no':
-      intel_license = USERARG.get('intel_license', None)
-      if intel_license is None:
-        logging.error("Intel license file or server must be provided to support intel toolchain, please provide intel_license userarg.")
-      intel = intel_psxe(eula=True, license=intel_license)
-      Stage0 += intel
-      tc = intel.toolchain """
+
   elif args.toolchain == 'arm' and "arm" in args.target_arch:
     if args.toolchain_version is None:
       args.toolchain_version = "20.3"
@@ -65,17 +59,24 @@ def toolchain():
     else:
       system="RHEL-"+args.system_version
     Stage0 += environment(variables={'PATH': '/opt/arm/arm-linux-compiler-'+args.toolchain_version+'_Generic-AArch64_'+system+'_aarch64-linux/bin/:${PATH}'})
-  elif args.toolchain == 'intel' or args.oneapi != 'no':
-    tc = hpccm.toolchain(CC='icc', CXX='icpc', F77='ifort',
+
+  elif args.toolchain == 'intel':
+    if args.oneapi == 'no':
+      intel_license = args.intel_license
+      if intel_license is None:
+        logging.error("Intel license file or server must be provided to support intel toolchain, please provide intel_license userarg ore use oneapi base image.")
+      intel = intel_psxe(eula=True, license=intel_license)
+      Stage0 += intel
+      tc = intel.toolchain
+    else:
+      tc = hpccm.toolchain(CC='icc', CXX='icpc', F77='ifort',
                                    F90='ifort', FC='ifort')
+
   elif args.toolchain == 'ibm' and args.target_arch == "ppc64le":
     xlf_url='http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le'
     xlf_vrm='16.1.1'
-    #validate eula at container startup
-
     Stage0 += packages(apt_keys=[xlf_url+'/ubuntu/public.gpg'], apt_repositories=['deb '+xlf_url+'/ubuntu/ xenial main'], ospackages=['xlf.'+xlf_vrm, 'xlf-license-community.'+xlf_vrm, 'xlc.'+xlf_vrm, 'xlc-license-community.'+xlf_vrm],
                        yum_keys=[xlf_url+'/rhel7/repodata/repomd.xml.key'], yum_repositories=[xlf_url+'/rhel7/ibm-xl-compiler-eval.repo'])
-
     Stage0 += shell(commands=[
     '/opt/ibm/xlf/'+xlf_vrm+'/bin/xlf_configure <<< 1 >/dev/null',
     '/opt/ibm/xlC/'+xlf_vrm+'/bin/xlc_configure <<< 1 >/dev/null',
@@ -84,6 +85,9 @@ def toolchain():
     Stage0 += environment(variables={ 'PATH': '/opt/ibm/xlf/'+xlf_vrm+'/bin:/opt/ibm/xlC/'+xlf_vrm+'/bin:${PATH}'})
     tc = hpccm.toolchain(CC='xlc', CXX='xlc++', F77='xlf',
                                    F90='xlf', FC='xlf')
+
+  else:
+    logging.error("no toolchain found or specified, check your inputs, default should be gnu")
 
   if args.cuda != "no":
     tc.CUDA_HOME = '/usr/local/cuda'

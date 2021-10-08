@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 import logging
+from distutils.version import StrictVersion
 
 import hpccm
 import hpccm.config
@@ -51,7 +52,7 @@ def sdk():
               'patch', 'pciutils', 'perl', 'pkg-config', 'rsync', 'strace', 'swig', 'tcl', 'tk', 'valgrind', 'vim', 'wget']
 
   apt_packages=ospackages+[
-          'autotools-dev', 'libpcre3-dev', 'libltdl-dev', 'lsb-release', 'libz-dev', 'zlib1g-dev', 'libzmq-dev', 'libmount-dev',
+          'autotools-dev', 'libpcre3-dev', 'libltdl-dev', 'lsb-release', 'libz-dev', 'zlib1g-dev', 'libzmq3-dev', 'libmount-dev',
           'iproute2', 'libnl-route-3-200', 'libnuma1', 'linux-headers-generic', 'gtk-doc-tools', 'libxml2-dev', 'libglu1-mesa-dev',
           'libnetcdf-dev', 'libgirepository1.0-dev', 'dpatch', 'libgtk-3-dev', 'libmount-dev', 'locales', 'ssh', 'libyaml-dev']
   yum_packages=ospackages+['pcre-devel', 'libtool-ltdl-devel', 'redhat-lsb', 'glibc-devel', 'zlib-devel', 'zeromq-devel', 'libmount-devel', 
@@ -147,7 +148,7 @@ def sdk():
       #make python3 and pip3 default
       Stage0 += shell(commands=['ln -s /usr/bin/python3 /usr/local/bin/python',
                               'ln -s /usr/bin/pip3 /usr/local/bin/pip',
-                              'pip install jupyter ipykernel'])
+                              'pip install jupyter ipykernel jupyterlab'])
     python_path = '/usr/'
 
   #Install boost with the provided python
