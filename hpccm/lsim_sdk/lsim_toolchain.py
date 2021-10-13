@@ -88,7 +88,13 @@ def toolchain():
 
   else:
     logging.error("no toolchain found or specified, check your inputs, default should be gnu")
-
+  Stage0 += environment(variables={
+                    "CC": tc.CC,
+                    "FC": tc.FC,
+                    "F77": tc.F77,
+                    "F90": tc.F90,
+                    "CXX": tc.CXX
+  })
   if args.cuda != "no":
     tc.CUDA_HOME = '/usr/local/cuda'
 
