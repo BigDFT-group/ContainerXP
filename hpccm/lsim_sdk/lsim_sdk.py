@@ -172,7 +172,8 @@ def sdk():
     Stage0 += raw(docker='CMD jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser', 
                   singularity='%runscript\n jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
-  if args.system == 'ubuntu' and args.system_version >= StrictVersion('20.04') and target_arch == "x86_64":
+  #workaround for an issue in Ubuntu 20 on docker
+  if args.system == 'ubuntu' and args.system_version >= StrictVersion('20.04') and args.target_arch == "x86_64":
     Stage0 += environment(variables={'LD_PRELOAD': '/usr/lib/x86_64-linux-gnu/libtinfo.so.6'})
 
   if args.system == 'ubuntu':
