@@ -108,9 +108,9 @@ def sdk():
     else:
       #use already present conda on oneapi images
       conda_path = '/opt/intel/oneapi/intelpython/latest/'
-      commands = ['conda config --add channels ' + ' --add channels '.join(channels),
-        'conda install -y '+ ' '.join(conda_packages),
-        'conda clean -afy' ]
+      commands = [conda_path+'bin/conda config --add channels ' + ' --add channels '.join(channels),
+        conda_path+'bin/conda install -y '+ ' '.join(conda_packages),
+        conda_path+'bin/conda clean -afy' ]
 
     if args.python == 'intel':
       commands += ['ln -s ' + conda_path + 'bin/python3-config' + conda_path + '/bin/python-config']
