@@ -55,7 +55,10 @@ def toolchain():
     Stage0 += arm
     tc = arm.toolchain
     if args.system == "ubuntu":
-      system="Ubuntu-16.04"
+      if args.toolchain_version <= StrictVersion('20.3'):
+        system="Ubuntu-16.04"
+      else:
+        system="Ubuntu-"+args.system_version
     else:
       system="RHEL-"+args.system_version
     Stage0 += environment(variables={'PATH': '/opt/arm/arm-linux-compiler-'+args.toolchain_version+'_Generic-AArch64_'+system+'_aarch64-linux/bin/:${PATH}'})
