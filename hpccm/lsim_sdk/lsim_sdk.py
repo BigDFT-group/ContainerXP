@@ -186,6 +186,11 @@ def sdk():
                                       "LC_ALL": "C.UTF-8",
                                       "PKG_CONFIG_PATH": "/usr/lib64:/usr/share/lib64"})   
 
+  if args.oneapi != 'no':
+    Stage0 += shell(commands=['if [ -e /root/.oneapi_env_vars ]; then cp /root/.oneapi_env_vars /opt/intel/.oneapi_env_vars; chmod +x /opt/intel/.oneapi_env_vars; fi'])
+    Stage0 += raw(docker='ENTRYPOINT ["bash", "-c", "source /opt/intel/.oneapi_env_vars && \\\"$@\\\"", "bash"]', 
+                  singularity="%runscript\n bash -c 'source /opt/intel/.oneapi_env_vars && \\\"$@\\\"' bash")
+
   return Stage0
 
 if __name__ == '__main__':
