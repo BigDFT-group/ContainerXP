@@ -138,7 +138,9 @@ def sdk():
     'python3-scipy', 'python3-numpy', 'watchdog', 'python3-ipython',
     'python3-flake8']
     yum=ospack+['python3-Cython', 'python3-sphinx_rtd_theme']
-    apt=ospack+['cython3', 'python3-sphinx-rtd-theme', 'python-is-python3']
+    apt=ospack+['cython3', 'python3-sphinx-rtd-theme']
+    pycommands=['ln -s /usr/bin/python3 /usr/local/bin/python',
+                   'ln -s /usr/bin/pip3 /usr/local/bin/pip']
     if args.jupyter == 'yes':
       apt+=['jupyter-notebook', 'python3-ipykernel']
     Stage0 += packages(apt=apt, yum=yum, powertools=True, epel=True)
@@ -146,9 +148,9 @@ def sdk():
     #somehow there is no jupyter package for centos 8.
     if args.system == 'centos' and args.jupyter == 'yes':
       #make python3 and pip3 default
-      Stage0 += shell(commands=['ln -s /usr/bin/python3 /usr/local/bin/python',
-                              'ln -s /usr/bin/pip3 /usr/local/bin/pip',
-                              'pip install jupyter ipykernel jupyterlab'])
+      pycommands += ['pip install jupyter ipykernel jupyterlab']
+
+    Stage0 += shell(commands=pycommands)
     python_path = '/usr/'
 
   #Install boost with the provided python
