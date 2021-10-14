@@ -86,8 +86,8 @@ def toolchain():
     '/opt/ibm/xlf/'+xlf_vrm+'/bin/xlf_configure -cuda null <<< 1 >/dev/null',
     '/opt/ibm/xlC/'+xlf_vrm+'/bin/xlc_configure -cuda null <<< 1 >/dev/null'])
     Stage0 += environment(variables={ 'PATH': '/opt/ibm/xlf/'+xlf_vrm+'/bin:/opt/ibm/xlC/'+xlf_vrm+'/bin:${PATH}'})
-    tc = hpccm.toolchain(CC='xlc', CXX='xlc++', F77='xlf',
-                                   F90='xlf', FC='xlf')
+    tc = hpccm.toolchain(CC='xlc_r', CXX='xlc++_r', F77='xlf_r',
+                                   F90='xlf_r', FC='xlf_r')
 
   else:
     logging.error("no toolchain found or specified, check your inputs, default should be gnu")
