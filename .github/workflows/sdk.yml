@@ -48,19 +48,22 @@ jobs:
                   echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN_ARM)
                   echo ::set-output name=blas::$(echo $BIGDFT_BLAS_ARM)
                   echo ::set-output name=python::$(echo $BIGDFT_PYTHON_ARM)
+                  echo ::set-output name=binary::$(echo $BIGDFT_USE_BINARIES_ARM)
                 elif [ ${{ matrix.arch }} == "ppc64le" ]; then
                   echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN_POWER)
                   echo ::set-output name=blas::$(echo $BIGDFT_BLAS_POWER)
                   echo ::set-output name=python::$(echo $BIGDFT_PYTHON_POWER)
+                  echo ::set-output name=binary::$(echo $BIGDFT_USE_BINARIES_POWER)
                 else
                   echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN)
                   echo ::set-output name=blas::$(echo $BIGDFT_BLAS)
                   echo ::set-output name=python::$(echo $BIGDFT_PYTHON)
+                  echo ::set-output name=binary::$(echo $BIGDFT_USE_BINARIES)
                 fi
         -   name: generate docker files for openmpi
             run: |
                 source current_setup.sh
-                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${{steps.vars.outputs.toolchain}} --python=${{steps.vars.outputs.python}} --blas=${{steps.vars.outputs.blas}} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }}> Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
+                hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${{steps.vars.outputs.toolchain}} --python=${{steps.vars.outputs.python}} --blas=${{steps.vars.outputs.blas}} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }} --binary=${{steps.vars.outputs.binary}} > Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Upload sdk dockerfile
             uses: actions/upload-artifact@v1
             with:
