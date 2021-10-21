@@ -9,7 +9,7 @@ uniopt BINARIES b binaries "\${HOME}/binaries" "Binaries directory (provide abso
 uniopt WITH_WORKDIR w workdir ASSUME_NO "Include present directory in the container"
 uniopt EMPLOY_ROOT_USER r root ASSUME_NO "Employ present user in the container"
 uniopt EXTRA_COMMANDS c extra-cmd "" "Extra commands to be provided to docker WARNING: Spaces are not tolerated, use long commands"
-uniopt HOMEDIR h homedir "/tmp/fake_home" "Directory of homedir of the container. Useful eg. to preserve history."
+uniopt HOMEDIR d homedir "/tmp/fake_home" "Directory of homedir of the container. Useful eg. to preserve history."
 uniopt PORT p port '8888' "Port to which redirect the 8888 port of the container"
 
 uniopt_parser $@
@@ -37,9 +37,23 @@ enable_current_user()
             dirname="$(basename $PWD)"
 	    local_user=$(id -u)
 	    local_group=$(id -g)
+	    user_name=$(id -un)
+	    group_name=$(id -gn)
 	    mkdir -p $HOMEDIR
 	    REHOME=$(get_abspath $HOMEDIR)
-            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user:$local_group -v /etc/passwd:/etc/passwd:ro -v $REHOME:/home/$USER -v $HOME/.ssh:/home/$USER/.ssh:ro -v $HOME/.gitconfig:/home/$USER/.gitconfig:ro"
+	    NEWHOME=$HOME
+	    cp /etc/passwd $HOMEDIR
+	    user_search=$(grep ":x:$local_user:" $HOMEDIR/passwd)
+	    if test x"$user_search" = x; then
+		    echo $user_name:x:$local_user:$local_group:$user_name,,,:$NEWHOME:/bin/bash >> $HOMEDIR/passwd
+	    fi
+	    cp /etc/group $HOMEDIR
+	    group_search=$(grep ":x:$local_group:" $HOMEDIR/passwd)
+	    if test x"$group_search" = x; then
+		    echo $group_name:x:$local_group:$user_name >> $HOMEDIR/group 
+	    fi
+    
+            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user:$local_group -v $REHOME/passwd:/etc/passwd:ro -v $REHOME/group:/etc/group:ro -v $REHOME:$NEWHOME -v $HOME/.ssh:$NEWHOME/.ssh:ro -v $HOME/.gitconfig:$NEWHOME/.gitconfig:ro"
     fi
 }
 
