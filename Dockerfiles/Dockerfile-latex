@@ -1,0 +1,19 @@
+FROM blang/latex:ctanfull
+LABEL presentations bigdft-developers@lists.launchpad.net
+
+#install needed dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    zip 
+
+RUN cd /tmp && \
+    wget --no-check-certificate  https://www.1001fonts.com/download/nunito.zip && \
+    mkdir -p /usr/share/fonts/custom/ && \ 
+    unzip nunito.zip -d /usr/share/fonts/custom && \
+    rm /tmp/nunito.zip
+
+
+
+
+
+

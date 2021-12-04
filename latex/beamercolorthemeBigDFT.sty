@@ -1,0 +1,54 @@
+\ProvidesPackageRCS $Header: /cvsroot/latex-beamer/latex-beamer/themes/color/beamercolorthemeBigDFT.sty,v 1.25 2004/10/07 22:21:16 tantau Exp $
+\mode<presentation>
+
+% color management
+\definecolor{noir}{RGB}{0,0,0}
+\definecolor{fond}{RGB}{255,255,255}
+\definecolor{rouge}{RGB}{198,0,0}
+\definecolor{bleuc}{RGB}{192,208,229}
+\definecolor{bleuf}{RGB}{107,129,178}
+\definecolor{jauneCEA}{RGB}{255,179,16}
+\definecolor{vertCEA}{RGB}{112,188,31}
+\definecolor{grisCEA}{RGB}{79,85,87}
+\definecolor{bluepanel}{RGB}{16,59,104}
+\definecolor{blueCEA}{RGB}{158,199,224}
+\definecolor{blue1CEA}{RGB}{63,166,204}
+\definecolor{blue2CEA}{RGB}{145,142,195}
+\definecolor{alert1CEA}{RGB}{192,104,177}
+\definecolor{BigDFTalert}{RGB}{235,142,128}
+%\definecolor{alert2CEA}{RGB}{242,38,144}
+\definecolor{craneblue}{RGB}{4,6,76}
+\definecolor{BigDFTblue}{RGB}{5,38,105}
+\definecolor{BigDFTyellow}{RGB}{236,193,102}
+
+\setbeamercolor{structure}{fg=BigDFTyellow}
+
+\setbeamercolor{palette sidebar primary}{fg=grisCEA}
+\setbeamercolor{palette sidebar secondary}{fg=bluepanel!75}
+\setbeamercolor{palette sidebar tertiary}{fg=bluepanel!75}
+\setbeamercolor{palette sidebar quaternary}{fg=bluepanel}
+
+
+%\setbeamercolor{structure}{fg=noir,bg=fond}
+\setbeamercolor{titlelike}{use=structure,fg=BigDFTblue,bg=fond}
+\setbeamercolor{title}{use=BigDFTblue,fg=BigDFTblue,bg=BigDFTyellow!20}
+
+\setbeamercolor{block title}{fg=noir!95,bg=BigDFTyellow}
+\setbeamercolor{block body}{parent=normal text,use=block title,bg=BigDFTyellow!25}
+
+\setbeamercolor{block title alerted}{use=alerted text,fg=rouge,bg=BigDFTalert}%rouge!45}
+\setbeamercolor{block body alerted}{parent=normal text,use=block title alerted,bg=BigDFTalert!40}%rouge!20}
+
+\setbeamercolor{block title example}{use=example text,fg=BigDFTyellow,bg=BigDFTblue}
+\setbeamercolor{block body example}{parent=normal text,use=block title example,bg=blue2CEA!25}
+
+\setbeamercolor{barhead}{fg=white,bg=BigDFTyellow}
+\setbeamercolor{barfoot}{fg=red,bg=BigDFTyellow}
+\setbeamercolor{normal text}{fg=grisCEA,bg=fond}
+\setbeamercolor{alerted text}{fg=rouge,bg=BigDFTalert}
+\setbeamercolor{example text}{fg=BigDFTblue,bg=BigDFTblue}
+\setbeamercolor{background canvas}{parent=normal text}
+\setbeamercolor{background}{parent=background canvas}
+
+\mode
+<all>

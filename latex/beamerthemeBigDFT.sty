@@ -1,0 +1,169 @@
+\ProvidesPackageRCS $Header: /cvsroot/latex-beamer/latex-beamer/themes/theme/compatibility/beamerthemeBigDFT.sty,v 1.9 2004/10/07 20:53:10 tantau Exp $
+\RequirePackage{pgf}
+\usepgflibrary{arrows,shadings}
+\usecolortheme{CEA}
+
+% Copyright 2006 by Thomas Jourdan and Luigi Genovese 
+%
+% This program can be rougeistributed and/or modified under the terms
+% of the GNU Public License, version 2.
+
+% lateral navigation bar
+\newdimen\beamer@sidebarwidth
+\usebeamerfont{frametitle}
+\beamer@sidebarwidth=.1\paperwidth
+\reset@font
+\def\beamer@lefttext{left}
+\beamer@nav@subsectionstyle{show}
+\newif\ifbeamer@nobar
+\beamer@nobarfalse
+\DeclareOptionBeamer{nobar}{\beamer@nobartrue}
+\ProcessOptionsBeamer
+
+% logos
+\newlength\LogoHeightCEA
+\newlength\LogoHeightLSim
+\newlength\HeadCEA
+\LogoHeightCEA=.105\paperheight
+\LogoHeightLSim=.035\paperheight
+\HeadCEA=.079\paperheight
+\pgfdeclareimage[height=\LogoHeightCEA,interpolate=true]{bigdft}{logo-BigDFT}
+\pgfdeclareimage[height=.9\LogoHeightCEA,interpolate=true]{CEA}{logo-CEA}
+\pgfdeclareimage[height=\LogoHeightLSim,interpolate=true]{LSim}{logo-lsim}
+
+
+\mode<presentation>
+
+\usecolortheme{CEA}
+
+\setbeamercolor*{titlelike}{use=structure,fg=structure.fg}
+
+  \defbeamertemplate*{frametitle}{CEA theme}
+  {%
+   \nointerlineskip%
+   \vskip-1\HeadCEA%
+    \vbox to \HeadCEA{%
+      \vfil
+      \leftskip=-\beamer@leftmargin%
+      \advance\leftskip by0.3cm%
+      \rightskip=-\beamer@rightmargin%
+      \advance\rightskip by0.3cm plus1fil%
+      {\usebeamercolor[fg]{frametitle}\usebeamerfont{frametitle}\insertframetitle\par}%
+      {\usebeamercolor[fg]{framesubtitle}\usebeamerfont{framesubtitle}\insertframesubtitle\par}%
+      \vbox{}%
+      \vskip-1em%
+      \vfil
+    }%
+  }
+
+%
+% header
+\defbeamertemplate*{headline}{CEA theme}
+{%
+  \leavevmode%
+  \advance\LogoHeightCEA by 0.125ex%
+  \vbox{
+    \vskip0.13\paperheight%
+    \hbox{
+      \hskip0.01\paperwidth%
+      \begin{beamercolorbox}[wd=.15\paperwidth,ht=2\LogoHeightCEA]{bleuc}
+        \vbox to 2\LogoHeightCEA{\vfil\pgfuseimage{CEA}
+	\vfill\pgfuseimage{bigdft}}
+      \end{beamercolorbox}
+     }
+    \vfill
+    \vskip-.261\paperheight%.156\paperheight%
+    % Barre horizontale
+    \hbox{\hskip.1176\paperwidth
+      \begin{beamercolorbox}[wd=0.875\paperwidth,ht=0.1ex,dp=0.1ex,leftskip=.3cm,rightskip=.3cm plus1fil]{barhead}%
+        \hfil \vfil \vfil \hfil
+      \end{beamercolorbox}%
+    }
+    \vskip0.5ex%
+  }
+}
+
+% footer
+%  L_Sim logo + navigation
+\defbeamertemplate*{footline}{CEA theme}
+{%
+  \hbox{\hskip.1176\paperwidth
+      \begin{beamercolorbox}[wd=0.875\paperwidth,ht=0.1ex,dp=0.1ex,leftskip=.3cm,rightskip=.3cm plus1fil]{barfoot}%
+        \hfil \vfil \vfil \hfil
+      \end{beamercolorbox}%
+    }
+  \leavevmode%
+  \hskip0.1176\paperwidth%
+  \begin{beamercolorbox}[wd=.7\paperwidth]{white}
+  \raisebox{3pt}{ \insertshortauthor \qquad {\color{grisCEA} \texttt{www.bigdft.org}}}\hfill
+\raisebox{3pt}{  Laboratoire de Simulation Atomistique}
+  \end{beamercolorbox}
+  \hfill
+     \begin{beamercolorbox}[wd=.07\paperwidth]{white}
+     \vbox to\LogoHeightLSim{\vfil\pgfuseimage{LSim}\vfill}
+   \end{beamercolorbox}
+
+}
+
+\ifbeamer@nobar
+% nosidebar
+ \setbeamersize{sidebar width left=\beamer@sidebarwidth}
+\else
+%sidebar
+\advance\beamer@sidebarwidth by 0.01\paperwidth
+\def\beamer@sidebarformat#1#2#3{%
+  \begin{beamercolorbox}[wd=\beamer@sidebarwidth,leftskip=#1,rightskip=2ex plus1fil,vmode]{#2}
+    \vbox{}%
+    #3\par%
+    \vbox{}%
+    \vskip-1.5ex%
+  \end{beamercolorbox}
+}
+
+%section and subsection styles in the navigation bar on the left
+\defbeamertemplate*{section in sidebar}{CEA theme}{%
+  \vbox{\vskip1ex\beamer@sidebarformat{2pt}{section in sidebar}{\insertsectionhead}}}
+\defbeamertemplate*{section in sidebar shaded}{CEA theme}{%
+  \vbox{\vskip1ex\beamer@sidebarformat{2pt}{section in sidebar shaded}{\insertsectionhead}}}
+\defbeamertemplate*{subsection in sidebar}{CEA theme}{%
+  \beamer@sidebarformat{4pt}{subsection in sidebar}{\insertsubsectionhead}}
+\defbeamertemplate*{subsection in sidebar shaded}{CEA theme}{%
+  \beamer@sidebarformat{4pt}{subsection in sidebar shaded}{\insertsubsectionhead}}
+
+%sidebar format
+\setbeamersize{sidebar width left=\beamer@sidebarwidth}
+\defbeamertemplate*{sidebar left}{CEA theme}{%
+  \beamer@tempdim=\beamer@sidebarwidth%
+  \advance\beamer@tempdim by -6pt%
+  % title of the navigation bar : 'Plan'
+  {
+    \vskip75pt%1.5em
+    \hskip2pt%
+    \usebeamercolor[fg]{title in sidebar}%
+    \begin{beamercolorbox}[wd=\beamer@sidebarwidth]{fond}%
+      \vbox{\vfil\hbox{\hfil\usebeamerfont{title in sidebar}%
+          \insertshorttitle[width=\beamer@tempdim,center,respectlinebreaks]\hfil}}
+    \end{beamercolorbox}%
+    \vskip1.5em%
+  }%
+  % navigation elements between sections
+  \insertverticalnavigation{\beamer@sidebarwidth}%
+}%
+
+%sidebar on the right : none
+\defbeamertemplate*{sidebar right}{LMAC theme}{}
+
+\fi
+
+
+\setbeamercolor{sidebar}{parent=palette primary}
+
+{\usebeamercolor{palette quaternary}}
+{\usebeamercolor{palette primary}}
+
+%leave the navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+\mode
+<all>
+

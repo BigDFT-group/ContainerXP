@@ -1,0 +1,131 @@
+\documentclass[11pt,unknownkeysallowed]{beamer}
+
+\usepackage[english]{babel}
+\usepackage{pgf}
+%\usepackage[latin1]{inputenc}
+
+%\usepackage{times}
+\usepackage{amsmath,amsfonts}
+\usepackage{graphics}
+\usepackage{fontenc} %[T1]
+%\usepackage[latin1]{inputenc}
+\usepackage{pslatex}
+\usepackage{color}
+\usepackage{units}
+\usepackage{textpos}
+\usepackage{booktabs}
+\usepackage{pifont}
+\usepackage{subfigure}
+\usepackage{multirow}
+\usepackage{pythonhighlight}
+%\usepackage[dvipsnames]{xcolor}
+
+\usepackage{tikz}
+\usepackage{ulem}
+\usefonttheme{professionalfonts} % using non standard fonts for beamer
+\usefonttheme{serif} % default family is serif
+\usepackage{fontspec}
+\setmainfont{Nunito}
+
+%\usetikzlibrary{snakes}
+\usetikzlibrary{mindmap,trees,patterns}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shapes,arrows,calc,positioning}
+
+\tikzstyle{block} = [rectangle, draw, fill=BigDFTyellow!25,
+    text width=6em, text centered, rounded corners, minimum height=3em]
+\tikzstyle{blockr} = [rectangle, draw, fill=rouge!20,
+    text width=7em, text centered, rounded corners, minimum height=7em]
+\tikzstyle{line} = [draw, -latex']
+\tikzstyle{cloud} = [draw, ellipse,fill=blue2CEA!25,
+    minimum height=3.5em, text centered, text width=4.0em]
+\tikzstyle{cloudr} = [draw, ellipse,fill=rouge!20,
+    minimum height=3.5em, text centered, text width=4.0em]
+
+
+\usepackage[version=3]{mhchem}
+%\usepackage[table]{xcolor}
+
+\input{colors}
+\input{symbols}
+
+
+\newcommand{\Biglogo}{\hfill \includegraphics[height=.06\textheight]{../Pictures/logo_bigdft.pdf}}
+
+  \newcommand{\cbra}[1]{\left({#1} \right|}
+  \newcommand{\cket}[1]{\left| {#1} \right)}
+
+  \usepackage{multirow}
+
+
+\newcommand{\thetitle}[2]{%
+\title[#1]{\Large #2}
+    }
+
+\newcommand{\thetitlepage}[3]{%
+\frame{
+
+\begin{figure}
+{\fontfamily{pag}\selectfont
+#1}
+\end{figure}
+
+\begin{figure}
+#2
+\end{figure}
+
+\titlepage
+
+\begin{figure}
+#3
+\end{figure}
+
+}
+}
+
+\newcommand{\thelayout}[2]{%
+\mode<presentation> {
+ \usetheme{#1}
+ \usecolortheme{#2}
+ \usecolortheme{sidebartab}
+  \setbeamertemplate{sidebar canvas right}%
+                   [vertical shading][top=BigDFTyellow,bottom=BigDFTyellow]
+ %\useinnertheme[shadow]{rounded}
+ \setbeamercovered{transparent}
+ \def\swidth{3\baselineskip}
+ \def\sheight{1.9em}
+ \def\txtw{0.85\paperwidth}
+ % position the logo
+% \addtobeamertemplate{frametitle}{}{%
+% \begin{textblock*}{100mm}(\textwidth,-0.1cm)
+% \includegraphics[height=1cm,width=1cm,keepaspectratio]{logo-bigdft}
+% \end{textblock*}}
+\setbeamertemplate{frametitle}
+{
+    \nointerlineskip
+    \vglue-0.15cm
+    \begin{beamercolorbox}[sep=0mm,ht=1.7em,wd=\txtw]{frametitle}
+        %\vbox{}\vskip-20ex%
+        \;\;\strut\insertframetitle\strut
+        \hfill
+        \raisebox{-0.5em}{\includegraphics[height=1.7em]{logo-BigDFT.pdf}\hspace{0.02cm}}
+        %\vskip-1.8ex%
+    \end{beamercolorbox}
+    \vglue-0.3cm
+    \hbox{\hskip-0.05cm%.1176\paperwidth%
+      \begin{beamercolorbox}[wd=0.86\paperwidth,ht=0.1ex,dp=0.3ex,leftskip=.0cm,rightskip=.3cm plus1fil]{barhead}%
+        \hfil \vfil \vfil \hfil
+      \end{beamercolorbox}%
+    }
+}
+%\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{frametitle}{series=\bfseries}
+\setbeamersize{sidebar width right=\swidth}
+%\setbeamersize{text margin right=0pt}
+\setbeamertemplate{itemize items}[circle]
+ }
+}
+
+\thelayout{Marburg}{BigDFT}
+\setbeamerfont{normal text}{family=\sffamily}
+
