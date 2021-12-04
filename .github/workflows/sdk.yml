@@ -1,5 +1,12 @@
 name: sdk
-on: [push, workflow_dispatch]
+on:
+    push:
+    workflow_dispatch:
+      inputs:
+          kind:
+              description: 'type of launch'
+              required: false
+              default: 'manual'
 jobs:
     generate:
         strategy:
@@ -10,7 +17,7 @@ jobs:
                     - mpi: mvapich
                       arch: arm
         runs-on: ubuntu-20.04
-        if: "contains(github.event.head_commit.message, 'sdk')"
+        if: "${{ github.event.inputs.name }} == 'manual' && contains(github.event.head_commit.message, 'sdk')"
         steps:
         -   uses: actions/checkout@v2
         -   name: Cache python dependencies

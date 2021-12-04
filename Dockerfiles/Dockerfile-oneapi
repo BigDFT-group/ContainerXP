@@ -4,7 +4,9 @@ LABEL maintainer bigdft-developers@lists.launchpad.net
 #install needed dependencies
 RUN apt-get update && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex
+    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex python3-pip
+
+RUN apt-get install rsync --no-install-recommends -y
 
 RUN cd /tmp/ && \
     curl --continue-at - -L https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0.tar.bz2 -o boost_1_72_0.tar.bz2 && \
@@ -23,16 +25,31 @@ RUN echo "\n\
 
 RUN cd /tmp/boost_1_72_0 && ./b2 --user-config=user-config.jam  install threading=multi variant=release link=shared stage --with-regex --disable-icu --with-thread --with-serialization --with-iostreams --with-python --with-system --with-test -q
 
+RUN rm -rf /tmp/boost*
+
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
 
-RUN pip install jupyterlab
+RUN pip3 install -U setuptools
+RUN pip3 install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn
 
 EXPOSE 8888
 
-RUN apt-get install rsync --no-install-recommends
+RUN if [ -e /root/.oneapi_env_vars ]; then cp /root/.oneapi_env_vars /opt/intel/.oneapi_env_vars; chmod +x /opt/intel/.oneapi_env_vars; fi
+
+ENTRYPOINT ["bash", "-c", "source /opt/intel/.oneapi_env_vars && \"$@\"", "bash"]
 
 WORKDIR /opt/bigdft
 
+RUN echo "\n\ 
+   source /opt/bigdft/install/bin/bigdftvars.sh\n\
+   jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
+" > /bin/run_notebook.sh
 
+RUN echo "\n\
+python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y\n\
+" > /bin/compile_bigdft-suite.sh
 
+RUN chmod a+x /bin/compile_bigdft-suite.sh
+
+CMD bash /bin/run_notebook.sh 
