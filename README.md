@@ -12,3 +12,4 @@ Some of the files of this projects:
     of the bigdft suite and to create binaries that are then compiled with user's permission. The script contains a number of facilities
     which would create the dockerline to be executed. One can encapsulate this script in other commands for automation.
 
+ * `latexmk` is a script that make possible the compilation of a beamer presentation by using the BigDFT layout. By running `latexmk -s <inputfile>` the bigdft/latex container is employed to compile the inputfile. A `-o <outdir>` option can be included to redirect the temporary latex files to another directory.
