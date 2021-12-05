@@ -1,0 +1,31 @@
+#!/bin/sh
+ORIGIN=$(dirname $(readlink -f $0))
+. "$ORIGIN/container_base.sh"
+
+uniopt SOURCEFILE s sources "" "Source latex file"
+uniopt EXTRA_DIR x extradir "" "Mount extra directory"
+uniopt OUTPUT_DIRECTORY o outputdir "/tmp" "Redirect output files into an existing directory (relative path from sourcefile)"
+uniopt CONTAINER i image "bigdft/latex" "Latex Container image to deploy"
+
+parse_base $@
+
+SRC=$(dirname $SOURCEFILE)
+EXT=$(get_abspath $EXTRA_DIR)
+FILE=$(basename $SOURCEFILE .tex)
+
+srcdirname="$(basename $SRC)"
+DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/$srcdirname -w /$srcdirname"
+
+if test x"$EXTRA_DIR" = x; then
+   DOCKER_OPTIONS="$DOCKER_OPTIONS"
+else
+   extdirname="$(basename $EXT)"
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -v $EXT:/$extdirname"
+fi
+
+if test x"$POSITIONAL" = x; then
+   POSITIONAL="sh /bin/bigdft_latexmk.sh $FILE $OUTPUT_DIRECTORY"
+fi
+
+docker_command
+

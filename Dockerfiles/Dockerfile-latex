@@ -12,6 +12,26 @@ RUN cd /tmp && \
     unzip nunito.zip -d /usr/share/fonts/custom && \
     rm /tmp/nunito.zip
 
+RUN mkdir -p /bigdft-latex/ && cd /tmp && \
+    wget https://github.com/BigDFT-group/ContainerXP/archive/refs/heads/master.zip && \
+    unzip master.zip && \
+    cp ContainerXP-master/latex/* /bigdft-latex/ && \
+    rm /tmp/master.zip && \
+    rm -rf ContainerXP-master
+
+ENV TEXINPUTS=/bigdft-latex/:$TEXINPUTS
+
+RUN echo '\n\
+    if test x"$2" = x; then\n\
+            latexmk -xelatex $1.tex\n\
+    else\n\
+	    latexmk -xelatex -output-directory=$2 $1.tex\n\
+            srcdir=$(dirname $1.tex)\n\
+            cp -f $2/$1.pdf $srcdir\n\
+    fi\n\
+' > /bin/bigdft_latexmk.sh; chmod +x /bin/bigdft_latexmk.sh
+
+
 
 
 
