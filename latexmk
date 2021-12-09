@@ -10,6 +10,7 @@ uniopt CONTAINER i image "bigdft/latex" "Latex Container image to deploy"
 parse_base $@
 
 SRC=$(dirname $SOURCEFILE)
+SRC=$(get_abspath $SRC)
 EXT=$(get_abspath $EXTRA_DIR)
 FILE=$(basename $SOURCEFILE .tex)
 
