@@ -4,7 +4,7 @@ LABEL maintainer bigdft-developers@lists.launchpad.net
 #install needed dependencies
 RUN apt-get update && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex python3-pip
+    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex
 
 RUN apt-get install rsync --no-install-recommends -y
 
@@ -30,16 +30,15 @@ RUN rm -rf /tmp/boost*
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
 
-RUN pip3 install -U setuptools
-RUN pip3 install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn
-
-EXPOSE 8888
-
 RUN if [ -e /root/.oneapi_env_vars ]; then cp /root/.oneapi_env_vars /opt/intel/.oneapi_env_vars; chmod +x /opt/intel/.oneapi_env_vars; fi
 
 ENTRYPOINT ["bash", "-c", "source /opt/intel/.oneapi_env_vars && \"$@\"", "bash"]
 
+EXPOSE 8888
+
 WORKDIR /opt/bigdft
+
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install setuptools jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget
 
 RUN echo "\n\ 
    source /opt/bigdft/install/bin/bigdftvars.sh\n\
@@ -50,6 +49,6 @@ RUN echo "\n\
 python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y\n\
 " > /bin/compile_bigdft-suite.sh
 
-RUN chmod a+x /bin/compile_bigdft-suite.sh
+RUN chmod +x /bin/compile_bigdft-suite.sh
 
 CMD bash /bin/run_notebook.sh 

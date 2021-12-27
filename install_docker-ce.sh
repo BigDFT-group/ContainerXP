@@ -4,6 +4,8 @@ sudo add-apt-repository ppa:criu/ppa --yes
 
 sudo apt update
 
+sudo apt --fix-broken install
+
 sudo apt remove docker docker-engine docker.io containerd runc
 
 sudo apt --yes install \
@@ -12,7 +14,7 @@ sudo apt --yes install \
         curl \
         gnupg \
         lsb-release \
-        criu
+        criu 
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
