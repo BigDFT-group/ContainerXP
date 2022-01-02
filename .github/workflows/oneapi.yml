@@ -1,0 +1,19 @@
+name: latex
+on: [push, workflow_dispatch]
+jobs:
+    build:
+        runs-on: ubuntu-20.04
+        if: "contains(github.event.head_commit.message, 'latex') || github.event_name == 'workflow_dispatch'"
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: Login to DockerHub Registry
+            run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        -   name: Build the Docker image
+            working-directory: Dockerfiles
+            run: docker build --file Dockerfiles/Dockerfile-oneapi-multi --target sdkfull --tag bigdft/sdk:oneapi .  
+        -   name: Push the tagged Docker image
+            run: |
+                d=$(date +%Y-%m-%d--%H-%M-%S)
+                docker tag bigdft/sdk:oneapi bigdft/sdk:oneapi-$d
+                docker push bigdft/sdk:oneapi-$d
+                docker push bigdft/sdk:oneapi
