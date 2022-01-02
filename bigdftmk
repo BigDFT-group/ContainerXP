@@ -1,0 +1,24 @@
+#!/bin/sh
+ORIGIN=$(dirname $(readlink -f $0))
+. "$ORIGIN/container_base.sh"
+
+uniopt SOURCEDIR s sources "\${HOME}/bigdft-suite" "Source directory"
+uniopt CONTAINER i image "bigdft/sdk" "SDK Container image to deploy"
+uniopt BINARIES b binaries "\${HOME}/binaries" "Binaries directory"
+uniopt TARGET t target "/opt/bigdft" "Target Binaries directory"
+uniopt PORT p port "" "Port to which redirect the 8888 port of the container"
+
+parse_base $@
+
+SRC=$(get_abspath $SOURCEDIR)
+BIN=$(get_abspath $BINARIES)
+
+if test x"$PORT" = x; then
+   DOCKER_OPTIONS="$DOCKER_OPTIONS"
+else
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -p $PORT:8888"
+fi
+
+DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:$TARGET"
+
+docker_command

@@ -1,0 +1,56 @@
+FROM intel/oneapi-hpckit AS sdkbase
+LABEL maintainer bigdft-developers@lists.launchpad.net
+
+#install needed dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex
+
+RUN apt-get install rsync --no-install-recommends -y
+
+RUN git config --global user.email "bigdft-project@gmail.com"
+RUN git config --global user.name "BigDFT developer"
+
+EXPOSE 8888
+
+WORKDIR /opt/bigdft
+
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget
+
+FROM sdkbase AS sdkseed
+
+RUN git clone https://gitlab.com/luigigenovese/bigdft-suite.git   sources
+
+FROM sdkseed AS sdkclient
+
+WORKDIR /opt/client-upstream
+
+ENV JHBUILD_RUN_AS_ROOT "please do it"
+
+RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/sources/rcfiles/oneapi-hpc.rc build client-plugins 
+
+FROM sdkseed AS sdkcore
+
+COPY --from=sdkclient /opt/client-upstream /opt/client-upstream
+
+ENV JHBUILD_RUN_AS_ROOT "please do it"
+
+RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/sources/rcfiles/oneapi-hpc-core.rc build core-upstream-suite
+
+FROM sdkbase AS sdkfull
+
+COPY --from=sdkclient /opt/client-upstream /opt/client-upstream
+COPY --from=sdkcore /opt/core-upstream /opt/core-upstream
+
+RUN echo "\n\ 
+   source /opt/bigdft/install/bin/bigdftvars.sh\n\
+   jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
+" > /bin/run_notebook.sh
+
+RUN echo "\n\
+python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc-full.rc -y\n\
+" > /bin/compile_bigdft-suite.sh
+
+RUN chmod +x /bin/compile_bigdft-suite.sh
+
+CMD bash /bin/run_notebook.sh 

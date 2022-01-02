@@ -5,7 +5,7 @@ ORIGIN=$(dirname $(readlink -f $0))
 uniopt WITH_DISPLAY X display ASSUME_NO "Enable host display usage (requires x11-xserver-utils)"
 uniopt WITH_WORKDIR w workdir ASSUME_NO "Include present directory in the container"
 uniopt EMPLOY_ROOT_USER r root ASSUME_NO "Employ present user in the container"
-uniopt EXTRA_COMMANDS c extra-cmd "" "Extra commands to be provided to docker WARNING: Spaces are not tolerated, use long commands"
+uniopt EXTRA_COMMANDS x extra-cmd "" "Extra commands to be provided to docker WARNING: Spaces are not tolerated, use long commands"
 uniopt HOMEDIR d homedir "/tmp/fake_home" "Directory of homedir of the container. Useful eg. to preserve history."
 
 enable_display() {
