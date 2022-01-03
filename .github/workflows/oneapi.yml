@@ -1,4 +1,4 @@
-name: latex
+name: oneapi
 on: [push, workflow_dispatch]
 jobs:
     build:
