@@ -34,7 +34,7 @@ EXPOSE 8888
 
 WORKDIR /opt/bigdft
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install setuptools jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install setuptools jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow
 
 RUN echo "\n\ 
    source /opt/bigdft/install/bin/bigdftvars.sh\n\
