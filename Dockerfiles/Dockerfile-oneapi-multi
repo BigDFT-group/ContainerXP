@@ -46,6 +46,7 @@ COPY --from=sdkcore /opt/core-upstream /opt/core-upstream
 
 RUN echo "\n\ 
    source /opt/bigdft/install/bin/bigdftvars.sh\n\
+   ulimit -s unlimited\n\
    jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
 " > /bin/run_notebook.sh
 
