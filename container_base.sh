@@ -45,7 +45,7 @@ enable_current_user()
 		    echo $group_name:x:$local_group:$user_name >> $HOMEDIR/group 
 	    fi
     
-            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user:$local_group -v $REHOME/passwd:/etc/passwd:ro -v $REHOME/group:/etc/group:ro -v $REHOME:$NEWHOME -v $HOME/.ssh:$NEWHOME/.ssh:ro -v $HOME/.gitconfig:$NEWHOME/.gitconfig:ro"
+            DOCKER_OPTIONS="$DOCKER_OPTIONS -u $local_user:$local_group -v $REHOME/passwd:/etc/passwd:ro -v $REHOME/group:/etc/group:ro -v $REHOME:$NEWHOME -v $HOME/.ssh:$NEWHOME/.ssh:ro -v $HOME/.gitconfig:$NEWHOME/.gitconfig:ro "
     fi
 }
 
