@@ -2,9 +2,9 @@
 ORIGIN=$(dirname $(readlink -f $0))
 . "$ORIGIN/container_base.sh"
 
-uniopt SOURCEDIR s sources "\${HOME}/bigdft-suite" "Source directory"
-uniopt CONTAINER i image "bigdft/sdk" "SDK Container image to deploy"
-uniopt BINARIES b binaries "\${HOME}/binaries" "Binaries directory"
+uniopt SOURCEDIR s sources "\${BIGDFT_SUITE_SOURCES}" "Source directory"
+uniopt CONTAINER i image "bigdft/sdk:oneapi-full" "SDK Container image to deploy"
+uniopt BINARIES b binaries "\${BIGDFT_SUITE_BINARIES}" "Binaries directory"
 uniopt TARGET t target "/opt/bigdft" "Target Binaries directory"
 uniopt PORT p port "" "Port to which redirect the 8888 port of the container"
 
