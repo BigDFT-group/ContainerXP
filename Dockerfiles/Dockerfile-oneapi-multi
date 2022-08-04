@@ -4,7 +4,7 @@ LABEL maintainer bigdft-developers@lists.launchpad.net
 #install needed dependencies
 RUN apt-get update && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex
+    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool gtk-doc-tools libglu1-mesa-dev libgtk-3-dev
 
 RUN apt-get install rsync --no-install-recommends -y
 
@@ -19,23 +19,29 @@ RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol netw
 
 FROM sdkbase AS sdkseed
 
-RUN git clone https://gitlab.com/luigigenovese/bigdft-suite.git   sources
+RUN git clone https://gitlab.com/l_sim/bigdft-suite.git sources
 
-FROM sdkseed AS sdkclient
+FROM sdkseed AS sdkclient_pre
 
 WORKDIR /opt/client-upstream
 
 ENV JHBUILD_RUN_AS_ROOT "please do it"
 
+RUN echo "\n    using python \n     : 3.7       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : /opt/intel/oneapi/intelpython/latest/include/python3.7m  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > /opt/bigdft/sources/boost-user-config.jam
+
+FROM sdkclient_pre AS sdkclient
+
 RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/sources/rcfiles/oneapi-hpc.rc build client-plugins 
 
-FROM sdkseed AS sdkcore
+FROM sdkseed AS sdkcore_pre
 
 COPY --from=sdkclient /opt/client-upstream /opt/client-upstream
 
 RUN cd sources && git pull && cd ../
 
 ENV JHBUILD_RUN_AS_ROOT "please do it"
+
+FROM sdkcore_pre AS sdkcore
 
 RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/sources/rcfiles/oneapi-hpc-core.rc build core-upstream-suite
 
