@@ -27,9 +27,7 @@ WORKDIR /opt/upstream
 
 ENV JHBUILD_RUN_AS_ROOT "please do it"
 
-ENV PYTHON_INCLUDE /opt/intel/oneapi/intelpython/latest/include/python3.7m
-
-RUN echo "\n    using python \n     : 3.7       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > /opt/bigdft/sources/boost-user-config.jam
+RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/-I//g` && echo "\n    using python \n     : 3.7       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > /opt/bigdft/sources/boost-user-config.jam
 
 FROM sdk_pre AS sdk_full
 

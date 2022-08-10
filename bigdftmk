@@ -4,7 +4,7 @@ ORIGIN=$(dirname $(readlink -f $0))
 
 uniopt SOURCEDIR s sources "\${BIGDFT_SUITE_SOURCES}" "Source directory"
 uniopt CONTAINER i image "bigdft/sdk:oneapi-full" "SDK Container image to deploy"
-uniopt BINARIES b binaries "\${BIGDFT_SUITE_BINARIES}" "Binaries directory"
+uniopt BINARIES b binaries "\${BIGDFT_SUITE_BINARIES}" "Binaries directory (created if absent)"
 uniopt TARGET t target "/opt/bigdft" "Target Binaries directory"
 uniopt PORT p port "" "Port to which redirect the 8888 port of the container"
 
@@ -12,6 +12,7 @@ parse_base $@
 
 SRC=$(get_abspath $SOURCEDIR)
 BIN=$(get_abspath $BINARIES)
+mkdir -p $BIN
 
 if test x"$PORT" = x; then
    DOCKER_OPTIONS="$DOCKER_OPTIONS"
