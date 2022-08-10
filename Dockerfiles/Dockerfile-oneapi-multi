@@ -15,7 +15,7 @@ EXPOSE 8888
 
 WORKDIR /opt/bigdft
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow python-constraint tinydb parmed lxml
 
 FROM sdkbase AS sdkseed
 
