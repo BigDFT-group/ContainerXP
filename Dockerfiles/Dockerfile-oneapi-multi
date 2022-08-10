@@ -19,23 +19,25 @@ RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol netw
 
 FROM sdkbase AS sdkseed
 
-RUN git clone https://gitlab.com/l_sim/bigdft-suite.git sources
+RUN git clone --depth 1 -b 1.9.3 https://gitlab.com/luigigenovese/bigdft-suite sources
 
-FROM sdkseed AS sdkclient_pre
+FROM sdkseed AS sdk_pre
 
-WORKDIR /opt/client-upstream
+WORKDIR /opt/upstream
 
 ENV JHBUILD_RUN_AS_ROOT "please do it"
 
-RUN echo "\n    using python \n     : 3.7       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : /opt/intel/oneapi/intelpython/latest/include/python3.7m  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > /opt/bigdft/sources/boost-user-config.jam
+ENV PYTHON_INCLUDE /opt/intel/oneapi/intelpython/latest/include/python3.7m
 
-FROM sdkclient_pre AS sdkclient
+RUN echo "\n    using python \n     : 3.7       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > /opt/bigdft/sources/boost-user-config.jam
 
-RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/sources/rcfiles/oneapi-hpc.rc build client-plugins 
+FROM sdk_pre AS sdk_full
+
+RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/bigdft-suite/rcfiles/oneapi-hpc.rc build upstream-suite
 
 FROM sdkseed AS sdkcore_pre
 
-COPY --from=sdkclient /opt/client-upstream /opt/client-upstream
+COPY --from=sdk_full /opt/upstream /opt/upstream
 
 RUN cd sources && git pull && cd ../
 
