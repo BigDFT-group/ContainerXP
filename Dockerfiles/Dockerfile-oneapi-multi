@@ -17,38 +17,43 @@ WORKDIR /opt/bigdft
 
 RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow python-constraint tinydb parmed lxml
 
+RUN echo "\n\
+cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc-full.rc -y; cd -\n\
+" > /bin/compile_bigdft-suite.sh
+
+RUN chmod +x /bin/compile_bigdft-suite.sh
+
+WORKDIR /opt/bigdft
+
+ENV JHBUILD_RUN_AS_ROOT "please do it"
+
 FROM sdkbase AS sdkseed
 
-RUN git clone --depth 1 -b 1.9.3 https://gitlab.com/luigigenovese/bigdft-suite sources
+RUN git clone --depth 1 -b 1.9.3-new https://gitlab.com/luigigenovese/bigdft-suite sources
 
 FROM sdkseed AS sdk_pre
 
-WORKDIR /opt/upstream
-
-ENV JHBUILD_RUN_AS_ROOT "please do it"
-
 RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/-I//g` && echo "\n    using python \n     : 3.7       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > /opt/bigdft/sources/boost-user-config.jam
 
-FROM sdk_pre AS sdk_full
+ENV BIGDFT_SUITE_SOURCES /opt/bigdft/sources
 
-RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/bigdft-suite/rcfiles/oneapi-hpc.rc build upstream-suite
+FROM sdk_pre AS sdk_bio
 
-FROM sdkseed AS sdkcore_pre
+RUN python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-bio-plugins
+
+FROM sdk_bio AS sdk_client
+
+RUN python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-plugins
+
+FROM sdk_client AS sdk_full
+
+RUN python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build upstream-suite
+
+RUN compile_bigdft-suite.sh
+
+FROM sdkseed AS sdk
 
 COPY --from=sdk_full /opt/upstream /opt/upstream
-
-RUN cd sources && git pull && cd ../
-
-ENV JHBUILD_RUN_AS_ROOT "please do it"
-
-FROM sdkcore_pre AS sdkcore
-
-RUN python3 /opt/bigdft/sources/bundler/jhbuild.py -f /opt/bigdft/sources/rcfiles/oneapi-hpc-core.rc build core-upstream-suite
-
-FROM sdkbase AS sdkfull
-
-COPY --from=sdkclient /opt/client-upstream /opt/client-upstream
-COPY --from=sdkcore /opt/core-upstream /opt/core-upstream
 
 RUN echo "\n\ 
    source /opt/bigdft/install/bin/bigdftvars.sh\n\
@@ -56,22 +61,9 @@ RUN echo "\n\
    jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
 " > /bin/run_notebook.sh
 
-RUN echo "\n\
-cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc-full.rc -y; cd -\n\
-" > /bin/compile_bigdft-suite.sh
-
-RUN chmod +x /bin/compile_bigdft-suite.sh
-
 CMD bash /bin/run_notebook.sh
 
-FROM sdkfull AS runtime
+FROM sdk_full AS runtime
 
-COPY --from=sdkclient /opt/bigdft/sources /opt/bigdft/sources
+COPY --from=sdk_full /opt/bigdft/install /opt/bigdft/install/
 
-WORKDIR /opt/bigdft/
-
-RUN cd sources && git pull && cd ../
-
-ENV JHBUILD_RUN_AS_ROOT "please do it"
-
-RUN compile_bigdft-suite.sh 
