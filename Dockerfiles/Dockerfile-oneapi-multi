@@ -70,7 +70,7 @@ RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/
 
 FROM sdk_pre AS sdk_full
 
-RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build upstream-suite
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build upstream-suite
 
 RUN compile_bigdft-suite.sh
 
