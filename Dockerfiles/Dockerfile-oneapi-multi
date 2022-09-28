@@ -19,7 +19,7 @@ WORKDIR /opt/bigdft
 RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools
 
 RUN echo "\n\
-cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc-full.rc -y; cd -\n\
+cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
 " > /bin/compile_bigdft-suite.sh
 
 RUN chmod +x /bin/compile_bigdft-suite.sh
