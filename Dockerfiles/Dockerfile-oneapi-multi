@@ -4,18 +4,19 @@ LABEL maintainer bigdft-developers@lists.launchpad.net
 #install needed dependencies
 RUN apt-get update && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool gtk-doc-tools libglu1-mesa-dev libgtk-3-dev
+    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool gtk-doc-tools libglu1-mesa-dev libgtk-3-dev git-lfs
 
 RUN apt-get install rsync --no-install-recommends -y
 
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
+RUN git lfs install
 
 EXPOSE 8888
 
 WORKDIR /opt/bigdft
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow python-constraint tinydb parmed lxml
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools
 
 RUN echo "\n\
 cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc-full.rc -y; cd -\n\
@@ -25,35 +26,59 @@ RUN chmod +x /bin/compile_bigdft-suite.sh
 
 WORKDIR /opt/bigdft
 
+ENV BIGDFT_SUITE_SOURCES /opt/bigdft/sources
+
 ENV JHBUILD_RUN_AS_ROOT "please do it"
 
 FROM sdkbase AS sdkseed
 
-RUN git clone --depth 1 -b 1.9.3-new https://gitlab.com/luigigenovese/bigdft-suite sources
+# RUN git clone --depth 1 -b bundler https://gitlab.com/l_sim/bundler.git
+
+# WORKDIR /opt/bigdft/bundler
+
+# RUN autoreconf -fi && ./configure --prefix $PWD && make && make install
+
+# WORKDIR /opt/bigdft
+
+ENV JHBUILD_COMMAND "python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
+
+ENV CHECKOUT_DIR $BIGDFT_SUITE_SOURCES
+
+RUN mkdir -p $CHECKOUT_DIR
+
+# RUN git clone --depth 1  https://gitlab.com/l_sim/bigdft-modulesets.git modulesets
+
+RUN git clone --depth 1 -b extras https://gitlab.com/l_sim/bigdft-upstream-tarballs.git tarballs-extra
+
+# RUN git clone --depth 1  https://gitlab.com/l_sim/bigdft-rcfiles.git rcfiles
+
+RUN git clone --depth 1 -b 1.9.3-new https://gitlab.com/luigigenovese/bigdft-suite.git sources
+
+RUN cp tarballs-extra/AmberTools* sources/tarballs/
 
 FROM sdkseed AS sdk_pre
 
-RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/-I//g` && echo "\n    using python \n     : 3.7       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > /opt/bigdft/sources/boost-user-config.jam
+RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/-I//g` && export PYTHON_VERSION=`python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'` && echo "\n    using python \n     : $PYTHON_VERSION       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > $CHECKOUT_DIR/boost-user-config.jam
 
-ENV BIGDFT_SUITE_SOURCES /opt/bigdft/sources
+#FROM sdk_pre AS sdk_bio
 
-FROM sdk_pre AS sdk_bio
+#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-bio-plugins
 
-RUN python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-bio-plugins
+#FROM sdk_pre AS sdk_client
 
-FROM sdk_bio AS sdk_client
+#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-plugins
 
-RUN python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-plugins
+FROM sdk_pre AS sdk_full
 
-FROM sdk_client AS sdk_full
-
-RUN python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build upstream-suite
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build upstream-suite
 
 RUN compile_bigdft-suite.sh
 
 FROM sdkseed AS sdk
 
 COPY --from=sdk_full /opt/upstream /opt/upstream
+
+ENV I_MPI_FABRICS shm
 
 RUN echo "\n\ 
    source /opt/bigdft/install/bin/bigdftvars.sh\n\
