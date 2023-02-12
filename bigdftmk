@@ -2,24 +2,29 @@
 ORIGIN=$(dirname $(readlink -f $0))
 . "$ORIGIN/container_base.sh"
 
-uniopt SOURCEDIR s sources "\${BIGDFT_SUITE_SOURCES}" "Source directory"
-uniopt CONTAINER i image "bigdft/sdk:oneapi-full" "SDK Container image to deploy"
-uniopt BINARIES b binaries "\${BIGDFT_SUITE_BINARIES}" "Binaries directory (created if absent)"
+uniopt SOURCEDIR s sources "\${BIGDFT_SUITE_SOURCES}"  "Source directory (value of BIGDFT_SUITE_SOURCES) "
+uniopt CONTAINER i image "bigdft/sdk:latest" "SDK Container image to deploy"
+uniopt BINARIES b binaries "\${BIGDFT_SUITE_BINARIES}" "Binaries directory (value of BIGDFT_SUITE_BINARIES, created if absent)"
 uniopt TARGET t target "/opt/bigdft" "Target Binaries directory"
 uniopt PORT p port "" "Port to which redirect the 8888 port of the container"
 
 parse_base $@
 
-SRC=$(get_abspath $SOURCEDIR)
-BIN=$(get_abspath $BINARIES)
-mkdir -p $BIN
-
 if test x"$PORT" = x; then
-   DOCKER_OPTIONS="$DOCKER_OPTIONS"
+   DOCKER_OPTIONS="$DOCKER_OPTIONS --network=host"
 else
    DOCKER_OPTIONS="$DOCKER_OPTIONS -p $PORT:8888"
 fi
 
-DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/ -v $BIN:$TARGET"
+if test x"$SOURCEDIR" != x; then
+   SRC=$(get_abspath $SOURCEDIR)
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/opt/bigdft/sources/"
+fi
+
+if test x"$BINARIES" != x; then
+   BIN=$(get_abspath $BINARIES)
+   mkdir -p $BIN
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -v $BIN:$TARGET"
+fi
 
 docker_command

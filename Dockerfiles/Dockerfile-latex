@@ -1,4 +1,4 @@
-FROM blang/latex:ctanfull
+FROM charlesbaynham/ctanfull:2022_jun
 LABEL presentations bigdft-developers@lists.launchpad.net
 
 #install needed dependencies

@@ -53,7 +53,7 @@ RUN apt-get install rsync --no-install-recommends -y
 
 EXPOSE 8888
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy
 
 RUN echo "\n\
 cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
@@ -82,6 +82,15 @@ RUN compile_bigdft-suite.sh
 FROM sdk AS runtime
 
 COPY --from=runtime_pre /opt/bigdft/install /opt/bigdft/install/
+
+RUN echo "#!/bin/bash\n\
+source /opt/bigdft/install/bin/bigdftvars.sh\n\
+\$BIGDFT_MPIRUN \$BIGDFT_ROOT/bigdft \$@\n\
+" > /bin/bigdft.sh
+
+RUN chmod +x /bin/bigdft.sh
+
+ENTRYPOINT ["bigdft.sh"]
 
 # RUN git clone --depth 1 -b bundler https://gitlab.com/l_sim/bundler.git
 

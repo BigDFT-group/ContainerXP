@@ -4,8 +4,10 @@ ORIGIN=$(dirname $(readlink -f $0))
 
 uniopt WITH_DISPLAY X display ASSUME_NO "Enable host display usage (requires x11-xserver-utils)"
 uniopt WITH_WORKDIR w workdir ASSUME_NO "Include present directory in the container"
-uniopt EMPLOY_ROOT_USER r root ASSUME_NO "Employ present user in the container"
+uniopt KEEP k keep ASSUME_NO "Do not remove container after it exits"
+uniopt EMPLOY_ROOT_USER r root ASSUME_NO "Employ root user in the container, use \$USER if absent"
 uniopt EXTRA_COMMANDS x extra-cmd "" "Extra commands to be provided to docker WARNING: Spaces are not tolerated, use long commands"
+uniopt EXTRA_POSITIONAL e extra-positional "" "Extra commands to be provided at commmand line WARNING: Spaces are not tolerated, use long commands"
 uniopt HOMEDIR d homedir "/tmp/fake_home" "Directory of homedir of the container. Useful eg. to preserve history."
 
 enable_display() {
@@ -63,6 +65,9 @@ parse_base(){
     uniopt_parser $@
 
     DOCKER_OPTIONS=""
+    if test "$KEEP" = "NO"; then
+            DOCKER_OPTIONS="--rm"
+    fi
 
     enable_display
     enable_workdir
@@ -71,7 +76,7 @@ parse_base(){
 }
 
 docker_command() {
-    DOCKER_COMMAND="docker run -ti $DOCKER_OPTIONS $CONTAINER $POSITIONAL"
+    DOCKER_COMMAND="docker run -ti $DOCKER_OPTIONS $CONTAINER $POSITIONAL $EXTRA_POSITIONAL"
     echo "$DOCKER_COMMAND"
 }
 
