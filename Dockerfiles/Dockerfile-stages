@@ -1,4 +1,4 @@
-FROM intel/oneapi-hpckit:2022.3.1-devel-ubuntu20.04 AS base
+FROM intel/oneapi-hpckit AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 
 #install needed dependencies
@@ -22,7 +22,8 @@ RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarbal
 
 ENV BIGDFT_SUITE_TARBALLDIR /opt/bigdft/bigdft-upstream-tarballs
 
-RUN git clone --depth 1 -b  devel  https://gitlab.com/luigigenovese/bigdft-suite.git sources
+# version of 22-03-23
+RUN git clone --depth 1 -b devel  https://gitlab.com/luigigenovese/bigdft-suite.git sources
 
 ENV JHBUILD_COMMAND "python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
 
@@ -33,8 +34,6 @@ RUN mkdir -p $BIGDFT_SUITE_CHECKOUTROOT
 FROM precompile AS coreseed
 
 RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/-I//g` && export PYTHON_VERSION=`python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'` && echo "\n    using python \n     : $PYTHON_VERSION       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > $BIGDFT_SUITE_CHECKOUTROOT/boost-user-config.jam
-
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install setuptools
 
 RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build core-upstream-suite
 
@@ -55,7 +54,7 @@ RUN apt-get install rsync --no-install-recommends -y
 
 EXPOSE 8888
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy xlsxwriter
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka
 
 RUN echo "\n\
 cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\

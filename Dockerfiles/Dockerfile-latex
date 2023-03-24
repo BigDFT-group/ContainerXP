@@ -1,4 +1,4 @@
-FROM blang/latex:ctanfull
+FROM charlesbaynham/ctanfull:2022_jun
 LABEL presentations bigdft-developers@lists.launchpad.net
 
 #install needed dependencies
@@ -8,9 +8,11 @@ RUN apt-get update && \
 
 RUN cd /tmp && \
     wget --no-check-certificate  https://www.1001fonts.com/download/nunito.zip && \
-    mkdir -p /usr/share/fonts/custom/ && \ 
-    unzip nunito.zip -d /usr/share/fonts/custom && \
-    rm /tmp/nunito.zip
+    wget --no-check-certificate  https://www.1001fonts.com/download/poppins.zip && \ 
+    mkdir -p /usr/share/fonts/custom/ && \
+    unzip poppins.zip -d /usr/share/fonts/custom && \
+    unzip -o nunito.zip -d /usr/share/fonts/custom && \
+    rm nunito.zip poppins.zip
 
 RUN mkdir -p /bigdft-latex/ && cd /tmp && \
     wget https://github.com/BigDFT-group/ContainerXP/archive/refs/heads/master.zip && \
