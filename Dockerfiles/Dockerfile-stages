@@ -22,7 +22,8 @@ RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarbal
 
 ENV BIGDFT_SUITE_TARBALLDIR /opt/bigdft/bigdft-upstream-tarballs
 
-RUN git clone --depth 1 -b  devel  https://gitlab.com/luigigenovese/bigdft-suite.git sources
+# version of 22-03-23
+RUN git clone --depth 1 -b devel  https://gitlab.com/luigigenovese/bigdft-suite.git sources
 
 ENV JHBUILD_COMMAND "python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
 
@@ -53,7 +54,7 @@ RUN apt-get install rsync --no-install-recommends -y
 
 EXPOSE 8888
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka
 
 RUN echo "\n\
 cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\

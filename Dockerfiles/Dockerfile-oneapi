@@ -1,50 +1,134 @@
-FROM intel/oneapi-hpckit
+FROM intel/oneapi-hpckit:2022.3.1-devel-ubuntu20.04 AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 
 #install needed dependencies
-RUN apt-get update && \
+RUN apt update || true && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen gdb valgrind vim graphviz zlib1g-dev gettext libmount-dev bison flex
-
-RUN apt-get install rsync --no-install-recommends -y
-
-#RUN cd /tmp/ && \
-#    curl --continue-at - -L https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0.tar.bz2 -o boost_1_72_0.tar.bz2 && \
-#    tar xjvf boost_1_72_0.tar.bz2 && cd boost_1_72_0
-
-#RUN cd /tmp/boost_1_72_0 && ./bootstrap.sh --with-libraries=python,serialization --with-python=`which python` --without-icu
-
-#RUN echo "\n\ 
-#   using python \n \ 
-#    : 3.7       \n \
-#    : /opt/intel/oneapi/intelpython/latest/bin/python \n \
-#    : /opt/intel/oneapi/intelpython/latest/include/python3.9  \n \
-#    : /opt/intel/oneapi/intelpython/latest/lib  \n \
-#    ; \n \
-#" > /tmp/boost_1_72_0/user-config.jam
-
-#RUN cd /tmp/boost_1_72_0 && ./b2 --user-config=user-config.jam  install threading=multi variant=release link=shared stage --with-regex --disable-icu --with-thread --with-serialization --with-iostreams --with-python --with-system --with-test -q
-
-#RUN rm -rf /tmp/boost*
+    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs
 
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
-
-EXPOSE 8888
+RUN git lfs install
 
 WORKDIR /opt/bigdft
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install setuptools jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow
+ENV BIGDFT_SUITE_SOURCES /opt/bigdft/sources
 
-RUN echo "\n\ 
-   source /opt/bigdft/install/bin/bigdftvars.sh\n\
-   jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
-" > /bin/run_notebook.sh
+ENV JHBUILD_RUN_AS_ROOT "please do it"
+
+FROM base AS precompile
+
+RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git
+
+ENV BIGDFT_SUITE_TARBALLDIR /opt/bigdft/bigdft-upstream-tarballs
+
+RUN git clone --depth 1 -b  devel  https://gitlab.com/luigigenovese/bigdft-suite.git sources
+
+ENV JHBUILD_COMMAND "python3 $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
+
+ENV BIGDFT_SUITE_CHECKOUTROOT /opt/bigdft/checkoutdir
+
+RUN mkdir -p $BIGDFT_SUITE_CHECKOUTROOT
+
+FROM precompile AS coreseed
+
+RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/-I//g` && export PYTHON_VERSION=`python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'` && echo "\n    using python \n     : $PYTHON_VERSION       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > $BIGDFT_SUITE_CHECKOUTROOT/boost-user-config.jam
+
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install setuptools
+
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build core-upstream-suite
+
+FROM coreseed AS clientseed
+
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools
+
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-upstream-suite
+
+FROM base AS sdk
+
+#install needed dependencies
+RUN apt update || true && \
+    apt-get install -y \
+    gdb valgrind vim graphviz sshpass
+
+RUN apt-get install rsync --no-install-recommends -y
+
+EXPOSE 8888
+
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy xlsxwriter
 
 RUN echo "\n\
-python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc-no_upstream.rc -y\n\
+cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
 " > /bin/compile_bigdft-suite.sh
 
 RUN chmod +x /bin/compile_bigdft-suite.sh
 
-CMD bash /bin/run_notebook.sh 
+COPY --from=clientseed /opt/upstream /opt/upstream
+
+ENV I_MPI_FABRICS shm
+
+RUN echo "\n\ 
+   source /opt/bigdft/install/bin/bigdftvars.sh\n\
+   ulimit -s unlimited\n\
+   jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
+" > /bin/run_notebook.sh
+
+CMD bash /bin/run_notebook.sh
+
+FROM sdk AS runtime_pre
+
+COPY --from=precompile /opt/bigdft/sources /opt/bigdft/sources
+
+RUN compile_bigdft-suite.sh
+
+FROM sdk AS runtime
+
+COPY --from=runtime_pre /opt/bigdft/install /opt/bigdft/install/
+
+RUN echo "#!/bin/bash\n\
+source /opt/bigdft/install/bin/bigdftvars.sh\n\
+\$BIGDFT_MPIRUN \$BIGDFT_ROOT/bigdft \$@\n\
+" > /bin/bigdft.sh
+
+RUN chmod +x /bin/bigdft.sh
+
+ENTRYPOINT ["bigdft.sh"]
+
+# RUN git clone --depth 1 -b bundler https://gitlab.com/l_sim/bundler.git
+
+# WORKDIR /opt/bigdft/bundler
+
+# RUN autoreconf -fi && ./configure --prefix $PWD && make && make install
+
+# WORKDIR /opt/bigdft
+
+# RUN git clone --depth 1  https://gitlab.com/l_sim/bigdft-modulesets.git modulesets
+
+# RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git tarballs-extra
+
+# RUN git clone --depth 1  https://gitlab.com/l_sim/bigdft-rcfiles.git rcfiles
+
+# RUN git clone --depth 1 -b 1.9.3-new https://gitlab.com/luigigenovese/bigdft-suite.git sources
+
+#FROM sdk_pre AS sdk_bio   gtk-doc-tools libglu1-mesa-dev libgtk-3-dev 
+
+#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-bio-plugins
+
+#FROM sdk_pre AS sdk_client
+
+#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-plugins
+
+# FROM sdk_pre AS sdk_full
+
+# RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build upstream-suite
+
+# RUN compile_bigdft-suite.sh
+
+# FROM sdkseed AS sdk
+
+# COPY --from=sdk_full /opt/upstream /opt/upstream
+
+# FROM sdk_full AS runtime
+
+# COPY --from=sdk_full /opt/bigdft/install /opt/bigdft/install/
+
