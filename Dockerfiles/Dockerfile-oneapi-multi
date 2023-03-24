@@ -16,7 +16,7 @@ EXPOSE 8888
 
 WORKDIR /opt/bigdft
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol networkx xlrd openpyxl mplcursors seaborn clustergrammer_widget pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg
 
 RUN echo "\n\
 cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
@@ -48,27 +48,30 @@ RUN mkdir -p $CHECKOUT_DIR
 
 # RUN git clone --depth 1  https://gitlab.com/l_sim/bigdft-modulesets.git modulesets
 
-RUN git clone --depth 1 -b extras https://gitlab.com/l_sim/bigdft-upstream-tarballs.git tarballs-extra
+RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git tarballs-extra && cd tarballs-extra && \
+    git lfs fetch && \
+    git lfs checkout && \
+    cd ../
 
 # RUN git clone --depth 1  https://gitlab.com/l_sim/bigdft-rcfiles.git rcfiles
 
 RUN git clone --depth 1 -b 1.9.3-new https://gitlab.com/luigigenovese/bigdft-suite.git sources
 
-RUN cp tarballs-extra/AmberTools* sources/tarballs/
+RUN cp tarballs-extra/* sources/tarballs/
 
 FROM sdkseed AS sdk_pre
 
 RUN export PYTHON_INCLUDE=`python3-config --includes | awk '{print $1}' | sed s/-I//g` && export PYTHON_VERSION=`python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'` && echo "\n    using python \n     : $PYTHON_VERSION       \n     : /opt/intel/oneapi/intelpython/latest/bin/python \n     : $PYTHON_INCLUDE  \n     : /opt/intel/oneapi/intelpython/latest/lib  \n     ; \n " > $CHECKOUT_DIR/boost-user-config.jam
 
-#FROM sdk_pre AS sdk_bio
+FROM sdk_pre AS sdk_core
 
-#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-bio-plugins
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build core-upstream-suite
 
-#FROM sdk_pre AS sdk_client
+FROM sdk_core AS sdk_client
 
-#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-plugins
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build client-plugins
 
-FROM sdk_pre AS sdk_full
+FROM sdk_client AS sdk_full
 
 RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build upstream-suite
 
