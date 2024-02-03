@@ -4,7 +4,7 @@ LABEL maintainer bigdft-developers@lists.launchpad.net
 #install needed dependencies
 RUN apt update || true && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs gawk libfreetype6-dev
+    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs gawk libfreetype6-dev #intel-opencl-icd
 
 RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/176aff1f-4922-4bd1-90ef-e4ab66fe76a0/l_pythoni39_oneapi_p_2023.1.0.46399.sh
 
@@ -30,8 +30,8 @@ FROM base AS precompile
 
 ENV BIGDFT_SUITE_TARBALLDIR /opt/bigdft/bigdft-upstream-tarballs
 
-# version of 13-04-23
-RUN git clone --depth 1 -b devel https://gitlab.com/luigigenovese/bigdft-suite.git $BIGDFT_SUITE_SOURCES
+# version of 18-08-23
+RUN git clone  --depth 1 -b devel https://gitlab.com/luigigenovese/bigdft-suite.git $BIGDFT_SUITE_SOURCES
 
 ENV JHBUILD_COMMAND "$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
 
@@ -52,6 +52,9 @@ RUN cd $BIGDFT_SUITE_CHECKOUTROOT/libxc && autoreconf -fi && cd -
 
 RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream-base.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build
 RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream-base.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules clean
+
+#RUN $JHBUILD_COMMAND --conditions=+no_intel_gpu -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build dbfft
+#RUN $JHBUILD_COMMAND --conditions=+no_intel_gpu -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules clean dbfft
 
 FROM basesdk as siriussdk
 
@@ -112,6 +115,12 @@ COPY --from=pygobject $BIGDFT_SUITE_TARBALLDIR/ $BIGDFT_SUITE_TARBALLDIR/
 COPY --from=simulation /opt/upstream/ /opt/upstream/
 COPY --from=simulation $BIGDFT_SUITE_TARBALLDIR/ $BIGDFT_SUITE_TARBALLDIR/
 
+RUN echo "\n\
+cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
+" > /bin/compile_bigdft-suite.sh
+
+RUN chmod +x /bin/compile_bigdft-suite.sh
+
 # RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules  build core-upstream-suite
 
 FROM  baseclientsdk AS clientsdk
@@ -132,26 +141,24 @@ FROM clientsdk AS sdk
 #install needed dependencies
 RUN apt update || true && \
     apt-get install -y \
-    gdb valgrind vim graphviz sshpass
+    gdb valgrind vim graphviz sshpass intel-opencl-icd intel-oneapi-dpcpp-ct
 
 RUN apt-get install rsync --no-install-recommends -y
 
 EXPOSE 8888
 
-RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka
+RUN /opt/intel/oneapi/intelpython/latest/bin/pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka bokeh
 
 RUN echo "\n\
 cd /opt/bigdft; python3 /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
 " > /bin/compile_bigdft-suite.sh
 
-RUN chmod +x /bin/compile_bigdft-suite.sh
-
 COPY --from=coresdk /opt/upstream/ /opt/upstream/
 COPY --from=coresdk $BIGDFT_SUITE_TARBALLDIR/ $BIGDFT_SUITE_TARBALLDIR/
 
-ENV I_MPI_FABRICS ofi
+ENV I_MPI_FABRICS shm
 
-RUN for f in /opt/intel/oneapi/intelpython/python3.9/lib/*tinfo*; do mv $f $f.bak;done
+RUN for f in /opt/intel/oneapi/intelpython/python3.9/lib/*tinfo.*; do mv $f $f.bak;done
 
 RUN echo "\n\ 
    source /opt/bigdft/install/bin/bigdftvars.sh\n\
