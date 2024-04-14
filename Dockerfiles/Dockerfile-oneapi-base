@@ -1,0 +1,13 @@
+FROM intel/oneapi-hpckit:2022.3.1-devel-ubuntu20.04 AS base
+LABEL maintainer bigdft-developers@lists.launchpad.net
+
+#install needed dependencies
+RUN apt update || true && \
+    apt-get install -y \
+    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs intel-hpckit 
+
+RUN git config --global user.email "bigdft-project@gmail.com"
+RUN git config --global user.name "BigDFT developer"
+RUN git lfs install
+
+
