@@ -1,0 +1,24 @@
+FROM intel/oneapi-hpckit:2023.1.0-devel-ubuntu22.04 AS base
+LABEL maintainer bigdft-developers@lists.launchpad.net
+
+#install needed dependencies
+RUN apt update || true && \
+    apt-get install -y \
+    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs gawk libfreetype6-dev rubygems libffi-dev ruby-dev vim less gdb
+
+RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/176aff1f-4922-4bd1-90ef-e4ab66fe76a0/l_pythoni39_oneapi_p_2023.1.0.46399.sh
+
+RUN sh l_pythoni39_oneapi_p_2023.1.0.46399.sh -a -s --eula accept 
+
+ENV PYTHON /opt/intel/oneapi/intelpython/latest/bin/python3
+
+ENV PATH "/opt/intel/oneapi/intelpython/latest/bin:$PATH"
+
+RUN git config --global user.email "bigdft-project@gmail.com"
+RUN git config --global user.name "BigDFT developer"
+RUN git lfs install
+
+RUN git clone https://github.com/Nanosim-LIG/boast && cd boast/ && gem build BOAST.gemspec && gem install BOAST-2.1.0.gem && cd ../
+
+RUN ln -s /usr/lib/x86_64-linux-gnu/libpthread.so.0 /usr/lib/x86_64-linux-gnu/libpthread.so
+
