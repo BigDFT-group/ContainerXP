@@ -6,6 +6,11 @@ RUN apt update || true && \
     apt-get install -y \
     autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs intel-hpckit 
 
+#RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/176aff1f-4922-4bd1-90ef-e4ab66fe76a0/l_pythoni39_oneapi_p_2023.1.0.46399.sh
+#RUN sh l_pythoni39_oneapi_p_2023.1.0.46399.sh -a -s --eula accept
+#ENV PYTHON /opt/intel/oneapi/intelpython/latest/bin/python3
+#ENV PATH "/opt/intel/oneapi/intelpython/latest/bin:$PATH"
+
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
 RUN git lfs install
