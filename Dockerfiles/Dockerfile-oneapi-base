@@ -1,18 +1,45 @@
-FROM intel/oneapi-hpckit:2022.3.1-devel-ubuntu20.04 AS base
+FROM intel/oneapi AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 
 #install needed dependencies
 RUN apt update || true && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs intel-hpckit 
+    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs
 
-#RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/176aff1f-4922-4bd1-90ef-e4ab66fe76a0/l_pythoni39_oneapi_p_2023.1.0.46399.sh
-#RUN sh l_pythoni39_oneapi_p_2023.1.0.46399.sh -a -s --eula accept
-#ENV PYTHON /opt/intel/oneapi/intelpython/latest/bin/python3
-#ENV PATH "/opt/intel/oneapi/intelpython/latest/bin:$PATH"
+RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/063bda92-d923-4acd-8745-c40090f05217/intelpython3-2024.1.0_814-Linux-x86_64.sh
+RUN sh intelpython3-2024.1.0_814-Linux-x86_64.sh -b
+ENV INTELPYTHON /root/intelpython3 
+ENV PYTHON $INTELPYTHON/bin/python3
+ENV PATH "$INTELPYTHON/bin:$PATH"
 
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
 RUN git lfs install
+
+WORKDIR /opt/bigdft
+
+ENV BIGDFT_SUITE_SOURCES /opt/bigdft/sources
+
+ENV JHBUILD_RUN_AS_ROOT "please do it"
+
+FROM base AS precompile
+
+# RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git
+
+ENV BIGDFT_SUITE_TARBALLDIR /opt/bigdft/bigdft-upstream-tarballs
+
+# version of 18-08-23
+RUN git clone  --depth 1 -b devel https://gitlab.com/l_sim/bigdft-suite.git $BIGDFT_SUITE_SOURCES
+
+ENV JHBUILD_COMMAND "$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
+
+ENV BIGDFT_SUITE_CHECKOUTROOT /opt/bigdft/checkoutdir
+
+RUN mkdir -p $BIGDFT_SUITE_CHECKOUTROOT
+
+FROM precompile AS prebase
+
+#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream-base.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build PyYAML
+#RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream-base.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules clean PyYAML
 
 
