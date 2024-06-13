@@ -2,15 +2,17 @@ FROM intel/oneapi AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 
 RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/063bda92-d923-4acd-8745-c40090f05217/intelpython3-2024.1.0_814-Linux-x86_64.sh
-RUN sh intelpython3-2024.1.0_814-Linux-x86_64.sh -b
-ENV INTELPYTHON /root/intelpython3 
+ENV INTELPYTHON /opt/intel/oneapi/intelpython3 
+
+RUN sh intelpython3-2024.1.0_814-Linux-x86_64.sh -b -p $INTELPYTHON
+
 ENV PYTHON $INTELPYTHON/bin/python3
 ENV PATH "$INTELPYTHON/bin:$PATH"
 
 #install needed dependencies
 RUN apt update || true && \
     apt-get install -y \
-    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs intel-hpckit
+    autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex libfreetype6-dev intltool libtool git-lfs intel-hpckit
 
 ENV I_MPI_FABRICS shm
 
@@ -30,11 +32,9 @@ ENV BIGDFT_SUITE_TARBALLDIR /opt/bigdft/bigdft-upstream-tarballs
 
 #RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git $BIGDFT_SUITE_TARBALLDIR
 
-ENV CONTAINER_DATE 22-06-04
+ENV CONTAINER_DATE 22-06-10
 
-RUN git clone --depth 1 -b devel https://gitlab.com/luigigenovese/bigdft-suite.git $BIGDFT_SUITE_SOURCES
-
-RUN cd $BIGDFT_SUITE_SOURCES && git pull && cd -
+RUN git clone --depth 1 -b devel https://gitlab.com/l_sim/bigdft-suite.git $BIGDFT_SUITE_SOURCES
 
 ENV JHBUILD_COMMAND "$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
 
@@ -95,17 +95,18 @@ RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m 
 
 FROM boost as bioone
 
-RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build openbabel rdkit
-RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules clean openbabel rdkit
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build rdkit openbabel
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules clean rdkit openbabel
 
-FROM bioone as biotwo
+FROM baseclientsdk as biotwo
 
-#COPY --from=bioone /opt/upstream/ /opt/upstream/
+COPY --from=bioone /opt/upstream/ /opt/upstream/
+COPY --from=boost /opt/upstream/ /opt/upstream/
 COPY --from=boost $BIGDFT_SUITE_TARBALLDIR/ $BIGDFT_SUITE_TARBALLDIR/
 
 RUN DEBIAN_FRONTEND="noninteractive" TZ="Europe/Paris" apt install -y python3-tk
-RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build pdbfixer openmmforcefields
-RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules clean openmm ambertools
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules build pdbfixer #openmmforcefields
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules clean pdbfixer #openmm ambertools
 
 FROM basesdk AS coresdk
 
@@ -136,4 +137,37 @@ COPY --from=bioone $BIGDFT_SUITE_TARBALLDIR/ $BIGDFT_SUITE_TARBALLDIR/
 
 COPY --from=biotwo /opt/upstream/ /opt/upstream/
 COPY --from=biotwo $BIGDFT_SUITE_TARBALLDIR/ $BIGDFT_SUITE_TARBALLDIR/
+
+FROM clientsdk AS sdk
+
+#install needed dependencies
+RUN apt update || true && \
+    apt-get install -y \
+    gdb valgrind vim graphviz sshpass intel-opencl-icd intel-oneapi-dpcpp-ct
+
+RUN apt-get install rsync --no-install-recommends -y
+
+EXPOSE 8888
+
+RUN pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka bokeh
+
+#RUN for f in /opt/intel/oneapi/intelpython/python3.9/lib/*tinfo.*; do mv $f $f.bak;done
+
+RUN echo "\n\ 
+   source /opt/bigdft/install/bin/bigdftvars.sh\n\
+   ulimit -s unlimited\n\
+   jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
+" > /bin/run_notebook.sh
+
+CMD bash /bin/run_notebook.sh
+
+FROM coresdk AS runtime_pre
+
+COPY --from=precompile /opt/bigdft/sources /opt/bigdft/sources
+
+RUN compile_bigdft-suite.sh
+
+FROM sdk AS runtime
+
+COPY --from=runtime_pre /opt/bigdft/install/ /opt/bigdft/install/
 
