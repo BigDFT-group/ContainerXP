@@ -14,6 +14,8 @@ RUN apt update || true && \
     apt-get install -y \
     autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex libfreetype6-dev intltool libtool git-lfs intel-hpckit
 
+ENV LD_LIBRARY_PATH /usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+
 ENV I_MPI_FABRICS shm
 
 RUN git config --global user.email "bigdft-project@gmail.com"
@@ -79,7 +81,7 @@ RUN apt-get install rsync --no-install-recommends -y
 
 EXPOSE 8888
 
-RUN pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka bokeh
+RUN pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka bokeh xlsxwriter
 
 #RUN for f in /opt/intel/oneapi/intelpython/python3.9/lib/*tinfo.*; do mv $f $f.bak;done
 
