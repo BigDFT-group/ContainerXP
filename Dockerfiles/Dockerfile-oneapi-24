@@ -34,7 +34,7 @@ ENV BIGDFT_SUITE_TARBALLDIR /opt/bigdft/bigdft-upstream-tarballs
 
 #RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git $BIGDFT_SUITE_TARBALLDIR
 
-ENV CONTAINER_DATE 22-06-12-5
+ENV CONTAINER_DATE 24-10-20-1
 
 RUN git clone --depth 1 -b devel https://gitlab.com/l_sim/bigdft-suite.git $BIGDFT_SUITE_SOURCES
 
@@ -56,12 +56,12 @@ RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m 
 FROM precompile as client-upstream
 
 RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules --conditions=-amber,+cython3 build client-upstream-suite
-RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules --conditions=-amber,+cython3 clean client-upstream-suite
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules --conditions=-amber,+cython3 clean --skip=simtk client-upstream-suite
 
 FROM precompile AS upstream
 
 RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules --conditions=-amber,+cython3 build upstream-suite
-RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules --conditions=-amber,+cython3 clean upstream-suite
+RUN $JHBUILD_COMMAND -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules --conditions=-amber,+cython3 clean --skip=simtk upstream-suite
 
 FROM upstream as sdk
 
