@@ -1,0 +1,11 @@
+FROM intel/oneapi AS base
+LABEL maintainer bigdft-developers@lists.launchpad.net
+
+RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/063bda92-d923-4acd-8745-c40090f05217/intelpython3-2024.1.0_814-Linux-x86_64.sh
+ENV INTELPYTHON /opt/intel/oneapi/intelpython3 
+
+RUN sh intelpython3-2024.1.0_814-Linux-x86_64.sh -b -p $INTELPYTHON
+
+ENV PYTHON $INTELPYTHON/bin/python3
+ENV PATH "$INTELPYTHON/bin:$PATH"
+
