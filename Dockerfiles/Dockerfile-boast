@@ -5,9 +5,6 @@ RUN apt update || true && \
     apt-get install -y \
     autoconf curl libpcre3-dev git doxygen zlib1g-dev libbz2-dev gettext libmount-dev bison flex intltool libtool git-lfs gawk libfreetype6-dev rubygems libffi-dev ruby-dev vim less gdb
 
-
-ENV PATH "/opt/intel/oneapi/intelpython/latest/bin:$PATH"
-
 RUN git config --global user.email "bigdft-project@gmail.com"
 RUN git config --global user.name "BigDFT developer"
 RUN git lfs install

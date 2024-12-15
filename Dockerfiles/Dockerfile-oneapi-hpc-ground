@@ -1,0 +1,28 @@
+FROM intel/oneapi-hpckit AS base
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ENV INTELPYTHON_PACKAGE_NAME=2025.0.0_71
+ENV INTELPYTHON_INSTALLER=intelpython3-${INTELPYTHON_PACKAGE_NAME}-Linux-x86_64.sh
+RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/065bada9-07c4-425a-98e0-d219baccd9d6/$INTELPYTHON_INSTALLER
+ENV INTELPYTHON=/opt/intel/oneapi/intelpython3 
+
+RUN sh $INTELPYTHON_INSTALLER -b -p $INTELPYTHON
+
+ENV PYTHON=$INTELPYTHON/bin/python3
+ENV PATH="$INTELPYTHON/bin:$PATH"
+
+RUN mkdir dpkg
+RUN cd dpkg && wget https://github.com/intel/intel-graphics-compiler/releases/download/v2.1.12/intel-igc-opencl-2_2.1.12+18087_amd64.deb && \
+    wget https://github.com/intel/intel-graphics-compiler/releases/download/v2.1.12/intel-igc-core-2_2.1.12+18087_amd64.deb && \
+    wget https://github.com/intel/compute-runtime/releases/download/24.45.31740.9/intel-level-zero-gpu-dbgsym_1.6.31740.9_amd64.ddeb && \
+    wget https://github.com/intel/compute-runtime/releases/download/24.45.31740.9/intel-level-zero-gpu_1.6.31740.9_amd64.deb && \
+    wget https://github.com/intel/compute-runtime/releases/download/24.45.31740.9/intel-opencl-icd-dbgsym_24.45.31740.9_amd64.ddeb &&\
+    wget https://github.com/intel/compute-runtime/releases/download/24.45.31740.9/intel-opencl-icd_24.45.31740.9_amd64.deb &&\
+    wget https://github.com/intel/compute-runtime/releases/download/24.45.31740.9/libigdgmm12_22.5.2_amd64.deb &&\
+    wget https://github.com/intel/compute-runtime/releases/download/24.45.31740.9/ww45.sum &&\
+    dpkg -i *.deb
+RUN rm -rf dpkg
+
+ENV I_MPI_FABRICS=shm
+
+
