@@ -28,28 +28,36 @@ ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
 
 RUN mkdir -p $BIGDFT_SUITE_CHECKOUTROOT
 
-FROM base AS precompile-yaml
+RUN echo "\n\
+cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
+" > /bin/compile_bigdft-suite.sh
 
-ENV CONTAINER_DATE=24-10-14-3
+RUN chmod +x /bin/compile_bigdft-suite.sh
+
+ENV CONTAINER_DATE=24-10-16-1
 
 #RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git $BIGDFT_SUITE_TARBALLDIR
 
 RUN git clone --depth 1 -b devel https://gitlab.com/l_sim/bigdft-suite.git $BIGDFT_SUITE_SOURCES
 
+FROM base AS precompile-base
+
 RUN $INSTALLATION_COMMAND build PyYAML
 RUN $INSTALLATION_COMMAND clean PyYAML
 
-FROM precompile-yaml AS upstream-core-base
+FROM precompile-base AS upstream-core-base
 
 RUN $INSTALLATION_COMMAND --conditions=+sycl build core-upstream-suite
 RUN $INSTALLATION_COMMAND --conditions=+sycl clean core-upstream-suite
 
 FROM upstream-core-base AS upstream-core
 
-RUN $INSTALLATION_COMMAND --conditions=+python,+devdoc,+simulation,+sirius build core-upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=+python,+devdoc,+simulation,+sirius clean core-upstream-suite
+RUN apt update || true && apt-get install -y gettext libmount-dev intltool python3-gi
 
-FROM precompile-yaml AS upstream-client-base
+RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius build core-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius clean core-upstream-suite
+
+FROM precompile-base AS upstream-client-base
 
 RUN $INSTALLATION_COMMAND --conditions=+ase,+vdw,+dill,+spg build  client-upstream-suite client-bio-baseplugins
 RUN $INSTALLATION_COMMAND --conditions=+ase,+vdw,+dill,+spg clean  client-upstream-suite client-bio-baseplugins
@@ -63,8 +71,8 @@ RUN apt update || true && \
 
 RUN pip install matplotlib
 
-RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,+amber build  --skip=rdkit client-upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,+amber clean  --skip=simtk client-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,-amber build  --skip=rdkit client-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,-amber clean  --skip=simtk client-upstream-suite
 
 FROM upstream-client-base AS upstream-suite-base
 
@@ -73,54 +81,30 @@ RUN $INSTALLATION_COMMAND --conditions=+sycl clean upstream-suite
 
 FROM upstream-client AS upstream-suite
 
-RUN $INSTALLATION_COMMAND --conditions=+python,+devdoc,+simulation,+sirius build upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=+python,+devdoc,+simulation,+sirius clean upstream-suite
+RUN apt update || true &&  apt-get install -y gettext libmount-dev intltool python3-gi
 
+RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius build upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius clean upstream-suite
 
-FROM upstream-core-base AS runtime-base
+FROM upstream-core-base AS runtime-core-base
 
-#install needed dependencies
-RUN apt update || true && \
-    apt-get install -y \
-    curl gettext libmount-dev intltool intel-hpckit
+RUN compile_bigdft-suite.sh
 
+FROM upstream-core AS runtime-core
 
-RUN $INSTALLATION_COMMAND setup GaIn  libxc
-RUN cd $BIGDFT_SUITE_CHECKOUTROOT/GaIn-1.0 && autoreconf -fi && cd -
-RUN cd $BIGDFT_SUITE_CHECKOUTROOT/libxc && autoreconf -fi && cd -
+RUN compile_bigdft-suite.sh
 
-FROM precompile AS core-upstream
-
-RUN $INSTALLATION_COMMAND build core-upstream-suite
-RUN $INSTALLATION_COMMAND core-upstream-suite
-
-FROM precompile AS client-upstream
-
-RUN $INSTALLATION_COMMAND --conditions=-amber,+cython3 build client-upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=-amber,+cython3 clean --skip=simtk client-upstream-suite
-
-FROM precompile AS upstream
-
-RUN $INSTALLATION_COMMAND --conditions=-amber,+cython3 build upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=-amber,+cython3 clean --skip=simtk upstream-suite
-
-FROM upstream AS sdk
-
-RUN echo "\n\
-cd /opt/bigdft; $PYTHON /opt/bigdft/sources/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
-" > /bin/compile_bigdft-suite.sh
-
-RUN chmod +x /bin/compile_bigdft-suite.sh
+FROM upstream-suite AS sdk
 
 #install needed dependencies
 RUN apt update || true && \
     apt-get install -y \
-    gdb valgrind vim graphviz sshpass intel-opencl-icd intel-oneapi-dpcpp-ct
+    gdb valgrind vim graphviz sshpass  
+#intel-opencl-icd intel-oneapi-dpcpp-ct
 
 RUN apt-get install rsync --no-install-recommends -y
 
 RUN ln -s /usr/lib/x86_64-linux-gnu/libpthread.so.0 /usr/lib/x86_64-linux-gnu/libpthread.so
-
 
 EXPOSE 8888
 
@@ -136,13 +120,7 @@ RUN echo "\n\
 
 CMD bash /bin/run_notebook.sh
 
-FROM sdk AS runtime_pre
-
-COPY --from=precompile /opt/bigdft/sources /opt/bigdft/sources
-
-RUN compile_bigdft-suite.sh
-
 FROM sdk AS runtime
 
-COPY --from=runtime_pre /opt/bigdft/install/ /opt/bigdft/install/
+RUN compile_bigdft-suite.sh
 
