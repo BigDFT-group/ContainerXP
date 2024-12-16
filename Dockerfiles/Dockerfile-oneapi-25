@@ -34,7 +34,7 @@ cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f oneapi-hpc.r
 
 RUN chmod +x /bin/compile_bigdft-suite.sh
 
-ENV CONTAINER_DATE=24-10-16-1
+ENV CONTAINER_DATE=24-10-16-2
 
 #RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git $BIGDFT_SUITE_TARBALLDIR
 
