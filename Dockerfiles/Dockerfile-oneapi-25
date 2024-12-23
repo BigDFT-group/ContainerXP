@@ -34,7 +34,7 @@ cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f oneapi-hpc.r
 
 RUN chmod +x /bin/compile_bigdft-suite.sh
 
-ENV CONTAINER_DATE=24-10-16-2
+ENV CONTAINER_DATE=24-10-16-3
 
 #RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git $BIGDFT_SUITE_TARBALLDIR
 
@@ -42,8 +42,8 @@ RUN git clone --depth 1 -b devel https://gitlab.com/l_sim/bigdft-suite.git $BIGD
 
 FROM base AS precompile-base
 
-RUN $INSTALLATION_COMMAND build PyYAML
-RUN $INSTALLATION_COMMAND clean PyYAML
+RUN $INSTALLATION_COMMAND build PyYAML dbfft onemath
+RUN $INSTALLATION_COMMAND clean PyYAML dbfft onemath
 
 FROM precompile-base AS upstream-core-base
 
@@ -54,8 +54,8 @@ FROM upstream-core-base AS upstream-core
 
 RUN apt update || true && apt-get install -y gettext libmount-dev intltool python3-gi
 
-RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius build core-upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius clean core-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius build boost fftw swig core-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius clean boost fftw swig core-upstream-suite
 
 FROM precompile-base AS upstream-client-base
 
@@ -71,8 +71,8 @@ RUN apt update || true && \
 
 RUN pip install matplotlib
 
-RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,-amber build  --skip=rdkit client-upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,-amber clean  --skip=simtk client-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,-amber build  --skip=rdkit boost client-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=+bio,+devdoc,+boost,-amber clean  --skip=simtk boost client-upstream-suite
 
 FROM upstream-client-base AS upstream-suite-base
 
@@ -83,8 +83,8 @@ FROM upstream-client AS upstream-suite
 
 RUN apt update || true &&  apt-get install -y gettext libmount-dev intltool python3-gi
 
-RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius build upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius clean upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=-python,-devdoc,+simulation,+sirius,+boost build upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=-python,-devdoc,+simulation,+sirius,+boost clean upstream-suite
 
 FROM upstream-core-base AS runtime-core-base
 
@@ -118,7 +118,7 @@ RUN echo "\n\
    jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser\n\
 " > /bin/run_notebook.sh
 
-CMD bash /bin/run_notebook.sh
+CMD ["bash", "/bin/run_notebook.sh"]
 
 FROM sdk AS runtime
 
