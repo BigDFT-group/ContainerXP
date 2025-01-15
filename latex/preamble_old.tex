@@ -1,4 +1,4 @@
-\documentclass[11pt,unknownkeysallowed,aspectratio=169]{beamer} %
+\documentclass[11pt,unknownkeysallowed]{beamer}
 
 \usepackage[english]{babel}
 \usepackage{pgf}
@@ -85,17 +85,16 @@
 
 \newcommand{\thelayout}[2]{%
 \mode<presentation> {
- %\def\swidth{3\baselineskip}
- \def\swidth{0.1\paperwidth}
- \def\sheight{1.9em}
- \def\txtw{0.9\paperwidth}
-  \usetheme[width=\swidth]{#1}
+ \usetheme{#1}
  \usecolortheme{#2}
  \usecolortheme{sidebartab}
   \setbeamertemplate{sidebar canvas right}%
                    [vertical shading][top=BigDFTyellow,bottom=BigDFTyellow]
  %\useinnertheme[shadow]{rounded}
  \setbeamercovered{transparent}
+ \def\swidth{3\baselineskip}
+ \def\sheight{1.9em}
+ \def\txtw{0.85\paperwidth}
  % position the logo
 % \addtobeamertemplate{frametitle}{}{%
 % \begin{textblock*}{100mm}(\textwidth,-0.1cm)
@@ -113,20 +112,17 @@
         %\vskip-1.8ex%
     \end{beamercolorbox}
     \vglue-0.3cm
-    \hbox{\hskip.015\paperwidth%-0.05cm%
-      \begin{beamercolorbox}[wd=\txtw,ht=0.1ex,dp=0.3ex,leftskip=.0cm,rightskip=.3cm plus1fil]{barhead}%
+    \hbox{\hskip-0.05cm%.1176\paperwidth%
+      \begin{beamercolorbox}[wd=0.86\paperwidth,ht=0.1ex,dp=0.3ex,leftskip=.0cm,rightskip=.3cm plus1fil]{barhead}%
         \hfil \vfil \vfil \hfil
       \end{beamercolorbox}%
     }
 }
 %\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
 \setbeamerfont{frametitle}{series=\bfseries}
-%\setbeamersize{sidebar width right=\swidth}
+\setbeamersize{sidebar width right=\swidth}
 %\setbeamersize{text margin right=0pt}
 \setbeamertemplate{itemize items}[circle]
-\setbeamertemplate{navigation symbols}{}
-\newlength\secinsidebarindent
-\setlength\secinsidebarindent{10pt}
  }
 }
 
