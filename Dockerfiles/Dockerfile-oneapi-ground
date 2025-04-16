@@ -1,13 +1,42 @@
-FROM intel/oneapi AS base
+FROM intel/oneapi-hpckit AS base
 LABEL maintainer=bigdft-developers@lists.launchpad.net
 
-ENV INTELPYTHON_PACKAGE_NAME=2025.0.0_71
+RUN apt update || true &&  apt-get install -y intel-ocloc intel-ocloc-dev
+
+ENV INTELPYTHON_PACKAGE_NAME=2025.1.0_196
+ENV INTEL_DOWNLOAD_SHA=5c0778a5-6bf6-4286-a1b0-db6ea9dd899c
 ENV INTELPYTHON_INSTALLER=intelpython3-${INTELPYTHON_PACKAGE_NAME}-Linux-x86_64.sh
-RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/065bada9-07c4-425a-98e0-d219baccd9d6/$INTELPYTHON_INSTALLER
+RUN wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/${INTEL_DOWNLOAD_SHA}/${INTELPYTHON_INSTALLER}
 ENV INTELPYTHON=/opt/intel/oneapi/intelpython3 
 
 RUN sh $INTELPYTHON_INSTALLER -b -p $INTELPYTHON
 
 ENV PYTHON=$INTELPYTHON/bin/python3
 ENV PATH="$INTELPYTHON/bin:$PATH"
+
+
+# Add persistent exit confirmation logic
+RUN printf '%s\n' \
+  '# Redefine "exit" to require confirmation' \
+  'exit() {' \
+  '  read -p "Are you sure you want to exit? (y/N): " answer' \
+  '  case "$answer" in' \
+  '    [Yy]*) builtin exit ;;' \
+  '    *) echo "Exit canceled." ;;' \
+  '  esac' \
+  '}' \
+  '' \
+  '# Confirm before real shell exit (on Ctrl+D or termination)' \
+  'trap_exit() {' \
+  '  # Remove trap temporarily to prevent infinite loop' \
+  '  trap - EXIT' \
+  '  read -p "Are you sure you want to exit? (y/N): " answer' \
+  '  case "$answer" in' \
+  '    [Yy]*) echo "Exiting..."; builtin exit ;;' \
+  '    *) echo "Exit canceled."; exec "$SHELL" ;;' \
+  '  esac' \
+  '}' \
+  '' \
+  'trap trap_exit EXIT' \
+  >> /etc/bash.bashrc
 
