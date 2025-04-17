@@ -34,11 +34,11 @@ cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f oneapi-hpc.r
 
 RUN chmod +x /bin/compile_bigdft-suite.sh
 
-ENV CONTAINER_DATE=24-10-16-3
+ENV CONTAINER_DATE=25-03-07-2
 
 #RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git $BIGDFT_SUITE_TARBALLDIR
 
-RUN git clone --depth 1 -b devel https://gitlab.com/l_sim/bigdft-suite.git $BIGDFT_SUITE_SOURCES
+RUN git clone --depth 1 -b devel https://gitlab.com/luigigenovese/bigdft-suite.git $BIGDFT_SUITE_SOURCES
 
 FROM base AS precompile-base
 
@@ -52,10 +52,10 @@ RUN $INSTALLATION_COMMAND --conditions=+sycl clean core-upstream-suite
 
 FROM upstream-core-base AS upstream-core
 
-RUN apt update || true && apt-get install -y gettext libmount-dev intltool python3-gi
+RUN apt update || true && apt-get install -y gettext libmount-dev intltool python3-gi libpcre3-dev
 
-RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius build boost fftw swig core-upstream-suite
-RUN $INSTALLATION_COMMAND --conditions=+python,-devdoc,+simulation,+sirius clean boost fftw swig core-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=-python,-devdoc,+simulation,+sirius build boost fftw swig core-upstream-suite
+RUN $INSTALLATION_COMMAND --conditions=-python,-devdoc,+simulation,+sirius clean boost fftw swig core-upstream-suite
 
 FROM precompile-base AS upstream-client-base
 
@@ -120,7 +120,7 @@ RUN echo "\n\
 
 CMD ["bash", "/bin/run_notebook.sh"]
 
-FROM sdk AS runtime
+FROM runtime-core AS runtime
 
 RUN compile_bigdft-suite.sh
 

@@ -1,5 +1,5 @@
 FROM charlesbaynham/ctanfull:2022_jun
-LABEL presentations bigdft-developers@lists.launchpad.net
+LABEL presentations=bigdft-developers@lists.launchpad.net
 
 #install needed dependencies
 RUN apt-get update && \
@@ -21,7 +21,7 @@ RUN mkdir -p /bigdft-latex/ && cd /tmp && \
     rm /tmp/master.zip && \
     rm -rf ContainerXP-master
 
-ENV TEXINPUTS=/bigdft-latex/:$TEXINPUTS
+ENV TEXINPUTS=.:/bigdft-latex//:
 
 RUN echo '\n\
     if test x"$2" = x; then\n\
