@@ -1,0 +1,42 @@
+FROM bigdft/sdk:ground AS base
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+RUN git config --global user.email "bigdft-project@gmail.com"
+RUN git config --global user.name "BigDFT developer"
+#RUN gitlfs install
+
+WORKDIR /opt/bigdft
+
+ENV BIGDFT_SUITE_SOURCES=/opt/bigdft/sources
+
+ENV JHBUILD_RUN_AS_ROOT="please do it"
+
+ENV BIGDFT_SUITE_TARBALLDIR=/opt/bigdft/bigdft-upstream-tarballs
+
+ENV JHBUILD_COMMAND="$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
+
+ENV JHBUILD_RCFILE="jhbuildrc"
+
+ENV INSTALLATION_COMMAND="$JHBUILD_COMMAND -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules -f $BIGDFT_SUITE_SOURCES/rcfiles/$JHBUILD_RCFILE"
+
+ENV BIGDFT_SUITE_CHECKOUTROOT=/opt/bigdft/checkoutdir
+
+RUN mkdir -p $BIGDFT_SUITE_CHECKOUTROOT
+
+RUN echo "\n\
+cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f $JHBUILD_RCFILE -y; cd -\n\
+" > /bin/compile_bigdft-suite.sh
+
+RUN chmod +x /bin/compile_bigdft-suite.sh
+
+ENV CONTAINER_DATE=25-04-12-1
+
+#RUN git clone --depth 1 -b total https://gitlab.com/l_sim/bigdft-upstream-tarballs.git $BIGDFT_SUITE_TARBALLDIR
+
+RUN git clone --depth 1 -b devel https://gitlab.com/luigigenovese/bigdft-suite.git $BIGDFT_SUITE_SOURCES
+
+FROM base AS precompile-base
+
+RUN $INSTALLATION_COMMAND build --conditions=+python37 upstream-suite
+RUN $INSTALLATION_COMMAND clean --conditions=+python37 upstream-suite
+
