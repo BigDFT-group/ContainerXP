@@ -1,0 +1,71 @@
+# syntax=docker/dockerfile:1
+
+ARG BASE_IMAGE=ubuntu:24.04
+FROM ${BASE_IMAGE}
+
+LABEL org.opencontainers.image.title="bigdft-hackathon"
+LABEL org.opencontainers.image.description="BigDFT hackathon environment with BigDFT, PyBigDFT, OntoFlow and JupyterLab"
+LABEL org.opencontainers.image.version="0.0.3"
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC
+
+# System deps
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends tzdata && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        python3 git sudo curl ca-certificates python3-venv rsync bash ssh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Use bash as default shell for RUN to allow conda activation style commands if needed
+SHELL ["/bin/bash", "-lc"]
+
+# ---- Install Miniforge (Conda) ----
+# Note: you were downloading Miniforge but naming the file mambaforge.sh; we keep Miniforge and install to /opt/conda.
+RUN curl -sSL https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -o /tmp/miniforge.sh && \
+    bash /tmp/miniforge.sh -b -p /opt/conda && \
+    rm /tmp/miniforge.sh
+
+# Make conda available
+ENV PATH=/opt/conda/bin:$PATH
+
+# ---- BigDFT suite via conda ----
+RUN conda install -y -c conda-forge bigdft-suite && \
+    conda clean -afy
+
+# ---- PyBigDFT (editable) ----
+RUN git clone --depth 1 https://gitlab.com/luigigenovese/bigdft-suite.git /bigdft-suite
+WORKDIR /bigdft-suite
+RUN /opt/conda/bin/pip install -e PyBigDFT
+
+# ---- Hackathon repo + OntoFlow (CPU branch) ----
+WORKDIR /work
+RUN git clone --depth 1  https://github.com/BigDFT-group/llm-hackathon-2025 /work/. && \
+    git submodule update --init --recursive --depth 1 && \
+    cd 2-aiengine/OntoFlow && \
+    git fetch --depth 1 origin cpu && \
+    git checkout -b cpu FETCH_HEAD
+
+# OntoFlow agent requirements
+RUN /opt/conda/bin/pip install -r 2-aiengine/OntoFlow/agent/requirements.txt
+
+# ---- BigDFT validator/runner stack & JupyterLab ----
+RUN /opt/conda/bin/pip install \
+      langgraph \
+      langgraph-supervisor \
+      langchain-openai \
+      langchain \
+      python-dotenv \
+      remotemanager \
+      jupyterlab \
+ && conda clean -afy
+
+# Default working directory
+WORKDIR /work
+
+# Expose Jupyter (optional)
+EXPOSE 8888
+EXPOSE 11434
+# Default command
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--allow-root", "--NotebookApp.token="]

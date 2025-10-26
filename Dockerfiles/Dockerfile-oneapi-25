@@ -109,7 +109,7 @@ EXPOSE 8888
 
 ENV SDK_CONTAINER_DATE=25-05-22-1
 
-RUN pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka bokeh xlsxwriter
+RUN pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions importlib_resources cachetools cairosvg pubchempy propka bokeh xlsxwriter xmltodict validators
 
 #RUN for f in /opt/intel/oneapi/intelpython/python3.9/lib/*tinfo.*; do mv $f $f.bak;done
 
