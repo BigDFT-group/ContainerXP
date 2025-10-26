@@ -1,0 +1,72 @@
+# syntax=docker/dockerfile:1
+
+# ==============================================================================
+# Development Base Image (lara-hpc-base)
+# Contains OS, Conda, and the BigDFT suite.
+# ==============================================================================
+ARG BASE_OS_IMAGE=ubuntu:24.04
+FROM ${BASE_OS_IMAGE}
+
+# Set non-interactive frontend for package installations
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC
+
+# Install base system dependencies
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        tzdata \
+        python3 \
+        git \
+        sudo \
+        curl \
+        ca-certificates \
+        python3-venv \
+        rsync \
+        ssh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Miniforge (Mamba/Conda)
+RUN curl -sSL https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -o /tmp/miniforge.sh && \
+    bash /tmp/miniforge.sh -b -p /opt/conda && \
+    rm /tmp/miniforge.sh
+
+# Add conda to the PATH for all subsequent commands
+ENV PATH="/opt/conda/bin:${PATH}"
+
+# Use bash as the default shell and ensure conda is activated for RUN commands
+SHELL ["/bin/bash", "-lc"]
+
+# Install the BigDFT suite using Mamba/Conda
+#RUN conda install -c conda-forge bigdft-suite -y && \
+#    conda install uv && conda clean -afy
+
+RUN conda install uv && conda clean -afy
+
+RUN git clone --depth=1 https://gitlab.com/l_sim/ontoflow.git 
+
+RUN pip install -e ontoflow
+
+RUN git clone --depth=1  https://gitlab.com/l_sim/lara-hpc.git 
+
+RUN pip install -e lara-hpc
+
+RUN pip uninstall -y ontoflow lara-hpc
+
+WORKDIR /work
+
+# maybe the pyproject file is not need in /work
+#COPY /lara-hpc/container/pyproject.toml .
+RUN cp /lara-hpc/container/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+RUN rm -rf ontoflow lara-hpc
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+ENV NBFILE=/bin/run_notebook.sh
+RUN echo "source /opt/bigdft/install/bin/bigdftvars.sh" > $NBFILE && echo "ulimit -s unlimited" >> $NBFILE && echo "jupyter-lab --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.token= " >> $NBFILE
+
+CMD ["bash", "/bin/run_notebook.sh"]
+
+EXPOSE 8888
+
