@@ -1,0 +1,35 @@
+#!/bin/sh
+ORIGIN=$(dirname $(readlink -f $0))
+. "$ORIGIN/container_base.sh"
+
+uniopt SOURCEDIR s sources "\${LARA_SOURCES}"  "Source directory (value of LARA_SOURCES) "
+uniopt CONTAINER i image "lara/sdk:latest" "SDK Container image to deploy"
+uniopt ONTOFLOW o ontoflow "\${ONTOFLOW_SOURCES}" "sources of ontoflow (value of ONTOFLOW_SOURCES)"
+uniopt KEYSDIR a apikeysdir "\${HOME}/.lara" "Directory of API keys, created if absent"
+uniopt PORT p port "" "Port to which redirect the 8888 port of the container"
+
+parse_base $@
+
+if test x"$PORT" = x; then
+   DOCKER_OPTIONS="$DOCKER_OPTIONS --network=host"
+else
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -p $PORT:8888"
+fi
+
+if test x"$SOURCEDIR" != x; then
+   SRC=$(get_abspath $SOURCEDIR)
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -v $SRC:/work/lara-hpc"
+fi
+
+if test x"$ONTOFLOW" != x; then
+   OSRC=$(get_abspath $ONTOFLOW)
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -v $OSRC:/work/ontoflow"
+fi
+
+if test x"$KEYSDIR" != x; then
+   KDIR=$(get_abspath $KEYSDIR)
+   mkdir -p $KDIR
+   DOCKER_OPTIONS="$DOCKER_OPTIONS -v $KDIR:/work/keys"
+fi
+
+docker_command
