@@ -4,7 +4,7 @@
 # Development Base Image (lara-hpc-base)
 # Contains OS, Conda, and the BigDFT suite.
 # ==============================================================================
-ARG BASE_OS_IMAGE=ubuntu:24.04
+ARG BASE_OS_IMAGE=bigdft/sdk:oneapi25.2-ground
 FROM ${BASE_OS_IMAGE}
 
 # Set non-interactive frontend for package installations
@@ -42,30 +42,39 @@ SHELL ["/bin/bash", "-lc"]
 
 RUN conda install uv && conda clean -afy
 
+WORKDIR /opt
+
+ENV LARA_SDK_DOCKERFILE_DATE=2025-10-30
+
 RUN git clone --depth=1 https://gitlab.com/l_sim/ontoflow.git 
 
 RUN pip install -e ontoflow
 
-RUN git clone --depth=1  https://gitlab.com/l_sim/lara-hpc.git 
+RUN git clone --depth=1 -b entripoint https://gitlab.com/l_sim/lara-hpc.git 
 
 RUN pip install -e lara-hpc
 
 RUN pip uninstall -y ontoflow lara-hpc
 
-WORKDIR /work
+RUN rm -rf ontoflow lara-hpc
 
 # maybe the pyproject file is not need in /work
 #COPY /lara-hpc/container/pyproject.toml .
-RUN cp /lara-hpc/container/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+#RUN cp /opt/lara-hpc/container/entrypoint.sh /usr/local/bin/entrypoint.sh
+#RUN chmod +x /usr/local/bin/entrypoint.sh
 
-RUN rm -rf ontoflow lara-hpc
+ENV ONTOFLOW_PATH=/opt/ontoflow
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENV LARA_PATH=/opt/lara-hpc
+
+ENTRYPOINT ["/opt/lara-hpc/container/entrypoint.sh"]
 
 ENV NBFILE=/bin/run_notebook.sh
 RUN echo "source /opt/bigdft/install/bin/bigdftvars.sh" > $NBFILE && echo "ulimit -s unlimited" >> $NBFILE && echo "jupyter-lab --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.token= " >> $NBFILE
 
+WORKDIR /work
+
+ENV LARA_WORKDIR=/work
 CMD ["bash", "/bin/run_notebook.sh"]
 
 EXPOSE 8888
