@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1.4
+
+# ==============================================================================
+# Development Base Image (lara-hpc-base)
+# Contains OS, Conda, and the BigDFT suite.
+# ==============================================================================
+ARG BASE_OS_IMAGE=bigdft/sdk:oneapi25.2-ground
+FROM ${BASE_OS_IMAGE}
+
+WORKDIR /opt
+
+ENV LARA_SDK_DOCKERFILE_DATE=2026-01-07-4
+
+# Clone sources only to read pyproject metadata and resolve deps
+RUN git clone --depth=1 -b configlite https://gitlab.com/l_sim/ontoflow.git
+RUN git clone --depth=1 -b entrypoint https://gitlab.com/l_sim/lara-hpc.git
+
+# 1) Resolve ONTOFLOW dependency plan (dry-run; installs nothing)
+RUN pip install --dry-run --report /tmp/ontoflow_deps.json -e /opt/ontoflow
+
+# 2) Resolve LARA-HPC dependency plan (dry-run; installs nothing)
+RUN pip install --dry-run --report /tmp/lara_deps.json -e /opt/lara-hpc
+
+# 3) Install deps ONLY (excluding ontoflow and lara-hpc themselves)
+# Install upstream deps only (script lives in the lara-hpc repo)
+# Adjust the path below to wherever you placed the script in the repo.
+RUN $PYTHON /opt/lara-hpc/install_upstream_deps.py \
+      /tmp/ontoflow_deps.json /tmp/lara_deps.json \
+    && rm -rf /tmp/ontoflow_deps.json /tmp/lara_deps.json /opt/ontoflow /opt/lara-hpc 
+
+ENV ONTOFLOW_PATH=/opt/ontoflow
+
+ENV LARA_PATH=/opt/lara-hpc
+
+ENTRYPOINT ["/opt/lara-hpc/container/entrypoint.sh"]
+
+ENV NBFILE=/bin/run_notebook.sh
+RUN echo "source /opt/bigdft/install/bin/bigdftvars.sh" > $NBFILE && echo "ulimit -s unlimited" >> $NBFILE && echo "jupyter-lab --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.token= " >> $NBFILE
+
+WORKDIR /work
+
+ENV LARA_WORKDIR=/work
+CMD ["bash", "/bin/run_notebook.sh"]
+
+EXPOSE 8888
+
+

@@ -1,0 +1,68 @@
+ARG BASEIMAGE
+FROM ${BASEIMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        wget \
+        ca-certificates \
+        git \
+        build-essential \
+        dh-make \
+        fakeroot \
+        devscripts \
+        lsb-release && \
+    rm -rf /var/lib/apt/lists/*
+
+ARG GOLANG_VERSION=0.0.0
+RUN set -eux; \
+    \
+    arch="$(uname -m)"; \
+    case "${arch##*-}" in \
+        x86_64 | amd64) ARCH='amd64' ;; \
+        ppc64el | ppc64le) ARCH='ppc64le' ;; \
+        aarch64 | arm64) ARCH='arm64' ;; \
+        *) echo "unsupported architecture" ; exit 1 ;; \
+    esac; \
+    wget -nv -O - https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz \
+    | tar -C /usr/local -xz
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+# packaging
+ARG PKG_NAME=nvidia-clab
+ARG PKG_VERS=0
+ARG PKG_REV=1
+
+ENV DEBFULLNAME "NVIDIA CORPORATION"
+ENV DEBEMAIL "cudatools@nvidia.com"
+ENV REVISION "$PKG_VERS-$PKG_REV"
+ENV SECTION ""
+
+# output directory
+ENV DIST_DIR=/tmp/nvidia-container-toolkit-$PKG_VERS
+RUN mkdir -p $DIST_DIR /dist
+
+# nvidia-container-toolkit
+WORKDIR $GOPATH/src/nvidia-container-toolkit
+COPY . .
+
+ARG GIT_COMMIT=null
+ENV GIT_COMMIT ${GIT_COMMIT}
+RUN make PREFIX=${DIST_DIR} cmds
+
+WORKDIR $DIST_DIR
+COPY packaging/debian ./debian
+COPY deployments/systemd/ .
+
+RUN dch --create --package="${PKG_NAME}" \
+        --newversion "${REVISION}" \
+            "See https://github.com/NVIDIA/nvidia-container-toolkit/blob/${GIT_COMMIT}/CHANGELOG.md for the changelog" && \
+    dch --append "Bump libnvidia-container dependency to ${REVISION}" && \
+    dch -r "" && \
+    if [ "$REVISION" != "$(dpkg-parsechangelog --show-field=Version)" ]; then exit 1; fi
+
+CMD export DISTRIB="$(lsb_release -cs)" && \
+    debuild -eDISTRIB -eSECTION -eVERSION="${REVISION}" \
+    --dpkg-buildpackage-hook='sh debian/prepare' -i -us -uc -b && \
+    mv /tmp/*.deb /dist

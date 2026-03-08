@@ -56,8 +56,8 @@ RUN apt-get update && apt-get upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       build-essential pkg-config gnupg libarchive13 openssh-server openssh-client \
       net-tools git cmake intel-cpp-essentials-${ONEAPI} intel-fortran-essentials-${ONEAPI}  intel-opencl-icd  \
-      libze-intel-gpu1 libze1 libze-dev clinfo git-lfs autoconf libtool libpcre3-dev doxygen \
-      zlib1g-dev libbz2-dev libfreetype6-dev bison flex automake \
+      libze-intel-gpu1 libze1 libze-dev clinfo git-lfs libhwloc-dev autoconf libtool libpcre3-dev doxygen \
+      zlib1g-dev libbz2-dev libfreetype6-dev bison flex automake libgfortran5 \
       python3-setuptools python3-dev cuda-toolkit-${CUDA_MAJOR}-${CUDA_MINOR} && \
     rm -rf /var/lib/apt/lists/*
 
@@ -93,6 +93,7 @@ ENV TBBROOT="/opt/intel/oneapi/tbb/latest/"
 
 ENV SHELL=/bin/bash
 ENV I_MPI_FABRICS=shm
+ENV LD_PRELOAD=/opt/intel/oneapi/compiler/latest/lib/libirc.so
 
 # Add persistent exit confirmation logic
 #

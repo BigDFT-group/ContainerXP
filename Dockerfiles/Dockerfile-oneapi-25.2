@@ -18,18 +18,19 @@ ENV BIGDFT_SUITE_TARBALLDIR=/opt/bigdft/bigdft-upstream-tarballs
 
 ENV JHBUILD_COMMAND="$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
 
-ENV INSTALLATION_COMMAND="$JHBUILD_COMMAND -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules -f $BIGDFT_SUITE_SOURCES/rcfiles/oneapi-hpc-upstream.rc"
+ARG CODENAME=oneapi-hpc
+ENV INSTALLATION_COMMAND="$JHBUILD_COMMAND -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules -f $BIGDFT_SUITE_SOURCES/rcfiles/$CODENAME-upstream.rc"
 
 ENV BIGDFT_SUITE_CHECKOUTROOT=/opt/bigdft/checkoutdir
 
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
 
-ENV PYTHONPATH='/opt/upstream/local/python3.12/dist-packages':$PYTHONPATH
+ENV PYTHONPATH='/opt/upstream/local/python3.10/dist-packages':$PYTHONPATH
 
 RUN mkdir -p $BIGDFT_SUITE_CHECKOUTROOT
 
 RUN echo "\n\
-cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f oneapi-hpc.rc -y; cd -\n\
+cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f $CODENAME.rc -y; cd -\n\
 " > /bin/compile_bigdft-suite.sh
 
 RUN chmod +x /bin/compile_bigdft-suite.sh
@@ -49,11 +50,10 @@ ENV LD_LIBRARY_PATH=$GLIB_BUILD_DIR/gio:$GLIB_BUILD_DIR/glib:$GLIB_BUILD_DIR/gob
 FROM base AS upstream-core-base
 
 ENV CONDITIONS=+sycl
-ENV PACKAGES="cmake-latest onemath core-upstream-suite"
+ENV PACKAGES="cmake-latest intellvm onemath core-upstream-suite"
 RUN $INSTALLATION_COMMAND --conditions=$CONDITIONS build $PACKAGES && $INSTALLATION_COMMAND --conditions=$CONDITIONS clean --skip=simtk $PACKAGES
 
 ENV INTELPYTHON=$PYTHON
-ENV PYTHONPATH=/opt/upstream/local/lib/python3.12/dist-packages
 
 FROM upstream-core-base AS upstream-core
 
@@ -97,7 +97,7 @@ RUN apt-get update && apt-get upgrade -y && \
 RUN pip install matplotlib Cython scipy --break-system-packages
 
 ENV CONDITIONS=+sycl,+python,+devdoc,-simulation,+sirius,+ase,+vdw,+dill,+spg,+bio,+boost,+amber
-ENV PACKAGES="cmake-latest onemath boost fftw swig upstream-suite"
+ENV PACKAGES="cmake-latest intellvm onemath boost fftw swig upstream-suite"
 RUN $INSTALLATION_COMMAND --conditions=$CONDITIONS build $PACKAGES && $INSTALLATION_COMMAND --conditions=$CONDITIONS clean --skip=simtk $PACKAGES
 
 FROM upstream-core-base AS runtime-core-base
