@@ -1,0 +1,150 @@
+# File role: Multi-stage BigDFT build pipeline (core/client/suite/runtime/sdk) on top of a chosen ground image.
+# Build options: BASE_IMAGE, CODENAME, REPO, BIGDFT_SUITE_BRANCH, UPSTREAM_TARBALLS_BRANCH, CONDITIONS_* and EXTRA_PIP_PACKAGES.
+# Main stages/targets: base, upstream-core/client/suite, runtime-core, sdk
+
+# syntax=docker/dockerfile:1
+
+# -----------------------------------------------------------------------------
+# Build arguments
+#
+# Core source selection
+# - BASE_IMAGE: ground image to build from (required)
+# - CODENAME: rcfile family used by Installer.py
+# - REPO: gitlab namespace for bigdft-suite
+# - BIGDFT_SUITE_BRANCH: branch/tag for bigdft-suite
+# - UPSTREAM_TARBALLS_BRANCH: branch/tag for bigdft-upstream-tarballs
+#
+# Advanced stage conditions
+# - CONDITIONS_CORE
+# - CONDITIONS_CLIENT
+# - CONDITIONS_SUITE
+#
+# SDK customization
+# - EXTRA_PIP_PACKAGES: additional pip packages appended in sdk stage
+# -----------------------------------------------------------------------------
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS base
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ARG CODENAME=oneapi-hpc
+ARG REPO=l_sim
+ARG BIGDFT_SUITE_BRANCH=devel
+ARG UPSTREAM_TARBALLS_BRANCH=total
+ARG CONDITIONS_CORE=+python,+devdoc,-simulation,+sirius
+ARG CONDITIONS_CLIENT=+bio,+devdoc,+boost,+amber
+ARG CONDITIONS_SUITE=+sycl,+python,+devdoc,-simulation,+sirius,+ase,+vdw,+dill,+spg,+bio,+boost,+amber
+
+RUN git config --global user.email "bigdft-project@gmail.com" && \
+    git config --global user.name "BigDFT developer" && \
+    git lfs install
+
+WORKDIR /opt/bigdft
+
+ENV BIGDFT_SUITE_SOURCES=/opt/bigdft/sources
+ENV JHBUILD_RUN_AS_ROOT="please do it"
+ENV BIGDFT_SUITE_TARBALLDIR=/opt/bigdft/bigdft-upstream-tarballs
+ENV BIGDFT_SUITE_CHECKOUTROOT=/opt/bigdft/checkoutdir
+ENV JHBUILD_COMMAND="$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
+ENV INSTALLATION_COMMAND="$JHBUILD_COMMAND -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules -f $BIGDFT_SUITE_SOURCES/rcfiles/$CODENAME-upstream.rc"
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+ENV PYTHONPATH='/opt/upstream/local/python3.10/dist-packages':$PYTHONPATH
+
+ENV PACKAGES_CORE_BASE="cmake-latest intellvm onemath core-upstream-suite"
+ENV PACKAGES_CORE="boost fftw swig core-upstream-suite"
+ENV PACKAGES_CLIENT_BASE="client-upstream-suite client-bio-baseplugins"
+ENV PACKAGES_CLIENT="boost client-upstream-suite"
+ENV PACKAGES_SUITE="cmake-latest intellvm onemath boost fftw swig upstream-suite"
+
+RUN mkdir -p "$BIGDFT_SUITE_CHECKOUTROOT"
+
+RUN printf '%s\n' \
+  "cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f $CODENAME.rc -y; cd -" \
+  > /bin/compile_bigdft-suite.sh && chmod +x /bin/compile_bigdft-suite.sh
+
+RUN git clone --depth 1 -b "$UPSTREAM_TARBALLS_BRANCH" \
+    https://gitlab.com/l_sim/bigdft-upstream-tarballs.git "$BIGDFT_SUITE_TARBALLDIR"
+
+RUN git clone --depth 1 -b "$BIGDFT_SUITE_BRANCH" \
+    "https://gitlab.com/$REPO/bigdft-suite.git" "$BIGDFT_SUITE_SOURCES"
+
+ENV GLIB_BUILD_DIR=/opt/bigdft/glib-2.82.5
+ENV LD_LIBRARY_PATH=$GLIB_BUILD_DIR/gio:$GLIB_BUILD_DIR/glib:$GLIB_BUILD_DIR/gobject:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+
+
+FROM base AS upstream-core-base
+RUN $INSTALLATION_COMMAND --conditions=+sycl build $PACKAGES_CORE_BASE && \
+    $INSTALLATION_COMMAND --conditions=+sycl clean --skip=simtk $PACKAGES_CORE_BASE
+ENV INTELPYTHON=$PYTHON
+
+
+FROM upstream-core-base AS upstream-core
+ARG CONDITIONS_CORE
+RUN apt-get update && apt-get upgrade -y && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gettext libmount-dev intltool libpcre3-dev && \
+  rm -rf /var/lib/apt/lists/*
+RUN $INSTALLATION_COMMAND --conditions=$CONDITIONS_CORE build $PACKAGES_CORE && \
+    $INSTALLATION_COMMAND --conditions=$CONDITIONS_CORE clean --skip=simtk $PACKAGES_CORE
+
+
+FROM base AS upstream-client-base
+RUN $INSTALLATION_COMMAND --conditions=+ase,+vdw,+dill,+spg build $PACKAGES_CLIENT_BASE && \
+    $INSTALLATION_COMMAND --conditions=+ase,+vdw,+dill,+spg clean --skip=simtk $PACKAGES_CLIENT_BASE
+
+
+FROM upstream-client-base AS upstream-client
+ARG CONDITIONS_CLIENT
+RUN apt-get update && apt-get upgrade -y && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gettext libmount-dev intltool python3-gi libpcre3-dev python3-tk && \
+  rm -rf /var/lib/apt/lists/*
+RUN pip install matplotlib --break-system-packages
+RUN $INSTALLATION_COMMAND --conditions=$CONDITIONS_CLIENT build $PACKAGES_CLIENT && \
+    $INSTALLATION_COMMAND --conditions=$CONDITIONS_CLIENT clean --skip=simtk $PACKAGES_CLIENT
+
+
+FROM base AS upstream-suite
+ARG CONDITIONS_SUITE
+RUN apt-get update && apt-get upgrade -y && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gettext libmount-dev intltool libpcre3-dev python3-tk && \
+  rm -rf /var/lib/apt/lists/*
+RUN pip install matplotlib Cython scipy --break-system-packages
+RUN $INSTALLATION_COMMAND --conditions=$CONDITIONS_SUITE build $PACKAGES_SUITE && \
+    $INSTALLATION_COMMAND --conditions=$CONDITIONS_SUITE clean --skip=simtk $PACKAGES_SUITE
+
+
+FROM upstream-core-base AS runtime-core-base
+RUN compile_bigdft-suite.sh
+
+
+FROM upstream-core AS runtime-core
+RUN compile_bigdft-suite.sh
+
+
+FROM upstream-suite AS sdk
+ARG EXTRA_PIP_PACKAGES=
+RUN apt-get update && apt-get upgrade -y && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gdb valgrind vim graphviz sshpass rsync && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libpthread.so.0 /usr/lib/x86_64-linux-gnu/libpthread.so
+EXPOSE 8888
+
+RUN pip install jupyterlab py3dmol xlrd openpyxl mplcursors clustergrammer_widget remotemanager \
+    networkx seaborn pillow python-constraint tinydb parmed lxml pint typing-extensions \
+    importlib_resources cachetools cairosvg pubchempy propka bokeh xlsxwriter \
+    --break-system-packages --root-user-action ignore && \
+    if [ -n "$EXTRA_PIP_PACKAGES" ]; then \
+      pip install $EXTRA_PIP_PACKAGES --break-system-packages --root-user-action ignore; \
+    fi
+
+RUN printf '%s\n' \
+  'source /opt/bigdft/install/bin/bigdftvars.sh' \
+  'ulimit -s unlimited' \
+  'jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser' \
+  > /bin/run_notebook.sh
+
+CMD ["bash", "/bin/run_notebook.sh"]

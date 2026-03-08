@@ -19,6 +19,7 @@ Top-level `Dockerfiles/` keeps only:
 - `Dockerfile-LARA` (`FROM ${BASE_IMAGE}`)
 - `Dockerfile-LARA-sdk` (`FROM ${BASE_OS_IMAGE}`)
 - `Dockerfile-LARA-sdk-2` (`FROM ${BASE_OS_IMAGE}`)
+- `Dockerfile-bigdft` (`FROM ${BASE_IMAGE}`)
 - `Dockerfile-ground` (`FROM ${BASE_IMAGE}`)
 - `Dockerfile-ide-llm` (`FROM ${BASE_IMAGE}`)
 - `Dockerfile-nvidia` (`FROM ${BASEIMAGE}`)
@@ -94,6 +95,92 @@ Use these to specialize a flavour without creating a new Dockerfile.
 # Intel Python package pinning
 --build-arg INTELPYTHON_PACKAGE_NAME=2025.1.0_196
 --build-arg INTEL_DOWNLOAD_SHA=5c0778a5-6bf6-4286-a1b0-db6ea9dd899c
+```
+
+## Dockerfile-bigdft Stage Cascade (current oneapi-25.2 model)
+
+`Dockerfile-bigdft` implements this multi-stage dependency pattern.
+
+```mermaid
+graph LR
+  base[base]
+
+  ucb[upstream-core-base]
+  uc[upstream-core]
+  uclb[upstream-client-base]
+  ucl[upstream-client]
+  us[upstream-suite]
+
+  rcb[runtime-core-base]
+  rc[runtime-core]
+  sdk[sdk]
+
+  base --> ucb
+  ucb --> uc
+  base --> uclb
+  uclb --> ucl
+  base --> us
+  ucb --> rcb
+  uc --> rc
+  us --> sdk
+```
+
+Stage list in build order:
+
+1. `base`
+2. `upstream-core-base`
+3. `upstream-core`
+4. `upstream-client-base`
+5. `upstream-client`
+6. `upstream-suite`
+7. `runtime-core-base`
+8. `runtime-core`
+9. `sdk`
+
+### Dockerfile-bigdft Arguments
+
+`Dockerfile-bigdft` is now available as [Dockerfile-bigdft](/ContainerXP/Dockerfiles/Dockerfile-bigdft) and uses these build args:
+
+| Argument | Purpose | Default |
+|---|---|---|
+| `BASE_IMAGE` | Ground image used in `FROM` | none (required) |
+| `CODENAME` | BigDFT rcfile codename family | `oneapi-hpc` |
+| `REPO` | GitLab namespace for `bigdft-suite` | `l_sim` |
+| `BIGDFT_SUITE_BRANCH` | Branch/tag for `bigdft-suite` checkout | `devel` |
+| `UPSTREAM_TARBALLS_BRANCH` | Branch/tag for `bigdft-upstream-tarballs` | `total` |
+| `CONDITIONS_CORE` | Installer conditions for `upstream-core` stage | `+python,+devdoc,-simulation,+sirius` |
+| `CONDITIONS_CLIENT` | Installer conditions for `upstream-client` stage | `+bio,+devdoc,+boost,+amber` |
+| `CONDITIONS_SUITE` | Installer conditions for `upstream-suite`/`sdk` lineage | `+sycl,+python,+devdoc,-simulation,+sirius,+ase,+vdw,+dill,+spg,+bio,+boost,+amber` |
+| `EXTRA_PIP_PACKAGES` | Extra pip packages appended in `sdk` stage | empty |
+
+Examples:
+
+1. Build `sdk` from Ubuntu Intel ground:
+
+```bash
+docker build -f Dockerfile-bigdft \
+  --target sdk \
+  --build-arg BASE_IMAGE=bigdft/ground:ubuntu-intelpython \
+  -t bigdft/sdk:ubuntu-intelpython .
+```
+
+2. Build `runtime-core` from Ubuntu system ground:
+
+```bash
+docker build -f Dockerfile-bigdft \
+  --target runtime-core \
+  --build-arg BASE_IMAGE=bigdft/ground:ubuntu-system \
+  -t bigdft/runtime:ubuntu-system .
+```
+
+3. Build `sdk` with extra notebook packages:
+
+```bash
+docker build -f Dockerfile-bigdft \
+  --target sdk \
+  --build-arg BASE_IMAGE=bigdft/ground:ubuntu-intelpython \
+  --build-arg EXTRA_PIP_PACKAGES=\"ipywidgets jupyterlab-git\" \
+  -t bigdft/sdk:ubuntu-intelpython-extra .
 ```
 
 ## Legacy Dockerfiles
