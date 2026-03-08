@@ -153,6 +153,16 @@ Stage list in build order:
 | `CONDITIONS_SUITE` | Installer conditions for `upstream-suite`/`sdk` lineage | `+sycl,+python,+devdoc,-simulation,+sirius,+ase,+vdw,+dill,+spg,+bio,+boost,+amber` |
 | `EXTRA_PIP_PACKAGES` | Extra pip packages appended in `sdk` stage | empty |
 
+`CODENAME` drives both rcfile names:
+
+- upstream rcfile: `${CODENAME}-upstream.rc`
+- build rcfile: `${CODENAME}.rc`
+
+Release/codename mapping source of truth:
+
+- [release-matrix.yaml](/ContainerXP/Dockerfiles/release-matrix.yaml)
+- This file is intended to be consumed by CI to build and test each release flavour.
+
 Examples:
 
 1. Build `sdk` from Ubuntu Intel ground:

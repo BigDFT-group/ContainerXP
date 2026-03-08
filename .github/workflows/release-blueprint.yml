@@ -1,0 +1,36 @@
+name: release-blueprint
+
+on:
+  workflow_dispatch:
+
+jobs:
+  blueprint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Blueprint Notice
+        run: |
+          echo "This workflow is a blueprint only."
+          echo "No container build/push is executed here."
+          echo ""
+          echo "Planned source of truth: Dockerfiles/release-matrix.yaml"
+          echo "Pending prerequisite: prepare/validate rcfiles for each codename."
+
+      - name: Planned Release Pipeline (Documentation)
+        run: |
+          cat <<'PLAN'
+          Intended future CI flow (not active yet):
+          1. Read releases from Dockerfiles/release-matrix.yaml
+          2. For each active codename:
+             - Build ground image (Dockerfile-ground + profile args)
+             - Build bigdft targets (Dockerfile-bigdft --target runtime-core/sdk)
+             - Run smoke tests defined in matrix
+             - Publish tagged images/manifests
+          3. Mark release status and attach logs/artifacts
+
+          TODO before enabling:
+          - Finalize all codename rcfiles: <codename>-upstream.rc and <codename>.rc
+          - Add strict validation of matrix schema + rcfile existence
+          - Add secrets/registry login policy and push guards
+          PLAN

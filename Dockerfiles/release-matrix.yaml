@@ -1,0 +1,64 @@
+version: 1
+description: >
+  Canonical release matrix for BigDFT container flavors.
+  Each codename binds ground image, rcfile basename, and CI build/test targets.
+
+releases:
+  - codename: oneapi-hpc
+    status: active
+    ground:
+      profile: ubuntu-intelpython
+      base_image: ubuntu:24.04
+      oneapi_version: "2025.3"
+      cuda_enabled: false
+      image_tag: bigdft/ground:oneapi2025.3-ubuntu-intelpython
+    rcfiles:
+      basename: oneapi-hpc
+      upstream: oneapi-hpc-upstream.rc
+      build: oneapi-hpc.rc
+    bigdft:
+      dockerfile: Dockerfile-bigdft
+      args:
+        CODENAME: oneapi-hpc
+        REPO: l_sim
+        BIGDFT_SUITE_BRANCH: devel
+        UPSTREAM_TARBALLS_BRANCH: total
+      targets:
+        - runtime-core
+        - sdk
+    ci:
+      build_targets:
+        - ground
+        - runtime-core
+        - sdk
+      smoke_tests:
+        - "python3 -c 'import BigDFT'"
+        - "bigdft --help"
+
+  - codename: ubuntu-system
+    status: draft
+    ground:
+      profile: ubuntu-system
+      base_image: ubuntu:24.04
+      cuda_enabled: false
+      image_tag: bigdft/ground:ubuntu-system
+    rcfiles:
+      basename: ubuntu-system
+      upstream: ubuntu-system-upstream.rc
+      build: ubuntu-system.rc
+    bigdft:
+      dockerfile: Dockerfile-bigdft
+      args:
+        CODENAME: ubuntu-system
+        REPO: l_sim
+        BIGDFT_SUITE_BRANCH: devel
+        UPSTREAM_TARBALLS_BRANCH: total
+      targets:
+        - runtime-core
+        - sdk
+    ci:
+      build_targets:
+        - ground
+        - runtime-core
+      smoke_tests:
+        - "bigdft --help"
