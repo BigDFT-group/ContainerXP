@@ -183,6 +183,34 @@ docker build -f Dockerfile-bigdft \
   -t bigdft/sdk:ubuntu-intelpython-extra .
 ```
 
+## Container Init Hooks Convention
+
+To avoid fragile ENTRYPOINT chaining across unrelated base images, Dockerfiles in this repo use a shared hook mechanism:
+
+- Hook directory: `/etc/container-init.d`
+- Hook files: `*.sh`, sourced in lexical order (`00-`, `10-`, `20-`, ...).
+- Generic entrypoint script: `/usr/local/bin/container-entrypoint`
+- Runtime behavior: source all hooks, then `exec "$@"`.
+
+Current hook usage:
+
+- `Dockerfile-bigdft` installs:
+  - `/etc/container-init.d/20-bigdft-runtime.sh`
+  - Responsibilities:
+    - source `/opt/bigdft/install/bin/bigdftvars.sh` if present
+    - detect Python major/minor at runtime
+    - export dynamic `PYTHONPATH` from `/opt/upstream/local/pythonX.Y/dist-packages`
+- `Dockerfile-ide-llm` installs:
+  - `/etc/container-init.d/80-ide-runtime.sh`
+  - Responsibilities:
+    - ensure `XDG_RUNTIME_DIR` exists with safe permissions
+
+Guidelines for new hooks:
+
+- Keep hooks idempotent and tolerant of missing paths.
+- Prefer conditional checks over hard failures when base-image features are optional.
+- Reserve early numbers for core env setup and later numbers for app-specific setup.
+
 ## Legacy Dockerfiles
 
 Moved to `Dockerfiles/legacy/`:

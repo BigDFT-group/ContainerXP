@@ -54,12 +54,38 @@ RUN mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
 ENV PATH="/opt/openvscode-server/bin:${PATH}"
 ENV OPENVSCODE_SERVER_ROOT=/opt/openvscode-server
 
+# Standard container init hooks.
+# Any image can drop scripts in /etc/container-init.d/*.sh and they will be
+# sourced before the main CMD is executed.
+RUN mkdir -p /etc/container-init.d /usr/local/bin && \
+    printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'HOOK_DIR="${HOOK_DIR:-/etc/container-init.d}"' \
+      'if [ -d "$HOOK_DIR" ]; then' \
+      '  for f in "$HOOK_DIR"/*.sh; do' \
+      '    [ -r "$f" ] || continue' \
+      '    # shellcheck disable=SC1090' \
+      '    source "$f"' \
+      '  done' \
+      'fi' \
+      'exec "$@"' \
+      > /usr/local/bin/container-entrypoint && \
+    chmod +x /usr/local/bin/container-entrypoint
+
+# IDE hook: ensure XDG runtime dir exists with correct permissions at container start.
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/xdg-runtime-ide}"' \
+  'mkdir -p "$XDG_RUNTIME_DIR"' \
+  'chmod 700 "$XDG_RUNTIME_DIR" || true' \
+  > /etc/container-init.d/80-ide-runtime.sh && \
+  chmod +x /etc/container-init.d/80-ide-runtime.sh
+
 ARG PORT=3000
 EXPOSE $PORT
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/opt/openvscode-server/bin/openvscode-server", \
-     "--host", "0.0.0.0", \
-     "--port", "3123", \
-     "--without-connection-token", \
-     "--workspace-folder", "."]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/container-entrypoint"]
+# Use shell form via sh -lc so PORT/WORKSPACE_DIR can be overridden at runtime.
+ENV WORKSPACE_DIR=.
+CMD ["sh", "-lc", "exec /opt/openvscode-server/bin/openvscode-server --host 0.0.0.0 --port ${PORT} --without-connection-token --workspace-folder ${WORKSPACE_DIR}"]

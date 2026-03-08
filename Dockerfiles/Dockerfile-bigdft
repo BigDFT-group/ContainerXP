@@ -48,7 +48,6 @@ ENV BIGDFT_SUITE_CHECKOUTROOT=/opt/bigdft/checkoutdir
 ENV JHBUILD_COMMAND="$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
 ENV INSTALLATION_COMMAND="$JHBUILD_COMMAND -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules -f $BIGDFT_SUITE_SOURCES/rcfiles/$CODENAME-upstream.rc"
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
-ENV PYTHONPATH='/opt/upstream/local/python3.10/dist-packages':$PYTHONPATH
 
 ENV PACKAGES_CORE_BASE="cmake-latest intellvm onemath core-upstream-suite"
 ENV PACKAGES_CORE="boost fftw swig core-upstream-suite"
@@ -57,6 +56,53 @@ ENV PACKAGES_CLIENT="boost client-upstream-suite"
 ENV PACKAGES_SUITE="cmake-latest intellvm onemath boost fftw swig upstream-suite"
 
 RUN mkdir -p "$BIGDFT_SUITE_CHECKOUTROOT"
+
+# Generic container entrypoint: source all init hooks then exec command.
+RUN mkdir -p /etc/container-init.d /usr/local/bin && \
+    printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'HOOK_DIR="${HOOK_DIR:-/etc/container-init.d}"' \
+      'if [ -d "$HOOK_DIR" ]; then' \
+      '  for f in "$HOOK_DIR"/*.sh; do' \
+      '    [ -r "$f" ] || continue' \
+      '    # shellcheck disable=SC1090' \
+      '    source "$f"' \
+      '  done' \
+      'fi' \
+      'exec "$@"' \
+      > /usr/local/bin/container-entrypoint && \
+    chmod +x /usr/local/bin/container-entrypoint
+
+# BigDFT runtime detection hook:
+# - source BigDFT vars if available
+# - derive /opt/upstream/local/pythonX.Y/dist-packages from active python
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'if [ -f /opt/bigdft/install/bin/bigdftvars.sh ]; then' \
+  '  # shellcheck disable=SC1091' \
+  '  source /opt/bigdft/install/bin/bigdftvars.sh || true' \
+  'fi' \
+  'if command -v python3 >/dev/null 2>&1; then' \
+  '  py_mm="$(python3 - <<'"'"'PY'"'"'' \
+  'import sys' \
+  'print(f"{sys.version_info.major}.{sys.version_info.minor}")' \
+  'PY' \
+  ')"' \
+  '  cand="/opt/upstream/local/python${py_mm}/dist-packages"' \
+  '  if [ -d "$cand" ]; then' \
+  '    export PYTHONPATH="${cand}:${PYTHONPATH:-}"' \
+  '    return 0' \
+  '  fi' \
+  'fi' \
+  'for cand in /opt/upstream/local/python*/dist-packages; do' \
+  '  if [ -d "$cand" ]; then' \
+  '    export PYTHONPATH="${cand}:${PYTHONPATH:-}"' \
+  '    break' \
+  '  fi' \
+  'done' \
+  > /etc/container-init.d/20-bigdft-runtime.sh && \
+  chmod +x /etc/container-init.d/20-bigdft-runtime.sh
 
 RUN printf '%s\n' \
   "cd /opt/bigdft; $PYTHON $BIGDFT_SUITE_SOURCES/Installer.py build -f $CODENAME.rc -y; cd -" \
@@ -147,4 +193,5 @@ RUN printf '%s\n' \
   'jupyter-lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser' \
   > /bin/run_notebook.sh
 
+ENTRYPOINT ["/usr/local/bin/container-entrypoint"]
 CMD ["bash", "/bin/run_notebook.sh"]
