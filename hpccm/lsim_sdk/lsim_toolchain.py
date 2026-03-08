@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from distutils.version import LooseVersion, StrictVersion
+from packaging.version import Version
 import logging
 
 import hpccm
@@ -55,7 +55,7 @@ def toolchain():
     Stage0 += arm
     tc = arm.toolchain
     if args.system == "ubuntu":
-      if args.toolchain_version <= StrictVersion('20.3'):
+      if Version(args.toolchain_version) <= Version('20.3'):
         system="Ubuntu-16.04"
       else:
         system="Ubuntu-"+args.system_version

@@ -1,6 +1,6 @@
 import argparse
 import hpccm
-from distutils.version import StrictVersion
+from packaging.version import Version
 from hpccm.primitives import *
 import logging
 
@@ -49,7 +49,7 @@ def arguments():
   if args.system == 'ubuntu':
     if args.system_version == "18.04":
       distro = 'ubuntu18'
-    elif args.system_version is not None and args.system_version >= StrictVersion('20.04'):
+    elif args.system_version is not None and Version(args.system_version) >= Version('20.04'):
       distro = 'ubuntu20'
     else:
       distro = 'ubuntu'
@@ -86,7 +86,7 @@ def arguments():
 
   hpccm.config.set_cpu_architecture(args.target_arch)
   hpccm.config.set_cpu_target(args.target_arch)
-  hpccm.config.g_linux_version=args.system_version
+  hpccm.config.g_linux_version=Version(args.system_version)
   hpccm.config.set_linux_distro(distro)
   hpccm.config.set_container_format(args.format)
   return args, distro

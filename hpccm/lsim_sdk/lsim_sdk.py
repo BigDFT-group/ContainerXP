@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 import logging
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 import hpccm
 import hpccm.config
@@ -173,7 +173,7 @@ def sdk():
                   singularity='%runscript\n jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token=bigdft --no-browser')
 
   #workaround for an issue in Ubuntu 20 on docker
-  if args.system == 'ubuntu' and args.system_version >= StrictVersion('20.04') and args.target_arch == "x86_64":
+  if args.system == 'ubuntu' and Version(args.system_version) >= Version('20.04') and args.target_arch == "x86_64":
     Stage0 += environment(variables={'LD_PRELOAD': '/usr/lib/x86_64-linux-gnu/libtinfo.so.6'})
 
   if args.system == 'ubuntu':

@@ -20,7 +20,7 @@ target_arch={}""".format(USERARG.get('target_arch', 'x86_64'))
 #######
 ## SDK stage
 #######
-from distutils.version import LooseVersion, StrictVersion
+from packaging.version import Version
 
 # Set the image tag based on the specified version (default to 10.0)
 cuda_version = USERARG.get('cuda', '10.0')
@@ -49,7 +49,7 @@ Stage0 += comment("SDK stage", reformat=False)
 import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
 hpccm.config.set_cpu_target(target_arch)
-hpccm.config.g_linux_version=ubuntu_version
+hpccm.config.g_linux_version=Version(ubuntu_version)
 
 # GNU compilers
 gnu = gnu()
@@ -161,7 +161,7 @@ Stage0 += shell(commands=['sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" 
 
 Stage0 += raw(docker='USER lsim')
 preload=''
-if ubuntu_version >= StrictVersion('20.04') and target_arch == "x86_64":
+if Version(ubuntu_version) >= Version('20.04') and target_arch == "x86_64":
   preload = "/usr/lib/x86_64-linux-gnu/libtinfo.so.6"
 
 Stage0 += environment(variables={"LANG": "en_US.UTF-8",
@@ -244,4 +244,3 @@ Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/
 Stage1 += shell(commands=['cp /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/lib/libnvidia-ml.so.1'])
 
 Stage1 += raw(docker='USER lsim')
-

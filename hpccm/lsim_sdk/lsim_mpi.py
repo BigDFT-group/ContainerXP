@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from distutils.version import LooseVersion, StrictVersion
+from packaging.version import Version
 import logging
 
 import hpccm
@@ -58,13 +58,13 @@ def mpi(tc):
       Stage0 += gdrcopy()
       if args.cuda == "8.0":
         gnu_version="5.4.0"
-      elif args.cuda == "11.0" and args.mpi_version is not None and args.mpi_version >= StrictVersion("2.3.4"):
+      elif args.cuda == "11.0" and args.mpi_version is not None and Version(args.mpi_version) >= Version("2.3.4"):
         gnu_version="9.3.0"
-      elif args.cuda >= StrictVersion("11.2") and args.mpi_version is not None and args.mpi_version >= StrictVersion("2.3.6"):
+      elif Version(args.cuda) >= Version("11.2") and args.mpi_version is not None and Version(args.mpi_version) >= Version("2.3.6"):
         gnu_version="7.3.0"
       else:
         gnu_version="4.8.5"
-      if args.mpi_version >= StrictVersion("2.3.4"):
+      if Version(args.mpi_version) >= Version("2.3.4"):
         release = 1
       else:
         release = 2

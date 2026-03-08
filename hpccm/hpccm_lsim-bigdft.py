@@ -13,7 +13,7 @@ Contents:
   This recipe was generated with command line :
 $ hpccm.py --recipe hpccm_lsim-mpi.py --userarg cuda={}""".format(USERARG.get('cuda', '10.0'))+""" ubuntu={}""".format(USERARG.get('ubuntu', '16.04'))+""" mpi={}""".format(USERARG.get('mpi', 'ompi'))
 from hpccm.templates.git import git
-from distutils.version import LooseVersion, StrictVersion
+from packaging.version import Version
 
 #######
 ## Build bigdft
@@ -21,6 +21,7 @@ from distutils.version import LooseVersion, StrictVersion
 image = format(USERARG.get('tag', 'bigdft/sdk_mpi:latest'))
 
 cuda_version = USERARG.get('cuda', '10.0')
+cuda_version_parsed = Version(cuda_version)
 if cuda_version == "8.0":
     ubuntu_version = "16.04"
 else:
@@ -176,12 +177,12 @@ import hpccm.config
 hpccm.config.set_cpu_architecture(target_arch)
 
 ## cuda runtime libraries, only the ones needed for bigdft
-if cuda_version >= StrictVersion('11.0'):
+if cuda_version_parsed >= Version('11.0'):
     cuvers='-'+cuda_version[:-2].replace('.','-')
     libs=['libcublas'+cuvers, 'libcufft'+cuvers, 'cuda-cudart'+cuvers, 'cuda-nvtx'+cuvers]
 else:
     cuvers='-'+cuda_version.replace('.','-')
-    if cuda_version >= StrictVersion('10.1'):
+    if cuda_version_parsed >= Version('10.1'):
         cublas="libcublas10"
     else:
         cublas='cuda-cublas'+cuvers
@@ -214,7 +215,7 @@ if "arm" in target_arch:
   Stage1 += shell(commands=['ln -s /usr/bin/python3 /usr/local/bin/python',
                           'ln -s /usr/bin/pip3 /usr/local/bin/pip'])
 
-if ubuntu_version <= StrictVersion('20.0'):
+if Version(ubuntu_version) <= Version('20.0'):
   openbabel='libopenbabel4v5'
 else:
   openbabel='libopenbabel6'
@@ -313,4 +314,3 @@ Stage1 += environment(variables={"PATH": "/usr/local/mpi/bin:/usr/local/bigdft/b
 
 Stage1 += environment(variables={"XDG_CACHE_HOME": "/home/bigdft/.cache/"})
 Stage1 += shell(commands=['MPLBACKEND=Agg python -c "import matplotlib.pyplot"'])
-
