@@ -1,123 +1,244 @@
-# File role: Ground/base Ubuntu image with CUDA + Intel oneAPI toolchain bootstrap.
-# Build options: ARG UBUNTULTS, CUDA_MAJOR, CUDA_MINOR, ONEAPI, UBUNTU_CODENAME.
+# File role: Unified single-stage ground image for BigDFT compilation environments.
+# Build options: Select profile + optional overrides with build args.
 # Main stages/targets: base
 
-# ---- args used in FROM
-ARG UBUNTULTS=22
-FROM ubuntu:${UBUNTULTS}.04 AS base
+# syntax=docker/dockerfile:1
 
-# ---- re-declare build args after FROM (scope!)
-ARG UBUNTULTS=22
+# -----------------------------------------------------------------------------
+# Profiles
+#
+# 1) Ubuntu + oneAPI + CUDA + system Python (default)
+# docker build -f Dockerfile-ground \
+#   --build-arg PROFILE=ubuntu-system \
+#   --build-arg BASE_IMAGE=ubuntu:24.04 \
+#   -t bigdft/ground:ubuntu-system .
+#
+# 2) Ubuntu + oneAPI + CUDA + Intel Python
+# docker build -f Dockerfile-ground \
+#   --build-arg PROFILE=ubuntu-intelpython \
+#   --build-arg BASE_IMAGE=ubuntu:24.04 \
+#   -t bigdft/ground:ubuntu-intelpython .
+#
+# 3) HPCKit base + Intel Python (legacy-like)
+# docker build -f Dockerfile-ground \
+#   --build-arg PROFILE=hpckit-intelpython \
+#   --build-arg BASE_IMAGE=intel/oneapi-hpckit \
+#   -t bigdft/ground:hpckit-intelpython .
+#
+# -----------------------------------------------------------------------------
+
+# Base/profile selectors
+ARG BASE_IMAGE=ubuntu:24.04
+ARG PROFILE=ubuntu-system
+
+# Platform and version options
+ARG UBUNTULTS=24
+ARG UBUNTU_CODENAME=
+ARG ONEAPI_VERSION=
+ARG CUDATOOLKIT=12-5
 ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=2
-ARG ONEAPI=2025.2
-# Map LTS number to codename (override with --build-arg UBUNTU_CODENAME=jammy if you like)
+ARG CUDA_MINOR=5
+
+# Optional explicit overrides (0/1). Empty means profile defaults.
+ARG ENABLE_ONEAPI_APT=
+ARG ENABLE_INTEL_GPU_REPO=
+ARG ENABLE_CUDA=
+ARG ENABLE_TOOLCHAIN_INSTALL=
+ARG INSTALL_INTEL_PYTHON=
+ARG INSTALL_INTEL_PYPI_STACK=
+ARG ENABLE_EXIT_GUARD=1
+
+# Intel Python package knobs
+ARG INTELPYTHON_PACKAGE_NAME=2025.1.0_196
+ARG INTEL_DOWNLOAD_SHA=5c0778a5-6bf6-4286-a1b0-db6ea9dd899c
+
+FROM ${BASE_IMAGE} AS base
+
+ARG BASE_IMAGE
+ARG PROFILE
+ARG UBUNTULTS
 ARG UBUNTU_CODENAME
+ARG ONEAPI_VERSION
+ARG CUDATOOLKIT
+ARG CUDA_MAJOR
+ARG CUDA_MINOR
+ARG ENABLE_ONEAPI_APT
+ARG ENABLE_INTEL_GPU_REPO
+ARG ENABLE_CUDA
+ARG ENABLE_TOOLCHAIN_INSTALL
+ARG INSTALL_INTEL_PYTHON
+ARG INSTALL_INTEL_PYPI_STACK
+ARG ENABLE_EXIT_GUARD
+ARG INTELPYTHON_PACKAGE_NAME
+ARG INTEL_DOWNLOAD_SHA
+
+ENV SHELL=/bin/bash
+ENV LANG=C.UTF-8
+
 RUN set -eux; \
+  case "$PROFILE" in \
+    ubuntu-system) \
+      def_oneapi=1; def_gpu=1; def_cuda=1; def_toolchain=1; def_ipy=0; def_ipypi=1 ;; \
+    ubuntu-intelpython) \
+      def_oneapi=1; def_gpu=1; def_cuda=1; def_toolchain=1; def_ipy=1; def_ipypi=0 ;; \
+    hpckit-intelpython) \
+      def_oneapi=0; def_gpu=0; def_cuda=0; def_toolchain=0; def_ipy=1; def_ipypi=0 ;; \
+    *) echo "Unsupported PROFILE=$PROFILE"; exit 1 ;; \
+  esac; \
+  use_oneapi="${ENABLE_ONEAPI_APT:-$def_oneapi}"; \
+  use_gpu_repo="${ENABLE_INTEL_GPU_REPO:-$def_gpu}"; \
+  use_cuda="${ENABLE_CUDA:-$def_cuda}"; \
+  use_toolchain="${ENABLE_TOOLCHAIN_INSTALL:-$def_toolchain}"; \
+  use_ipy="${INSTALL_INTEL_PYTHON:-$def_ipy}"; \
+  use_ipypi="${INSTALL_INTEL_PYPI_STACK:-$def_ipypi}"; \
   if [ -z "${UBUNTU_CODENAME:-}" ]; then \
     case "$UBUNTULTS" in \
       24) UBUNTU_CODENAME=noble ;; \
       22) UBUNTU_CODENAME=jammy ;; \
       20) UBUNTU_CODENAME=focal ;; \
-      *)  echo "Unsupported UBUNTULTS=$UBUNTULTS"; exit 1 ;; \
+      *) UBUNTU_CODENAME=unknown ;; \
     esac; \
   fi; \
-  echo "Building for Ubuntu ${UBUNTULTS}.04 (${UBUNTU_CODENAME})" && \
-  echo "UBUNTULTS=${UBUNTULTS}" > /etc/build-args && \
-  echo "UBUNTU_CODENAME=${UBUNTU_CODENAME}" >> /etc/build-args
+  if [ -z "${CUDATOOLKIT:-}" ] || [ "$CUDATOOLKIT" = "auto" ]; then \
+    CUDATOOLKIT="${CUDA_MAJOR}-${CUDA_MINOR}"; \
+  fi; \
+  { \
+    echo "PROFILE=$PROFILE"; \
+    echo "BASE_IMAGE=$BASE_IMAGE"; \
+    echo "UBUNTULTS=$UBUNTULTS"; \
+    echo "UBUNTU_CODENAME=$UBUNTU_CODENAME"; \
+    echo "ONEAPI_VERSION=$ONEAPI_VERSION"; \
+    echo "CUDATOOLKIT=$CUDATOOLKIT"; \
+    echo "ENABLE_ONEAPI_APT=$use_oneapi"; \
+    echo "ENABLE_INTEL_GPU_REPO=$use_gpu_repo"; \
+    echo "ENABLE_CUDA=$use_cuda"; \
+    echo "ENABLE_TOOLCHAIN_INSTALL=$use_toolchain"; \
+    echo "INSTALL_INTEL_PYTHON=$use_ipy"; \
+    echo "INSTALL_INTEL_PYPI_STACK=$use_ipypi"; \
+  } > /etc/build-args
 
-# Base utils
 RUN apt-get update && apt-get upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      curl ca-certificates gpg-agent software-properties-common wget && \
+      ca-certificates curl wget gpg-agent software-properties-common && \
     rm -rf /var/lib/apt/lists/*
 
-# Intel oneAPI repo
-RUN curl -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB \
-     | gpg --dearmor | tee /usr/share/keyrings/intel-oneapi-archive-keyring.gpg >/dev/null && \
+RUN set -eux; \
+  . /etc/build-args; \
+  if [ "$ENABLE_ONEAPI_APT" = "1" ]; then \
+    curl -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB \
+      | gpg --dearmor | tee /usr/share/keyrings/intel-oneapi-archive-keyring.gpg >/dev/null; \
     echo "deb [signed-by=/usr/share/keyrings/intel-oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
-     > /etc/apt/sources.list.d/oneAPI.list
+      > /etc/apt/sources.list.d/oneAPI.list; \
+  fi
 
-
-#RUN  wget -qO - hhttps://repositories.intel.com/gpu/intel-graphics.key | gpg --dearmor | tee /usr/share/keyrings/codeplay-keyring.gpg > /dev/null && echo "deb [signed-by=/usr/share/keyrings/codeplay-keyring.gpg] https://developer.codeplay.com/apt all main" | tee /etc/apt/sources.list.d/codeplay.list 
-
-# Intel GPU repo (use the correct codename)
-RUN . /etc/build-args; \
+RUN set -eux; \
+  . /etc/build-args; \
+  if [ "$ENABLE_INTEL_GPU_REPO" = "1" ]; then \
     curl -fsSL https://repositories.intel.com/gpu/intel-graphics.key \
-     | gpg --dearmor | tee /usr/share/keyrings/intel-graphics-archive-keyring.gpg >/dev/null && \
+      | gpg --dearmor | tee /usr/share/keyrings/intel-graphics-archive-keyring.gpg >/dev/null; \
     echo "deb [signed-by=/usr/share/keyrings/intel-graphics-archive-keyring.gpg arch=amd64] https://repositories.intel.com/gpu/ubuntu ${UBUNTU_CODENAME} unified" \
-     > /etc/apt/sources.list.d/intel-graphics.list
+      > /etc/apt/sources.list.d/intel-graphics.list; \
+  fi
 
-# NVIDIA CUDA repo (uses LTS number, e.g. ubuntu2204 / ubuntu2404)
-RUN . /etc/build-args; \
-    wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTULTS}04/x86_64/cuda-keyring_1.1-1_all.deb && \
-    dpkg -i cuda-keyring_1.1-1_all.deb && rm -f cuda-keyring_1.1-1_all.deb
+RUN set -eux; \
+  . /etc/build-args; \
+  if [ "$ENABLE_CUDA" = "1" ]; then \
+    wget -q "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTULTS}04/x86_64/cuda-keyring_1.1-1_all.deb"; \
+    dpkg -i cuda-keyring_1.1-1_all.deb; \
+    rm -f cuda-keyring_1.1-1_all.deb; \
+  fi
 
-#RUN apt-get update && apt-cache search oneapi
-
-# Toolchains + CUDA Toolkit versioned install
-RUN apt-get update && apt-get upgrade -y && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      build-essential pkg-config gnupg libarchive13 openssh-server openssh-client \
-      net-tools git cmake intel-cpp-essentials-${ONEAPI} intel-fortran-essentials-${ONEAPI}  intel-opencl-icd  \
+RUN set -eux; \
+  . /etc/build-args; \
+  if [ "$ENABLE_TOOLCHAIN_INSTALL" = "1" ]; then \
+    if [ -n "$ONEAPI_VERSION" ]; then \
+      CXX_PKG="intel-cpp-essentials-${ONEAPI_VERSION}"; \
+      F_PKG="intel-fortran-essentials-${ONEAPI_VERSION}"; \
+    else \
+      CXX_PKG="intel-cpp-essentials"; \
+      F_PKG="intel-fortran-essentials"; \
+    fi; \
+    PKGS="build-essential pkg-config gnupg libarchive13 openssh-server openssh-client \
+      net-tools git cmake ${CXX_PKG} ${F_PKG} intel-opencl-icd \
       libze-intel-gpu1 libze1 libze-dev clinfo git-lfs libhwloc-dev autoconf libtool libpcre3-dev doxygen \
-      zlib1g-dev libbz2-dev libfreetype6-dev bison flex automake libgfortran5 \
-      python3-setuptools python3-dev cuda-toolkit-${CUDA_MAJOR}-${CUDA_MINOR} && \
-    rm -rf /var/lib/apt/lists/*
+      zlib1g-dev libbz2-dev libfreetype6-dev bison flex automake libgfortran5 gfortran \
+      libblas-dev liblapack-dev libopenmpi-dev python-is-python3 python3-setuptools python3-dev"; \
+    if [ "$ENABLE_CUDA" = "1" ] && [ "$CUDATOOLKIT" != "none" ]; then \
+      PKGS="$PKGS cuda-toolkit-${CUDATOOLKIT}"; \
+    fi; \
+    apt-get update && apt-get upgrade -y; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $PKGS; \
+    rm -rf /var/lib/apt/lists/*; \
+  else \
+    apt-get update || true; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends intel-ocloc intel-ocloc-dev || true; \
+    rm -rf /var/lib/apt/lists/*; \
+  fi
 
-# pip
 ENV PYTHON=python3
 RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
     $PYTHON /tmp/get-pip.py --break-system-packages && rm -f /tmp/get-pip.py
 
-RUN pip install -i https://software.repos.intel.com/python/pypi --break-system-packages numpy scipy dpnp dpctl tbb4py pip --upgrade --root-user-action ignore 
-RUN pip install --break-system-packages smp cython numba scikit-learn-intelex --root-user-action ignore
+RUN set -eux; \
+  . /etc/build-args; \
+  if [ "$INSTALL_INTEL_PYPI_STACK" = "1" ]; then \
+    pip install -i https://software.repos.intel.com/python/pypi \
+      --break-system-packages --root-user-action ignore \
+      numpy scipy dpnp dpctl tbb4py pip --upgrade; \
+    pip install --break-system-packages --root-user-action ignore \
+      smp cython numba scikit-learn-intelex; \
+  fi
 
-# envvars coming from fortran-essentials with addition from cpp essentials
-ENV LANG=C.UTF-8
+RUN set -eux; \
+  . /etc/build-args; \
+  if [ "$INSTALL_INTEL_PYTHON" = "1" ]; then \
+    installer="intelpython3-${INTELPYTHON_PACKAGE_NAME}-Linux-x86_64.sh"; \
+    wget "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/${INTEL_DOWNLOAD_SHA}/${installer}"; \
+    sh "$installer" -b -p /opt/intel/oneapi/intelpython3; \
+    rm -f "$installer"; \
+    ln -sf /opt/intel/oneapi/intelpython3/bin/python3 /usr/local/bin/python3-intel || true; \
+  fi
+
+# oneAPI-related runtime env expected by downstream BigDFT builds.
 ENV CLASSPATH='/opt/intel/oneapi/mpi/latest/share/java/mpi.jar'
-ENV CMAKE_PREFIX_PATH="/opt/intel/oneapi/tbb/latest/:/opt/intel/oneapi/mkl/latest/lib/cmake:/opt/intel/oneapi/compiler/latest"
-ENV CPATH="/opt/intel/oneapi/mkl/latest/include:/opt/intel/oneapi/dev-utilities/latest/include"
-ENV CPLUS_INCLUDE_PATH="/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include"
-ENV C_INCLUDE_PATH="/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include"
-ENV FI_PROVIDER_PATH="/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric"
-ENV GDB_INFO="/opt/intel/oneapi/debugger/latest/share/info/"
-ENV INFOPATH="/opt/intel/oneapi/debugger/latest/share/info"
-ENV INTEL_PYTHONHOME="/opt/intel/oneapi/debugger/latest/opt/debugger"
-ENV I_MPI_ROOT="/opt/intel/oneapi/mpi/latest"
-ENV LD_LIBRARY_PATH="/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/debugger/latest/opt/debugger/lib:/opt/intel/oneapi/compiler/latest/opt/compiler/lib:/opt/intel/oneapi/compiler/latest/lib"
-ENV LIBRARY_PATH="/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/compiler/latest/lib"
-ENV MANPATH="/opt/intel/oneapi/mpi/latest/share/man:/opt/intel/oneapi/debugger/latest/share/man:/opt/intel/oneapi/compiler/latest/share/man"
-ENV MKLROOT="/opt/intel/oneapi/mkl/latest"
-ENV OCL_ICD_FILENAMES="/opt/intel/oneapi/compiler/latest/lib/libintelocl.so"
-ENV PATH="/opt/intel/oneapi/mpi/latest/bin:/opt/intel/oneapi/mkl/latest/bin:/opt/intel/oneapi/dpcpp-ct/latest/bin:/opt/intel/oneapi/dev-utilities/latest/bin:/opt/intel/oneapi/debugger/latest/opt/debugger/bin:/opt/intel/oneapi/compiler/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ENV PKG_CONFIG_PATH="/opt/intel/oneapi/tbb/latest/lib/pkgconfig:/opt/intel/oneapi/mpi/latest/lib/pkgconfig:/opt/intel/oneapi/mkl/latest/lib/pkgconfig:/opt/intel/oneapi/compiler/latest/lib/pkgconfig"
-ENV TBBROOT="/opt/intel/oneapi/tbb/latest/"
-#end of copy
-
-ENV SHELL=/bin/bash
+ENV CMAKE_PREFIX_PATH='/opt/intel/oneapi/tbb/latest/:/opt/intel/oneapi/mkl/latest/lib/cmake:/opt/intel/oneapi/compiler/latest'
+ENV CPATH='/opt/intel/oneapi/mkl/latest/include:/opt/intel/oneapi/dev-utilities/latest/include'
+ENV CPLUS_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
+ENV C_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
+ENV FI_PROVIDER_PATH='/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric'
+ENV GDB_INFO='/opt/intel/oneapi/debugger/latest/share/info/'
+ENV INFOPATH='/opt/intel/oneapi/debugger/latest/share/info'
+ENV INTEL_PYTHONHOME='/opt/intel/oneapi/debugger/latest/opt/debugger'
+ENV I_MPI_ROOT='/opt/intel/oneapi/mpi/latest'
+ENV LD_LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/debugger/latest/opt/debugger/lib:/opt/intel/oneapi/compiler/latest/opt/compiler/lib:/opt/intel/oneapi/compiler/latest/lib'
+ENV LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/compiler/latest/lib'
+ENV MANPATH='/opt/intel/oneapi/mpi/latest/share/man:/opt/intel/oneapi/debugger/latest/share/man:/opt/intel/oneapi/compiler/latest/share/man'
+ENV MKLROOT='/opt/intel/oneapi/mkl/latest'
+ENV OCL_ICD_FILENAMES='/opt/intel/oneapi/compiler/latest/lib/libintelocl.so'
+ENV PATH='/opt/intel/oneapi/intelpython3/bin:/opt/intel/oneapi/mpi/latest/bin:/opt/intel/oneapi/mkl/latest/bin:/opt/intel/oneapi/dpcpp-ct/latest/bin:/opt/intel/oneapi/dev-utilities/latest/bin:/opt/intel/oneapi/debugger/latest/opt/debugger/bin:/opt/intel/oneapi/compiler/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+ENV PKG_CONFIG_PATH='/opt/intel/oneapi/tbb/latest/lib/pkgconfig:/opt/intel/oneapi/mpi/latest/lib/pkgconfig:/opt/intel/oneapi/mkl/latest/lib/pkgconfig:/opt/intel/oneapi/compiler/latest/lib/pkgconfig'
+ENV TBBROOT='/opt/intel/oneapi/tbb/latest/'
 ENV I_MPI_FABRICS=shm
-ENV LD_PRELOAD=/opt/intel/oneapi/compiler/latest/lib/libirc.so
+ENV LD_PRELOAD='/opt/intel/oneapi/compiler/latest/lib/libirc.so'
 
-# Add persistent exit confirmation logic
-#
-RUN printf '%s\n' \
- '# Confirm before real shell exit (on Ctrl+D or termination)' \
- 'trap_exit() {' \
- '  # Remove trap temporarily to prevent infinite loop' \
- '  trap - EXIT' \
- '  if [ -n "$UNDER_JHBUILD" ]; then' \
- '    prompt="Are you sure you want to exit (UNDER_JHBUILD=$UNDER_JHBUILD)? (y/N): "' \
- '  else' \
- '    prompt="Are you sure you want to exit? (y/N): "' \
- '  fi' \
- '  read -p "$prompt" answer' \
- '  case "$answer" in' \
- '    [Yy]*) echo "Exiting..."; builtin exit ;;' \
- '    *) echo "Exit canceled."; exec "$SHELL" ;;' \
- '  esac' \
- '}' \
- '' \
- 'trap trap_exit EXIT' \
- >> /etc/bash.bashrc
-
+RUN set -eux; \
+  if [ "${ENABLE_EXIT_GUARD}" = "1" ]; then \
+    printf '%s\n' \
+      '# Confirm before real shell exit (on Ctrl+D or termination)' \
+      'trap_exit() {' \
+      '  trap - EXIT' \
+      '  if [ -n "$UNDER_JHBUILD" ]; then' \
+      '    prompt="Are you sure you want to exit (UNDER_JHBUILD=$UNDER_JHBUILD)? (y/N): "' \
+      '  else' \
+      '    prompt="Are you sure you want to exit? (y/N): "' \
+      '  fi' \
+      '  read -p "$prompt" answer' \
+      '  case "$answer" in' \
+      '    [Yy]*) echo "Exiting..."; builtin exit ;;' \
+      '    *) echo "Exit canceled."; exec "$SHELL" ;;' \
+      '  esac' \
+      '}' \
+      '' \
+      'trap trap_exit EXIT' \
+      >> /etc/bash.bashrc; \
+  fi
