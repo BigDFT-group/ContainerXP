@@ -1,9 +1,14 @@
 name: oneapi
-on: [push, workflow_dispatch]
+on:
+    push:
+        paths:
+            - Dockerfiles/Dockerfile-stages
+            - Dockerfiles/Dockerfile-oneapi*
+            - .github/workflows/oneapi.yml
+    workflow_dispatch:
 jobs:
     build:
         runs-on: ubuntu-20.04
-        if: "contains(github.event.head_commit.message, 'oneapi') || github.event_name == 'workflow_dispatch'"
         steps:
         -   uses: actions/checkout@v4
         -   name: Login to DockerHub Registry

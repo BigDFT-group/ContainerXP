@@ -1,9 +1,13 @@
 name: runtime-lite
-on: [workflow_dispatch, push]
+on:
+    workflow_dispatch:
+    push:
+        paths:
+            - Dockerfiles/Dockerfile
+            - .github/workflows/runtime-lite.yml
 jobs:
     build:
         runs-on: ubuntu-20.04
-        if: "github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'lite')"
         strategy:
             matrix:
                 arch: [linux/arm64, linux/amd64]

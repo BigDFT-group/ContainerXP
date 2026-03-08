@@ -1,6 +1,10 @@
 name: sdk
 on:
     push:
+      paths:
+          - hpccm/**
+          - current_setup.sh
+          - .github/workflows/sdk.yml
     workflow_dispatch:
       inputs:
           kind:
@@ -17,7 +21,6 @@ jobs:
                     - mpi: mvapich
                       arch: arm
         runs-on: ubuntu-20.04
-        if: "github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'sdk')"
         steps:
         -   uses: actions/checkout@v4
         -   name: Cache python dependencies
