@@ -1,3 +1,7 @@
+# File role: LARA SDK image layered on prebuilt BigDFT SDK oneAPI ground image.
+# Build options: ARG BASE_OS_IMAGE (default bigdft/sdk:oneapi25.2-ground).
+# Main stages/targets: single stage
+
 # syntax=docker/dockerfile:1
 
 # ==============================================================================

@@ -1,3 +1,7 @@
+# File role: Experimental oneAPI multi-step sdk pipeline (sdkbase -> sdk_full -> sdk/runtime).
+# Build options: No args.
+# Main stages/targets: sdkbase, sdkseed, sdk_pre, sdk_core, sdk_client, sdk_full, sdk, runtime
+
 FROM intel/oneapi-hpckit AS sdkbase
 LABEL maintainer bigdft-developers@lists.launchpad.net
 

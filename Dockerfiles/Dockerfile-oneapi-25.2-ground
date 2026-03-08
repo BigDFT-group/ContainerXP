@@ -1,3 +1,7 @@
+# File role: Ground image for oneAPI 25.2 with Ubuntu/CUDA toolkit selection.
+# Build options: ARG UBUNTULTS, CUDATOOLKIT, UBUNTU_CODENAME.
+# Main stages/targets: base
+
 # ---- args used in FROM
 ARG UBUNTULTS=24
 FROM ubuntu:${UBUNTULTS}.04 AS base

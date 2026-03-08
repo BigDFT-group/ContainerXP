@@ -1,5 +1,0 @@
-FROM bigdft/sdk:latest AS base
-LABEL maintainer=bigdft-developers@lists.launchpad.net
-
-ENV PYTHON=python3
-

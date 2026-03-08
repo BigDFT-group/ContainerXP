@@ -1,3 +1,7 @@
+# File role: Staged oneAPI reference graph (successor of oneapi-base; used in CI oneapi workflow).
+# Build options: No args.
+# Main stages/targets: precompile/prebase/basesdk/.../sdk/runtime
+
 FROM intel/oneapi:latest AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 

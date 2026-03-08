@@ -1,3 +1,7 @@
+# File role: Legacy Debian multi-stage BigDFT build/runtime image used by runtime-lite workflow.
+# Build options: No build args; runtime stage is named "runtime".
+# Main stages/targets: build stage + runtime
+
 #
 # This Dockerfile installs a basic BigDFT build
 #

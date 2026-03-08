@@ -1,3 +1,7 @@
+# File role: BOAST tooling image derived from oneapi-ground SDK image.
+# Build options: No args.
+# Main stages/targets: base
+
 FROM bigdft/sdk:oneapi-ground AS base
 
 #install needed dependencies

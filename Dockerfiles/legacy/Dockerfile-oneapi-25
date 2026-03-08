@@ -1,3 +1,7 @@
+# File role: oneAPI 25 multi-stage pipeline based on oneapi-hpc-ground image.
+# Build options: No args.
+# Main stages/targets: base, precompile-base, upstream-core/client/suite, runtime-core, sdk, runtime
+
 FROM bigdft/sdk:oneapi-hpc-ground AS base
 LABEL maintainer=bigdft-developers@lists.launchpad.net
 

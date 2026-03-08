@@ -1,3 +1,7 @@
+# File role: Older oneAPI pipeline with sdk and runtime multi-stage targets.
+# Build options: No args.
+# Main stages/targets: base, precompile, coreseed, clientseed, sdk, runtime_pre, runtime
+
 FROM intel/oneapi-hpckit:2022.3.1-devel-ubuntu20.04 AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 

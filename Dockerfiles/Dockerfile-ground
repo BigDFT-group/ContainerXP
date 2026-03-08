@@ -1,3 +1,7 @@
+# File role: Ground/base Ubuntu image with CUDA + Intel oneAPI toolchain bootstrap.
+# Build options: ARG UBUNTULTS, CUDA_MAJOR, CUDA_MINOR, ONEAPI, UBUNTU_CODENAME.
+# Main stages/targets: base
+
 # ---- args used in FROM
 ARG UBUNTULTS=22
 FROM ubuntu:${UBUNTULTS}.04 AS base

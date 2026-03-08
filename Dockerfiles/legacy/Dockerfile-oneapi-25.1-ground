@@ -1,3 +1,7 @@
+# File role: Ground image for oneAPI 25.1, with optional Intel Python variants.
+# Build options: No external args; build targets nointelpython or intelpython.
+# Main stages/targets: base, nointelpython, intelpython
+
 # Copyright (c) 2020-2021 Intel Corporation.
 # SPDX-License-Identifier: BSD-3-Clause
 

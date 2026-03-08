@@ -1,3 +1,7 @@
+# File role: SDK recipe based on bigdft/sdk:ground (currently partial/WIP pipeline).
+# Build options: No args.
+# Main stages/targets: base, precompile-base
+
 FROM bigdft/sdk:ground AS base
 LABEL maintainer=bigdft-developers@lists.launchpad.net
 

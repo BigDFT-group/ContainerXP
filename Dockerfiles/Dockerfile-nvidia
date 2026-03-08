@@ -1,3 +1,7 @@
+# File role: NVIDIA container toolkit packaging/build environment.
+# Build options: ARG BASEIMAGE, GOLANG_VERSION, PKG_NAME, PKG_VERS, PKG_REV, GIT_COMMIT.
+# Main stages/targets: single stage
+
 ARG BASEIMAGE
 FROM ${BASEIMAGE}
 

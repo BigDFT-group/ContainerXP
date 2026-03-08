@@ -1,3 +1,7 @@
+# File role: oneAPI 24-era multi-stage pipeline with upstream + sdk/runtime targets.
+# Build options: No args.
+# Main stages/targets: base, precompile, core-upstream, client-upstream, upstream, sdk, runtime_pre, runtime
+
 FROM intel/oneapi AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 

@@ -1,3 +1,7 @@
+# File role: LaTeX environment image for documentation/paper builds.
+# Build options: No args.
+# Main stages/targets: single stage
+
 FROM charlesbaynham/ctanfull:2022_jun
 LABEL presentations=bigdft-developers@lists.launchpad.net
 

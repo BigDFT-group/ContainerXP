@@ -1,3 +1,7 @@
+# File role: Primary staged oneAPI build graph used by oneapi CI (target sdk).
+# Build options: No args.
+# Main stages/targets: precompile/prebase/basesdk/.../sdk/runtime
+
 FROM intel/oneapi-hpckit:2023.1.0-devel-ubuntu22.04 AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 

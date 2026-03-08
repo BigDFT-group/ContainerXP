@@ -1,3 +1,7 @@
+# File role: oneAPI HPCKit ground image variant with Intel Python and MPI fabric setup.
+# Build options: No args.
+# Main stages/targets: base
+
 FROM intel/oneapi-hpckit AS base
 LABEL maintainer=bigdft-developers@lists.launchpad.net
 

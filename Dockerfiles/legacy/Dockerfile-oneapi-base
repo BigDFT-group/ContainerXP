@@ -1,3 +1,7 @@
+# File role: Historical comprehensive oneAPI stage graph (core/client/sdk/runtime).
+# Build options: No args.
+# Main stages/targets: precompile/prebase/basesdk/.../sdk/runtime
+
 FROM intel/oneapi AS base
 LABEL maintainer bigdft-developers@lists.launchpad.net
 

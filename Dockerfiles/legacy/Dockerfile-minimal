@@ -1,3 +1,7 @@
+# File role: Minimal Ubuntu base image placeholder.
+# Build options: No args.
+# Main stages/targets: single stage
+
 FROM ubuntu
 LABEL maintainer bigdft-developers@lists.launchpad.net
 #install needed dependencies

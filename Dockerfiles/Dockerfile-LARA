@@ -1,3 +1,7 @@
+# File role: LARA user environment with conda/Jupyter on top of configurable base image.
+# Build options: ARG BASE_IMAGE (default ubuntu:24.04).
+# Main stages/targets: single stage
+
 # syntax=docker/dockerfile:1
 
 ARG BASE_IMAGE=ubuntu:24.04

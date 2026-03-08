@@ -1,3 +1,7 @@
+# File role: OpenVSCode-based IDE container on top of configurable SDK/base image.
+# Build options: ARG BASE_IMAGE, OVS_VERSION, PORT.
+# Main stages/targets: single stage
+
 # syntax=docker/dockerfile:1
 
 ARG BASE_IMAGE=bigdft/sdk:latest
