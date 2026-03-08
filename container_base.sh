@@ -12,8 +12,8 @@ uniopt HOMEDIR d homedir "/tmp/fake_home" "Directory of homedir of the container
 
 enable_display() {
 if test "$WITH_DISPLAY" = "YES"; then
-    xhost +local:root > /dev/null
-    DOCKER_OPTIONS="$DOCKER_OPTIONS -e DISPLAY=\$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix"
+    xhost +si:localuser:$(id -u) > /dev/null
+    DOCKER_OPTIONS="$DOCKER_OPTIONS --device /dev/dri -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro"
 fi
 }
 

@@ -1,0 +1,61 @@
+# syntax=docker/dockerfile:1
+
+ARG BASE_IMAGE=bigdft/sdk:latest
+FROM ${BASE_IMAGE}
+
+USER root
+
+# Basic tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    openssh-client \
+    ca-certificates \
+    nodejs \
+    npm \
+    python3-pip \
+    tini \
+ && rm -rf /var/lib/apt/lists/*
+
+# OpenVSCode Server
+ARG OVS_VERSION=1.109.5
+RUN curl -L "https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v${OVS_VERSION}/openvscode-server-v${OVS_VERSION}-linux-x64.tar.gz" \
+    | tar -xz -C /opt \
+ && mv /opt/openvscode-server-v${OVS_VERSION}-linux-x64 /opt/openvscode-server
+
+# Codex CLI
+RUN npm install -g @openai/codex
+
+# Aider
+RUN pip install --no-cache-dir aider-chat
+
+# Non-root user
+#RUN useradd -ms /bin/bash coder
+#USER coder
+#WORKDIR /workspace
+
+RUN apt-get update && apt-get install -y \
+    vulkan-tools \
+    mesa-vulkan-drivers \
+    libvulkan1 \
+    mesa-utils \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV SHELL=/usr/bin/bash
+RUN curl -f https://zed.dev/install.sh | sh
+
+ENV XDG_RUNTIME_DIR=/tmp/xdg-runtime-ide
+RUN mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
+
+ENV PATH="/opt/openvscode-server/bin:${PATH}"
+ENV OPENVSCODE_SERVER_ROOT=/opt/openvscode-server
+
+ARG PORT=3000
+EXPOSE $PORT
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/opt/openvscode-server/bin/openvscode-server", \
+     "--host", "0.0.0.0", \
+     "--port", "3123", \
+     "--without-connection-token", \
+     "--workspace-folder", "."]
