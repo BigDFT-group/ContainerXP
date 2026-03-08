@@ -39,7 +39,7 @@ Top-level `Dockerfiles/` keeps only:
 
 | Flavour | `BASE_IMAGE` | `PROFILE` | oneAPI apt | Intel GPU repo | CUDA repo/toolkit | Toolchain install | Intel Python | Intel PyPI stack |
 |---|---|---|---|---|---|---|---|---|
-| `ubuntu-system` | `ubuntu:24.04` | `ubuntu-system` | on | on | on | on | off | on |
+| `ubuntu-system` | `ubuntu:24.04` | `ubuntu-system` | off | off | off | off (uses distro minimum deps) | off | off |
 | `ubuntu-intelpython` | `ubuntu:24.04` | `ubuntu-intelpython` | on | on | on | on | on | off |
 | `hpckit-intelpython` | `intel/oneapi-hpckit` | `hpckit-intelpython` | off | off | off | off | on | off |
 

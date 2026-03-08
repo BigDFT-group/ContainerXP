@@ -78,7 +78,7 @@ ENV LANG=C.UTF-8
 RUN set -eux; \
   case "$PROFILE" in \
     ubuntu-system) \
-      def_oneapi=1; def_gpu=1; def_cuda=1; def_toolchain=1; def_ipy=0; def_ipypi=1 ;; \
+      def_oneapi=0; def_gpu=0; def_cuda=0; def_toolchain=0; def_ipy=0; def_ipypi=0 ;; \
     ubuntu-intelpython) \
       def_oneapi=1; def_gpu=1; def_cuda=1; def_toolchain=1; def_ipy=1; def_ipypi=0 ;; \
     hpckit-intelpython) \
@@ -170,8 +170,13 @@ RUN set -eux; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $PKGS; \
     rm -rf /var/lib/apt/lists/*; \
   else \
-    apt-get update || true; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends intel-ocloc intel-ocloc-dev || true; \
+    PKGS="autoconf build-essential pkg-config gfortran libblas-dev liblapack-dev \
+      cmake libopenmpi-dev curl git python-is-python3 python3-setuptools python3-dev"; \
+    if [ "$ENABLE_CUDA" = "1" ] && [ "$CUDATOOLKIT" != "none" ]; then \
+      PKGS="$PKGS cuda-toolkit-${CUDATOOLKIT}"; \
+    fi; \
+    apt-get update && apt-get upgrade -y; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $PKGS; \
     rm -rf /var/lib/apt/lists/*; \
   fi
 
