@@ -17,19 +17,19 @@ jobs:
                     - mpi: mvapich
                       arch: arm
         runs-on: ubuntu-20.04
-        if: "${{ github.event.inputs.name }} == 'manual' && contains(github.event.head_commit.message, 'sdk')"
+        if: "github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'sdk')"
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v4
         -   name: Cache python dependencies
             id: cache-pip
-            uses: actions/cache@v2
+            uses: actions/cache@v4
             with:
                 path: ~/.cache/pip
                 key: pip-pre-commit-${{ hashFiles('**/setup.json') }}
                 restore-keys:
                     pip-pre-commit-
         -   name: Set up Python
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v5
             with:
                 python-version: 3.8
         -   name: Install python dependencies
@@ -40,32 +40,32 @@ jobs:
             run: |
                 source current_setup.sh
                 if [ ${{ matrix.mpi }} == "mvapich" ]; then
-                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION)
+                    echo "version=$BIGDFT_MVAPICH2_VERSION" >> "$GITHUB_OUTPUT"
                 else
-                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION)
+                    echo "version=$BIGDFT_OPENMPI_VERSION" >> "$GITHUB_OUTPUT"
                 fi
                 if [ ${{ matrix.arch }} == "arm" ]; then
-                  echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN_ARM)
-                  echo ::set-output name=blas::$(echo $BIGDFT_BLAS_ARM)
-                  echo ::set-output name=python::$(echo $BIGDFT_PYTHON_ARM)
-                  echo ::set-output name=binary::$(echo $BIGDFT_USE_BINARIES_ARM)
+                  echo "toolchain=$BIGDFT_TOOLCHAIN_ARM" >> "$GITHUB_OUTPUT"
+                  echo "blas=$BIGDFT_BLAS_ARM" >> "$GITHUB_OUTPUT"
+                  echo "python=$BIGDFT_PYTHON_ARM" >> "$GITHUB_OUTPUT"
+                  echo "binary=$BIGDFT_USE_BINARIES_ARM" >> "$GITHUB_OUTPUT"
                 elif [ ${{ matrix.arch }} == "ppc64le" ]; then
-                  echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN_POWER)
-                  echo ::set-output name=blas::$(echo $BIGDFT_BLAS_POWER)
-                  echo ::set-output name=python::$(echo $BIGDFT_PYTHON_POWER)
-                  echo ::set-output name=binary::$(echo $BIGDFT_USE_BINARIES_POWER)
+                  echo "toolchain=$BIGDFT_TOOLCHAIN_POWER" >> "$GITHUB_OUTPUT"
+                  echo "blas=$BIGDFT_BLAS_POWER" >> "$GITHUB_OUTPUT"
+                  echo "python=$BIGDFT_PYTHON_POWER" >> "$GITHUB_OUTPUT"
+                  echo "binary=$BIGDFT_USE_BINARIES_POWER" >> "$GITHUB_OUTPUT"
                 else
-                  echo ::set-output name=toolchain::$(echo $BIGDFT_TOOLCHAIN)
-                  echo ::set-output name=blas::$(echo $BIGDFT_BLAS)
-                  echo ::set-output name=python::$(echo $BIGDFT_PYTHON)
-                  echo ::set-output name=binary::$(echo $BIGDFT_USE_BINARIES)
+                  echo "toolchain=$BIGDFT_TOOLCHAIN" >> "$GITHUB_OUTPUT"
+                  echo "blas=$BIGDFT_BLAS" >> "$GITHUB_OUTPUT"
+                  echo "python=$BIGDFT_PYTHON" >> "$GITHUB_OUTPUT"
+                  echo "binary=$BIGDFT_USE_BINARIES" >> "$GITHUB_OUTPUT"
                 fi
         -   name: generate docker files for openmpi
             run: |
                 source current_setup.sh
                 hpccm/lsim_sdk/lsim_mpi.py --system=${BIGDFT_SYSTEM} --system_version=${BIGDFT_SYSTEM_VERSION} --cuda=${BIGDFT_CUDA_VERSION} --toolchain=${{steps.vars.outputs.toolchain}} --python=${{steps.vars.outputs.python}} --blas=${{steps.vars.outputs.blas}} --mpi=${{ matrix.mpi }} --mpi_version=${{steps.vars.outputs.version}} --jupyter=${BIGDFT_JUPYTER} --target_arch=${{ matrix.arch }} --binary=${{steps.vars.outputs.binary}} > Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Upload sdk dockerfile
-            uses: actions/upload-artifact@v1
+            uses: actions/upload-artifact@v4
             with:
                 name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
                 path: Dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
@@ -80,17 +80,17 @@ jobs:
         runs-on: ubuntu-20.04
         needs: generate
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v4
         -   name: Download dockerfile
-            uses: actions/download-artifact@v1
+            uses: actions/download-artifact@v4
             with:
                 name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Set up QEMU
-            uses: docker/setup-qemu-action@v1
+            uses: docker/setup-qemu-action@v3
             with:
                 platforms: all
         -   name: Set up Docker Buildx
-            uses: docker/setup-buildx-action@v1
+            uses: docker/setup-buildx-action@v3
             with:
                 version: latest
         -   name: Login to DockerHub Registry
@@ -100,17 +100,17 @@ jobs:
             run: |
                 source current_setup.sh
                 if [ ${{ matrix.mpi }} == "mvapich" ]; then
-                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION)
+                    echo "version=$BIGDFT_MVAPICH2_VERSION" >> "$GITHUB_OUTPUT"
                 else
-                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION)
+                    echo "version=$BIGDFT_OPENMPI_VERSION" >> "$GITHUB_OUTPUT"
                 fi
-                echo ::set-output name=nompitag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{steps.vars.outputs.version}}_${{ matrix.arch }})
+                echo "nompitag=${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{steps.vars.outputs.version}}_${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
                 if [ ${{ matrix.arch }} == "arm" ]; then
-                    echo ::set-output name=docker_platform::"linux/arm64"
+                    echo "docker_platform=linux/arm64" >> "$GITHUB_OUTPUT"
                 elif [ ${{ matrix.arch }} == "ppc64le" ]; then
-                    echo ::set-output name=docker_platform::"linux/ppc64le"
+                    echo "docker_platform=linux/ppc64le" >> "$GITHUB_OUTPUT"
                 else
-                    echo ::set-output name=docker_platform::"linux/amd64"
+                    echo "docker_platform=linux/amd64" >> "$GITHUB_OUTPUT"
                 fi
         -   name: Build the tagged Docker image
             run: |
@@ -126,17 +126,17 @@ jobs:
         runs-on: ubuntu-20.04
         needs: build_sdk
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v4
         -   name: Download dockerfile
-            uses: actions/download-artifact@v1
+            uses: actions/download-artifact@v4
             with:
                 name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Set up QEMU
-            uses: docker/setup-qemu-action@v1
+            uses: docker/setup-qemu-action@v3
             with:
                 platforms: all
         -   name: Set up Docker Buildx
-            uses: docker/setup-buildx-action@v1
+            uses: docker/setup-buildx-action@v3
             with:
                 version: latest
         -   name: Login to DockerHub Registry
@@ -146,17 +146,17 @@ jobs:
             run: |
                 source current_setup.sh
                 if [ ${{ matrix.mpi }} == "mvapich" ]; then
-                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION)
+                    echo "version=$BIGDFT_MVAPICH2_VERSION" >> "$GITHUB_OUTPUT"
                 else
-                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION)
+                    echo "version=$BIGDFT_OPENMPI_VERSION" >> "$GITHUB_OUTPUT"
                 fi
-                echo ::set-output name=nompitag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{steps.vars.outputs.version}}_${{ matrix.arch }})
+                echo "nompitag=${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{steps.vars.outputs.version}}_${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
                 if [ ${{ matrix.arch }} == "arm" ]; then
-                    echo ::set-output name=docker_platform::"linux/arm64"
+                    echo "docker_platform=linux/arm64" >> "$GITHUB_OUTPUT"
                 elif [ ${{ matrix.arch }} == "ppc64le" ]; then
-                    echo ::set-output name=docker_platform::"linux/ppc64le"
+                    echo "docker_platform=linux/ppc64le" >> "$GITHUB_OUTPUT"
                 else
-                    echo ::set-output name=docker_platform::"linux/amd64"
+                    echo "docker_platform=linux/amd64" >> "$GITHUB_OUTPUT"
                 fi
         -   name: Build the tagged Docker image
             run: |
@@ -181,17 +181,17 @@ jobs:
         runs-on: ubuntu-20.04
         needs: build_toolchain
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v4
         -   name: Download dockerfile
-            uses: actions/download-artifact@v1
+            uses: actions/download-artifact@v4
             with:
                 name: dockerfile_sdk_${{ matrix.mpi }}_${{ matrix.arch }}
         -   name: Set up QEMU
-            uses: docker/setup-qemu-action@v1
+            uses: docker/setup-qemu-action@v3
             with:
                 platforms: all
         -   name: Set up Docker Buildx
-            uses: docker/setup-buildx-action@v1
+            uses: docker/setup-buildx-action@v3
             with:
                 version: latest
         -   name: Login to DockerHub Registry
@@ -201,18 +201,18 @@ jobs:
             run: |
                 source current_setup.sh
                 if [ ${{ matrix.mpi }} == "mvapich" ]; then
-                    echo ::set-output name=version::$(echo $BIGDFT_MVAPICH2_VERSION)
+                    echo "version=$BIGDFT_MVAPICH2_VERSION" >> "$GITHUB_OUTPUT"
                 else
-                    echo ::set-output name=version::$(echo $BIGDFT_OPENMPI_VERSION)
+                    echo "version=$BIGDFT_OPENMPI_VERSION" >> "$GITHUB_OUTPUT"
                 fi
-                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}})_${{ matrix.arch }}
-                echo ::set-output name=nompitag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{steps.vars.outputs.version}}_${{ matrix.arch }})
+                echo "tag=${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{ matrix.mpi }}${{steps.vars.outputs.version}}_${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
+                echo "nompitag=${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_${{steps.vars.outputs.version}}_${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
                 if [ ${{ matrix.arch }} == "arm" ]; then
-                    echo ::set-output name=docker_platform::"linux/arm64"
+                    echo "docker_platform=linux/arm64" >> "$GITHUB_OUTPUT"
                 elif [ ${{ matrix.arch }} == "ppc64le" ]; then
-                    echo ::set-output name=docker_platform::"linux/ppc64le"
+                    echo "docker_platform=linux/ppc64le" >> "$GITHUB_OUTPUT"
                 else
-                    echo ::set-output name=docker_platform::"linux/amd64"
+                    echo "docker_platform=linux/amd64" >> "$GITHUB_OUTPUT"
                 fi
         -   name: Build the tagged Docker image
             run: |
@@ -221,14 +221,14 @@ jobs:
         runs-on: ubuntu-latest
         needs: build_mpi
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v4
         -   name: Login to DockerHub Registry
             run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         -   name: Get the tag and MPI version
             id: vars
             run: |
                 source current_setup.sh
-                echo ::set-output name=tag::$(echo ${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi)
+                echo "tag=${BIGDFT_SYSTEM}${BIGDFT_SYSTEM_VERSION}_cuda${BIGDFT_CUDA_VERSION}_ompi" >> "$GITHUB_OUTPUT"
         -   name: Update manifest for sdk to attach arm and x86_64 versions on a single image
             run: |
                 export DOCKER_CLI_EXPERIMENTAL=enabled
