@@ -19,6 +19,10 @@ RUN apt-get update && apt-get install -y \
     npm \
     python3-pip \
     tini \
+    tmux \
+    less \
+    ripgrep \
+    fd-find \
  && rm -rf /var/lib/apt/lists/*
 
 # OpenVSCode Server
@@ -33,11 +37,7 @@ RUN npm install -g @openai/codex
 # Aider
 RUN pip install --no-cache-dir aider-chat
 
-# Non-root user
-#RUN useradd -ms /bin/bash coder
-#USER coder
-#WORKDIR /workspace
-
+# Optional GUI-related packages you already had
 RUN apt-get update && apt-get install -y \
     vulkan-tools \
     mesa-vulkan-drivers \
@@ -55,9 +55,7 @@ ENV PATH="/opt/openvscode-server/bin:${PATH}"
 ENV OPENVSCODE_SERVER_ROOT=/opt/openvscode-server
 
 # Standard container init hooks.
-# Any image can drop scripts in /etc/container-init.d/*.sh and they will be
-# sourced before the main CMD is executed.
-RUN mkdir -p /etc/container-init.d /usr/local/bin && \
+RUN mkdir -p /etc/container-init.d /usr/local/bin /etc/profile.d && \
     printf '%s\n' \
       '#!/usr/bin/env bash' \
       'set -euo pipefail' \
@@ -82,10 +80,63 @@ RUN printf '%s\n' \
   > /etc/container-init.d/80-ide-runtime.sh && \
   chmod +x /etc/container-init.d/80-ide-runtime.sh
 
+# Helper: sanitize current directory into a tmux-friendly suffix
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'base="$(basename "${PWD}")"' \
+  'base="${base//[^A-Za-z0-9_.-]/_}"' \
+  'printf "%s\n" "$base"' \
+  > /usr/local/bin/session-dir-name && \
+  chmod +x /usr/local/bin/session-dir-name
+
+# Reattach/create Codex tmux session
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'name="${1:-codex-$(session-dir-name)}"' \
+  'shift || true' \
+  'if tmux has-session -t "$name" 2>/dev/null; then' \
+  '  exec tmux attach -t "$name"' \
+  'else' \
+  '  exec tmux new-session -s "$name" -c "$PWD" codex "$@"' \
+  'fi' \
+  > /usr/local/bin/codex-session && \
+  chmod +x /usr/local/bin/codex-session
+
+# Reattach/create Aider tmux session
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'name="${1:-aider-$(session-dir-name)}"' \
+  'shift || true' \
+  'if tmux has-session -t "$name" 2>/dev/null; then' \
+  '  exec tmux attach -t "$name"' \
+  'else' \
+  '  exec tmux new-session -s "$name" -c "$PWD" aider "$@"' \
+  'fi' \
+  > /usr/local/bin/aider-session && \
+  chmod +x /usr/local/bin/aider-session
+
+# List active LLM-related tmux sessions
+RUN printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'tmux list-sessions 2>/dev/null | grep -E "^(codex|aider)-" || true' \
+  > /usr/local/bin/llm-sessions && \
+  chmod +x /usr/local/bin/llm-sessions
+
+# Handy aliases for interactive shells
+RUN printf '%s\n' \
+  'alias codexr="codex-session"' \
+  'alias aiderr="aider-session"' \
+  'alias llms="llm-sessions"' \
+  > /etc/profile.d/llm-tools.sh
+
 ARG PORT=3000
 EXPOSE $PORT
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/container-entrypoint"]
-# Use shell form via sh -lc so PORT/WORKSPACE_DIR can be overridden at runtime.
+
 ENV WORKSPACE_DIR=.
 CMD ["sh", "-lc", "exec /opt/openvscode-server/bin/openvscode-server --host 0.0.0.0 --port ${PORT} --without-connection-token --workspace-folder ${WORKSPACE_DIR}"]

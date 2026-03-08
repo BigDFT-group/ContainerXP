@@ -9,7 +9,9 @@
 #
 # Core source selection
 # - BASE_IMAGE: ground image to build from (required)
-# - CODENAME: rcfile family used by Installer.py
+# - CODENAME: rcfile basename used for both:
+#     - upstream file: <CODENAME>-upstream.rc
+#     - compile file : <CODENAME>.rc
 # - REPO: gitlab namespace for bigdft-suite
 # - BIGDFT_SUITE_BRANCH: branch/tag for bigdft-suite
 # - UPSTREAM_TARBALLS_BRANCH: branch/tag for bigdft-upstream-tarballs
@@ -23,7 +25,7 @@
 # - EXTRA_PIP_PACKAGES: additional pip packages appended in sdk stage
 # -----------------------------------------------------------------------------
 
-ARG BASE_IMAGE
+ARG BASE_IMAGE=bigdft/ground:ubuntu-system
 FROM ${BASE_IMAGE} AS base
 LABEL maintainer=bigdft-developers@lists.launchpad.net
 
@@ -46,6 +48,7 @@ ENV JHBUILD_RUN_AS_ROOT="please do it"
 ENV BIGDFT_SUITE_TARBALLDIR=/opt/bigdft/bigdft-upstream-tarballs
 ENV BIGDFT_SUITE_CHECKOUTROOT=/opt/bigdft/checkoutdir
 ENV JHBUILD_COMMAND="$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
+ENV CODENAME=$CODENAME
 ENV INSTALLATION_COMMAND="$JHBUILD_COMMAND -m $BIGDFT_SUITE_SOURCES/modulesets/upstream.modules -f $BIGDFT_SUITE_SOURCES/rcfiles/$CODENAME-upstream.rc"
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
 

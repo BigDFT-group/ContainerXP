@@ -144,7 +144,7 @@ Stage list in build order:
 | Argument | Purpose | Default |
 |---|---|---|
 | `BASE_IMAGE` | Ground image used in `FROM` | none (required) |
-| `CODENAME` | BigDFT rcfile codename family | `oneapi-hpc` |
+| `CODENAME` | Rcfile basename for both `<name>-upstream.rc` and `<name>.rc` | `oneapi-hpc` |
 | `REPO` | GitLab namespace for `bigdft-suite` | `l_sim` |
 | `BIGDFT_SUITE_BRANCH` | Branch/tag for `bigdft-suite` checkout | `devel` |
 | `UPSTREAM_TARBALLS_BRANCH` | Branch/tag for `bigdft-upstream-tarballs` | `total` |
@@ -161,6 +161,7 @@ Examples:
 docker build -f Dockerfile-bigdft \
   --target sdk \
   --build-arg BASE_IMAGE=bigdft/ground:ubuntu-intelpython \
+  --build-arg CODENAME=oneapi-hpc \
   -t bigdft/sdk:ubuntu-intelpython .
 ```
 
@@ -170,6 +171,7 @@ docker build -f Dockerfile-bigdft \
 docker build -f Dockerfile-bigdft \
   --target runtime-core \
   --build-arg BASE_IMAGE=bigdft/ground:ubuntu-system \
+  --build-arg CODENAME=oneapi-hpc \
   -t bigdft/runtime:ubuntu-system .
 ```
 
@@ -179,6 +181,7 @@ docker build -f Dockerfile-bigdft \
 docker build -f Dockerfile-bigdft \
   --target sdk \
   --build-arg BASE_IMAGE=bigdft/ground:ubuntu-intelpython \
+  --build-arg CODENAME=oneapi-hpc \
   --build-arg EXTRA_PIP_PACKAGES=\"ipywidgets jupyterlab-git\" \
   -t bigdft/sdk:ubuntu-intelpython-extra .
 ```
