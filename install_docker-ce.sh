@@ -1,35 +1,38 @@
 #!/usr/bin/env bash
 
-sudo add-apt-repository ppa:criu/ppa --yes
+set -euo pipefail
 
-sudo apt update
+echo "[INFO] Installing Docker Engine (official Docker APT repository)."
+echo "[INFO] You may be prompted for sudo password."
 
-sudo apt --fix-broken install
+# Remove old/conflicting packages if present.
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+  sudo apt-get remove -y "$pkg" || true
+done
 
-sudo apt remove docker docker-engine docker.io containerd runc
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
 
-sudo apt --yes install \
-	apt-transport-https \
-        ca-certificates \
-        curl \
-        gnupg \
-        lsb-release \
-        criu 
+# Add Docker's official GPG key.
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
+# Add Docker repository.
 echo \
-  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo \"${UBUNTU_CODENAME:-$VERSION_CODENAME}\") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-sudo apt update
+sudo apt-get update
 
+# Install Docker Engine + CLI + container runtime + buildx + compose plugin.
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Enable non-root docker usage for current user.
 sudo groupadd -f docker
-
-sudo apt --yes install docker-ce docker-ce-cli containerd.io
-
-sudo usermod -aG docker $USER
+sudo usermod -aG docker "${USER}"
 
 newgrp docker 
-
-
+echo "[INFO] Docker installation complete."
+echo "[INFO] Run: docker run hello-world"

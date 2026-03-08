@@ -1,15 +1,267 @@
-# Container eXPeriences Project
+# Container eXPeriences Project (ContainerXP)
 
-This project collects the files related to the containers associated to BigDFT project.
-Dockerfiles as well as Bench files will be associated to this project such that the container experience
-can be maintained and tested.
+This repository contains container recipes, helper scripts, and CI workflows used to build and run BigDFT container images.
 
-Some of the files of this projects:
+## Table of Contents
 
- * `install_docker_ce.sh` is a facility script that can be used to install the docker community edition on your local workstation. Run it not being sudo, it will then prompt for the superuser password.
+- [Top-Level Shell Scripts](#top-level-shell-scripts)
+- [`uniopt.sh` (Option Parser Framework)](#unioptsh-option-parser-framework)
+- [`container_base.sh` (Docker Run Base Builder)](#container_basesh-docker-run-base-builder)
+- [`bigdftmk` (BigDFT SDK Launcher)](#bigdftmk-bigdft-sdk-launcher)
+- [`latexmk` (Containerized LaTeX Builder)](#latexmk-containerized-latex-builder)
+- [Docker Installation Helper (`install_docker-ce.sh`)](#docker-installation-helper-install_docker-cesh)
 
- *  `bigdftmk` is a script that triggers the execution of the docker image. With this script it should be easy to mount the source directory
-    of the bigdft suite and to create binaries that are then compiled with user's permission. The script contains a number of facilities
-    which would create the dockerline to be executed. One can encapsulate this script in other commands for automation.
+## Top-Level Shell Scripts
 
- * `latexmk` is a script that make possible the compilation of a beamer presentation by using the BigDFT layout. By running `latexmk -s <inputfile>` the bigdft/latex container is employed to compile the inputfile. A `-o <outdir>` option can be included to redirect the temporary latex files to another directory.
+| File | Role | Status |
+|---|---|---|
+| `uniopt.sh` | Minimal option-parser framework used by wrapper scripts. | Active |
+| `container_base.sh` | Shared Docker run option builder (`parse_base`, `docker_command`). | Active |
+| `bigdftmk` | BigDFT SDK launcher wrapper built on `container_base.sh`. | Active |
+| `latexmk` | LaTeX build launcher wrapper built on `container_base.sh`. | Active |
+| `current_setup.sh` | Environment/version defaults used by workflows and build generation. | Active |
+| `install_docker-ce.sh` | Host helper to install Docker CE from official Docker APT repo. | Active |
+| `run.sh` | Older docker wrapper superseded by `container_base.sh` usage. | Removed |
+| `scripts/legacy/*.sh` | Hardcoded legacy launchers kept for reference. | Legacy |
+
+Legacy launchers moved to:
+
+- `scripts/legacy/run_jupyter.sh`
+- `scripts/legacy/run_sdk.sh`
+- `scripts/legacy/run_ubuntu_sdk.sh`
+- `scripts/legacy/run_v-sim.sh`
+
+## `uniopt.sh` (Option Parser Framework)
+
+`uniopt.sh` provides a small declarative interface to define CLI options and parse them into shell variables.
+
+### Core API
+
+- `uniopt NAME SHORT LONG DEFAULT HELP`
+- `uniopt_parser "$@"`
+
+### Default modes
+
+- `ASSUME_NO`: boolean flag, default `NO`; passing the option toggles to `YES`.
+- `ASSUME_YES`: boolean flag, default `YES`; passing the option toggles to `NO`.
+- Any other `DEFAULT`: value option (accepts `-s value` or `--long=value`).
+
+### Typical usage pattern
+
+```bash
+#!/usr/bin/env bash
+ORIGIN=$(dirname "$(readlink -f "$0")")
+. "$ORIGIN/uniopt.sh"
+
+uniopt WITH_GPU g gpu ASSUME_NO "Enable GPU"
+uniopt IMAGE i image "bigdft/sdk:latest" "Container image"
+uniopt PORT p port "8888" "Host port"
+
+uniopt_parser "$@"
+
+# Parsed variables are now available:
+#   WITH_GPU, IMAGE, PORT, POSITIONAL
+```
+
+### Notes
+
+- Unknown options are preserved in `POSITIONAL`.
+- `-h` / `--help` prints generated help lines.
+- Set `UNIOPT_VERBATIM=1` to print generated parser/debug values.
+
+## `container_base.sh` (Docker Run Base Builder)
+
+`container_base.sh` builds consistent Docker run options and command strings for wrapper scripts.
+
+### Imported dependency
+
+- Requires `uniopt.sh` in the same directory.
+
+### Declared options
+
+- `WITH_DISPLAY` (`-X`, `--display`) toggle X11/DRI passthrough
+- `WITH_WORKDIR` (`-w`, `--workdir`) mount current directory and set working directory
+- `KEEP` (`-k`, `--keep`) keep container after exit (otherwise `--rm`)
+- `EMPLOY_ROOT_USER` (`-r`, `--root`) if unset, maps current host user/group into container
+- `EXTRA_COMMANDS` (`-x`, `--extra-cmd=...`) extra docker run arguments
+- `EXTRA_POSITIONAL` (`-e`, `--extra-positional=...`) extra command arguments passed after image
+- `HOMEDIR` (`-d`, `--homedir=...`) temp home mapping used for passwd/group/user consistency
+
+### Main functions
+
+- `parse_base "$@"`
+  - Parses options.
+  - Builds `DOCKER_OPTIONS`.
+  - Applies display/workdir/user mapping logic.
+- `docker_command`
+  - Builds final `DOCKER_COMMAND` string:
+  - `docker run -ti $DOCKER_OPTIONS $CONTAINER $POSITIONAL $EXTRA_POSITIONAL`
+
+### Example wrapper usage
+
+```bash
+#!/usr/bin/env bash
+ORIGIN=$(dirname "$(readlink -f "$0")")
+. "$ORIGIN/container_base.sh"
+
+uniopt CONTAINER i image "bigdft/sdk:latest" "Container image"
+parse_base "$@"
+docker_command
+
+echo "$DOCKER_COMMAND"
+# Optional execution:
+# eval "$DOCKER_COMMAND"
+```
+
+### Caution
+
+- `EXTRA_COMMANDS` and `EXTRA_POSITIONAL` are raw string expansions; quote carefully.
+- Display passthrough requires host X11 setup and permissions.
+
+## `bigdftmk` (BigDFT SDK Launcher)
+
+`bigdftmk` is a thin wrapper around `container_base.sh`. It prepares mounts and networking for a BigDFT SDK-style container and then generates `DOCKER_COMMAND`.
+
+### Base API dependency
+
+- Calls `parse_base "$@"` from `container_base.sh`.
+- Calls `docker_command` to build the final command string.
+
+### Script-specific options
+
+- `-s`, `--sources`: source tree to mount in container as `/opt/bigdft/sources/`
+  - default: `${BIGDFT_SUITE_SOURCES}`
+- `-i`, `--image`: container image
+  - default: `bigdft/sdk:latest`
+- `-b`, `--binaries`: host binaries directory mounted into container target path
+  - default: `${BIGDFT_SUITE_BINARIES}`
+- `-t`, `--target`: container target path for binaries mount
+  - default: `/opt/bigdft`
+- `-p`, `--port`: host port forwarded to container `8888`
+  - default: empty (no explicit port map)
+
+### Behavior details
+
+- If `--port` is not set, it adds `--network=host`.
+- If `--port` is set, it adds `-p <PORT>:8888`.
+- If sources are set, it mounts them to `/opt/bigdft/sources/`.
+- If binaries are set, it creates the host directory if needed and mounts it to `--target`.
+- Like other wrappers, the script only composes command text via `docker_command`; execution is handled by the caller workflow.
+
+### Examples
+
+```bash
+# Build default command from env defaults
+./bigdftmk
+
+# Use explicit image, source tree, and host binaries directory
+./bigdftmk \
+  --image bigdft/sdk:latest \
+  --sources ~/src/bigdft-suite \
+  --binaries ~/bigdft-bin \
+  --target /opt/bigdft
+
+# Expose notebook/service port instead of host networking
+./bigdftmk --port 8899
+```
+
+## `latexmk` (Containerized LaTeX Builder)
+
+`latexmk` is another `container_base.sh` wrapper. It mounts the `.tex` source directory, optional extra assets directory, and generates the container command.
+
+### Base API dependency
+
+- Calls `parse_base "$@"` from `container_base.sh`.
+- Calls `docker_command` to build the final command string.
+
+### Script-specific options
+
+- `-s`, `--sources`: source `.tex` file path (required for default behavior)
+- `-x`, `--extradir`: optional additional directory to mount
+- `-o`, `--outputdir`: output directory (path interpreted by container-side helper)
+  - default: `/tmp`
+- `-i`, `--image`: container image
+  - default: `bigdft/latex`
+
+### Behavior details
+
+- Mounts source file directory at `/<source_dir_name>` and sets `-w` there.
+- If `--extradir` is provided, mounts it at `/<extra_dir_name>`.
+- If no positional command is provided, defaults to:
+  - `sh /bin/bigdft_latexmk.sh <file_basename> <outputdir>`
+- If positional arguments are provided, they override that default command.
+
+### Examples
+
+```bash
+# Default latex build command using container helper
+./latexmk --sources docs/report.tex
+
+# Mount an extra assets directory and write outputs to build/
+./latexmk \
+  --sources docs/report.tex \
+  --extradir docs/figures \
+  --outputdir build
+
+# Override default command executed inside the container
+./latexmk --sources docs/report.tex -- latexmk -pdf report.tex
+```
+
+## Docker Installation Helper (`install_docker-ce.sh`)
+
+### Warning
+
+This script modifies host package repositories and installs/removes system packages.
+Run it only on hosts where Docker CE should be installed from the official Docker repository.
+
+### Current behavior (literalinclude-style mirror)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[INFO] Installing Docker Engine (official Docker APT repository)."
+echo "[INFO] You may be prompted for sudo password."
+
+# Remove old/conflicting packages if present.
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+  sudo apt-get remove -y "$pkg" || true
+done
+
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
+
+# Add Docker's official GPG key.
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add Docker repository.
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo \"${UBUNTU_CODENAME:-$VERSION_CODENAME}\") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+
+# Install Docker Engine + CLI + container runtime + buildx + compose plugin.
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Enable non-root docker usage for current user.
+sudo groupadd -f docker
+sudo usermod -aG docker "${USER}"
+
+newgrp docker
+echo "[INFO] Docker installation complete."
+echo "[INFO] Run: docker run hello-world"
+```
+
+### Up-to-date check
+
+This script now follows the current official Docker Ubuntu installation flow:
+
+- keyring-based repo (`/etc/apt/keyrings/docker.asc`)
+- official Docker APT source
+- installs `docker-buildx-plugin` and `docker-compose-plugin`
+
+Reference: <https://docs.docker.com/engine/install/ubuntu/>
