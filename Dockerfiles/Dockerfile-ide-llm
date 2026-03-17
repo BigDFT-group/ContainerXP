@@ -7,7 +7,7 @@
 ARG BASE_IMAGE=bigdft/sdk:latest
 FROM ${BASE_IMAGE}
 
-USER root
+ENV CONTAINER_DATE=10-03-26
 
 # Basic tools
 RUN apt-get update && apt-get install -y \
@@ -43,10 +43,15 @@ RUN apt-get update && apt-get install -y \
     mesa-vulkan-drivers \
     libvulkan1 \
     mesa-utils \
+    libasound2t64 \
  && rm -rf /var/lib/apt/lists/*
 
+# Install Zed in a system-visible location
 ENV SHELL=/usr/bin/bash
-RUN curl -f https://zed.dev/install.sh | sh
+
+RUN curl -f https://zed.dev/install.sh | sh && \
+    mv /root/.local/zed.app /opt/zed.app && \
+    ln -sf /opt/zed.app/bin/zed /usr/local/bin/zed
 
 ENV XDG_RUNTIME_DIR=/tmp/xdg-runtime-ide
 RUN mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
@@ -71,12 +76,13 @@ RUN mkdir -p /etc/container-init.d /usr/local/bin /etc/profile.d && \
       > /usr/local/bin/container-entrypoint && \
     chmod +x /usr/local/bin/container-entrypoint
 
-# IDE hook: ensure XDG runtime dir exists with correct permissions at container start.
+## IDE hook: ensure XDG runtime dir exists with correct permissions at container start.
 RUN printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/xdg-runtime-ide}"' \
+  'uid="$(id -u)"' \
+  'export XDG_RUNTIME_DIR="/tmp/xdg-runtime-ide-${uid}"' \
   'mkdir -p "$XDG_RUNTIME_DIR"' \
-  'chmod 700 "$XDG_RUNTIME_DIR" || true' \
+  'chmod 700 "$XDG_RUNTIME_DIR" 2>/dev/null || true' \
   > /etc/container-init.d/80-ide-runtime.sh && \
   chmod +x /etc/container-init.d/80-ide-runtime.sh
 
@@ -133,10 +139,8 @@ RUN printf '%s\n' \
   'alias llms="llm-sessions"' \
   > /etc/profile.d/llm-tools.sh
 
-ARG PORT=3000
-EXPOSE $PORT
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/container-entrypoint"]
 
 ENV WORKSPACE_DIR=.
-CMD ["sh", "-lc", "exec /opt/openvscode-server/bin/openvscode-server --host 0.0.0.0 --port ${PORT} --without-connection-token --workspace-folder ${WORKSPACE_DIR}"]
+CMD ["sh", "-lc", "exec /opt/openvscode-server/bin/openvscode-server --host 0.0.0.0 --port 3123 --without-connection-token --workspace-folder ${WORKSPACE_DIR}"]

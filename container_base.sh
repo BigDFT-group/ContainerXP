@@ -9,11 +9,17 @@ uniopt EMPLOY_ROOT_USER r root ASSUME_NO "Employ root user in the container, use
 uniopt EXTRA_COMMANDS x extra-cmd "" "Extra commands to be provided to docker WARNING: Spaces are not tolerated, use long commands"
 uniopt EXTRA_POSITIONAL e extra-positional "" "Extra commands to be provided at commmand line WARNING: Spaces are not tolerated, use long commands"
 uniopt HOMEDIR d homedir "/tmp/fake_home" "Directory of homedir of the container. Useful eg. to preserve history."
+uniopt USE_GPU g gpus ASSUME_NO "Export gpu usage in the docker container (usefule with nvidia-docker container)"
+
 
 enable_display() {
 if test "$WITH_DISPLAY" = "YES"; then
-    xhost +si:localuser:$(id -u) > /dev/null
+    xhost +si:localuser:$(id -un) > /dev/null
     DOCKER_OPTIONS="$DOCKER_OPTIONS --device /dev/dri -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro"
+fi
+
+if test "$USE_GPU" = "YES"; then
+    DOCKER_OPTIONS="$DOCKER_OPTIONS --gpus=all"
 fi
 }
 
@@ -72,7 +78,7 @@ parse_base(){
     enable_display
     enable_workdir
     enable_current_user
-    DOCKER_OPTIONS="$DOCKER_OPTIONS --hostname $CONTAINER $EXTRA_COMMANDS"
+    DOCKER_OPTIONS="$DOCKER_OPTIONS --hostname ${CONTAINER##*:} $EXTRA_COMMANDS"
 }
 
 docker_command() {
