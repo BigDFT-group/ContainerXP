@@ -35,7 +35,7 @@ RUN curl -L "https://github.com/gitpod-io/openvscode-server/releases/download/op
 RUN npm install -g @openai/codex
 
 # Aider
-RUN pip install --no-cache-dir aider-chat
+RUN pip install --no-cache-dir aider-chat --break-system-packages
 
 # Optional GUI-related packages you already had
 RUN apt-get update && apt-get install -y \
