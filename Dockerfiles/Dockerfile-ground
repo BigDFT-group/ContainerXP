@@ -1,13 +1,14 @@
-# File role: Unified single-stage ground image for BigDFT compilation environments.
+# File role: Unified ground image for BigDFT compilation environments.
 # Build options: Select profile + optional overrides with build args.
-# Main stages/targets: base
+# Main stages/targets: ground-ubuntu-system, ground-ubuntu-intelpython,
+# ground-hpckit-intelpython, base
 
 # syntax=docker/dockerfile:1
 
 # -----------------------------------------------------------------------------
 # Profiles
 #
-# 1) Ubuntu + oneAPI + CUDA + system Python (default)
+# 1) Ubuntu + distro toolchain + system Python
 # docker build -f Dockerfile-ground \
 #   --build-arg PROFILE=ubuntu-system \
 #   --build-arg BASE_IMAGE=ubuntu:24.04 \
@@ -24,14 +25,11 @@
 #   --build-arg PROFILE=hpckit-intelpython \
 #   --build-arg BASE_IMAGE=intel/oneapi-hpckit \
 #   -t bigdft/ground:hpckit-intelpython .
-#
 # -----------------------------------------------------------------------------
 
-# Base/profile selectors
 ARG BASE_IMAGE=ubuntu:24.04
 ARG PROFILE=ubuntu-system
 
-# Platform and version options
 ARG UBUNTULTS=24
 ARG UBUNTU_CODENAME=
 ARG ONEAPI_VERSION=
@@ -39,7 +37,6 @@ ARG CUDATOOLKIT=12-5
 ARG CUDA_MAJOR=12
 ARG CUDA_MINOR=5
 
-# Optional explicit overrides (0/1). Empty means profile defaults.
 ARG ENABLE_ONEAPI_APT=
 ARG ENABLE_INTEL_GPU_REPO=
 ARG ENABLE_CUDA=
@@ -48,11 +45,10 @@ ARG INSTALL_INTEL_PYTHON=
 ARG INSTALL_INTEL_PYPI_STACK=
 ARG ENABLE_EXIT_GUARD=1
 
-# Intel Python package knobs
 ARG INTELPYTHON_PACKAGE_NAME=2025.1.0_196
 ARG INTEL_DOWNLOAD_SHA=5c0778a5-6bf6-4286-a1b0-db6ea9dd899c
 
-FROM ${BASE_IMAGE} AS base
+FROM ${BASE_IMAGE} AS base-common
 
 ARG BASE_IMAGE
 ARG PROFILE
@@ -74,6 +70,7 @@ ARG INTEL_DOWNLOAD_SHA
 
 ENV SHELL=/bin/bash
 ENV LANG=C.UTF-8
+ENV PYTHON=python3
 
 RUN set -eux; \
   case "$PROFILE" in \
@@ -160,7 +157,7 @@ RUN set -eux; \
     fi; \
     PKGS="build-essential pkg-config gnupg libarchive13 openssh-server openssh-client \
       net-tools git cmake ${CXX_PKG} ${F_PKG} intel-opencl-icd \
-      libze-intel-gpu1 libze1 libze-dev clinfo git-lfs autoconf libtool libpcre3-dev doxygen \
+      libze-intel-gpu1 libze1 libze-dev clinfo git-lfs autoconf libtool libpcre2-dev doxygen \
       zlib1g-dev libbz2-dev libfreetype6-dev bison flex automake \
       python3-setuptools python3-dev"; \
     if [ "$ENABLE_CUDA" = "1" ] && [ "$CUDATOOLKIT" != "none" ]; then \
@@ -171,7 +168,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*; \
   else \
     PKGS="autoconf build-essential pkg-config gfortran libblas-dev liblapack-dev \
-      cmake libopenmpi-dev curl git python-is-python3 python3-setuptools python3-dev"; \
+      cmake libopenmpi-dev curl git git-lfs autoconf libtool automake bison flex python3-setuptools python3-dev doxygen"; \
     if [ "$ENABLE_CUDA" = "1" ] && [ "$CUDATOOLKIT" != "none" ]; then \
       PKGS="$PKGS cuda-toolkit-${CUDATOOLKIT}"; \
     fi; \
@@ -180,7 +177,6 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*; \
   fi
 
-ENV PYTHON=python3
 RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
     $PYTHON /tmp/get-pip.py --break-system-packages && rm -f /tmp/get-pip.py
 
@@ -204,27 +200,8 @@ RUN set -eux; \
     ln -sf /opt/intel/oneapi/intelpython3/bin/python3 /usr/local/bin/python3-intel || true; \
   fi
 
-# oneAPI-related runtime env expected by downstream BigDFT builds.
-ENV CLASSPATH='/opt/intel/oneapi/mpi/latest/share/java/mpi.jar'
-ENV CMAKE_PREFIX_PATH='/opt/intel/oneapi/tbb/latest/:/opt/intel/oneapi/mkl/latest/lib/cmake:/opt/intel/oneapi/compiler/latest'
-ENV CPATH='/opt/intel/oneapi/mkl/latest/include:/opt/intel/oneapi/dev-utilities/latest/include'
-ENV CPLUS_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
-ENV C_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
-ENV FI_PROVIDER_PATH='/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric'
-ENV GDB_INFO='/opt/intel/oneapi/debugger/latest/share/info/'
-ENV INFOPATH='/opt/intel/oneapi/debugger/latest/share/info'
-ENV INTEL_PYTHONHOME='/opt/intel/oneapi/debugger/latest/opt/debugger'
-ENV I_MPI_ROOT='/opt/intel/oneapi/mpi/latest'
-ENV LD_LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/debugger/latest/opt/debugger/lib:/opt/intel/oneapi/compiler/latest/opt/compiler/lib:/opt/intel/oneapi/compiler/latest/lib'
-ENV LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/compiler/latest/lib'
-ENV MANPATH='/opt/intel/oneapi/mpi/latest/share/man:/opt/intel/oneapi/debugger/latest/share/man:/opt/intel/oneapi/compiler/latest/share/man'
-ENV MKLROOT='/opt/intel/oneapi/mkl/latest'
-ENV OCL_ICD_FILENAMES='/opt/intel/oneapi/compiler/latest/lib/libintelocl.so'
-ENV PATH='/opt/intel/oneapi/intelpython3/bin:/opt/intel/oneapi/mpi/latest/bin:/opt/intel/oneapi/mkl/latest/bin:/opt/intel/oneapi/dpcpp-ct/latest/bin:/opt/intel/oneapi/dev-utilities/latest/bin:/opt/intel/oneapi/debugger/latest/opt/debugger/bin:/opt/intel/oneapi/compiler/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-ENV PKG_CONFIG_PATH='/opt/intel/oneapi/tbb/latest/lib/pkgconfig:/opt/intel/oneapi/mpi/latest/lib/pkgconfig:/opt/intel/oneapi/mkl/latest/lib/pkgconfig:/opt/intel/oneapi/compiler/latest/lib/pkgconfig'
-ENV TBBROOT='/opt/intel/oneapi/tbb/latest/'
-ENV I_MPI_FABRICS=shm
-ENV LD_PRELOAD='/opt/intel/oneapi/compiler/latest/lib/libirc.so'
+RUN set -eux; \
+  : > /etc/profile.d/oneapi-preload.sh
 
 RUN set -eux; \
   if [ "${ENABLE_EXIT_GUARD}" = "1" ]; then \
@@ -247,3 +224,77 @@ RUN set -eux; \
       'trap trap_exit EXIT' \
       >> /etc/bash.bashrc; \
   fi
+
+FROM base-common AS ground-ubuntu-system
+ENV PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+ENV LD_LIBRARY_PATH=''
+ENV LIBRARY_PATH=''
+ENV PKG_CONFIG_PATH=''
+ENV CMAKE_PREFIX_PATH=''
+ENV CPATH=''
+ENV C_INCLUDE_PATH=''
+ENV CPLUS_INCLUDE_PATH=''
+ENV CLASSPATH=''
+ENV FI_PROVIDER_PATH=''
+ENV GDB_INFO=''
+ENV INFOPATH=''
+ENV INTEL_PYTHONHOME=''
+ENV I_MPI_ROOT=''
+ENV MKLROOT=''
+ENV OCL_ICD_FILENAMES=''
+ENV TBBROOT=''
+
+FROM base-common AS ground-ubuntu-intelpython
+ENV CLASSPATH='/opt/intel/oneapi/mpi/latest/share/java/mpi.jar'
+ENV CMAKE_PREFIX_PATH='/opt/intel/oneapi/tbb/latest/:/opt/intel/oneapi/mkl/latest/lib/cmake:/opt/intel/oneapi/compiler/latest'
+ENV CPATH='/opt/intel/oneapi/mkl/latest/include:/opt/intel/oneapi/dev-utilities/latest/include'
+ENV CPLUS_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
+ENV C_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
+ENV FI_PROVIDER_PATH='/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric'
+ENV GDB_INFO='/opt/intel/oneapi/debugger/latest/share/info/'
+ENV INFOPATH='/opt/intel/oneapi/debugger/latest/share/info'
+ENV INTEL_PYTHONHOME='/opt/intel/oneapi/debugger/latest/opt/debugger'
+ENV I_MPI_ROOT='/opt/intel/oneapi/mpi/latest'
+ENV LD_LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/debugger/latest/opt/debugger/lib:/opt/intel/oneapi/compiler/latest/opt/compiler/lib:/opt/intel/oneapi/compiler/latest/lib'
+ENV LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/compiler/latest/lib'
+ENV MANPATH='/opt/intel/oneapi/mpi/latest/share/man:/opt/intel/oneapi/debugger/latest/share/man:/opt/intel/oneapi/compiler/latest/share/man'
+ENV MKLROOT='/opt/intel/oneapi/mkl/latest'
+ENV OCL_ICD_FILENAMES='/opt/intel/oneapi/compiler/latest/lib/libintelocl.so'
+ENV PATH='/opt/intel/oneapi/intelpython3/bin:/opt/intel/oneapi/mpi/latest/bin:/opt/intel/oneapi/mkl/latest/bin:/opt/intel/oneapi/dpcpp-ct/latest/bin:/opt/intel/oneapi/dev-utilities/latest/bin:/opt/intel/oneapi/debugger/latest/opt/debugger/bin:/opt/intel/oneapi/compiler/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+ENV PKG_CONFIG_PATH='/opt/intel/oneapi/tbb/latest/lib/pkgconfig:/opt/intel/oneapi/mpi/latest/lib/pkgconfig:/opt/intel/oneapi/mkl/latest/lib/pkgconfig:/opt/intel/oneapi/compiler/latest/lib/pkgconfig'
+ENV TBBROOT='/opt/intel/oneapi/tbb/latest/'
+ENV I_MPI_FABRICS=shm
+RUN set -eux; \
+  preload_lib='/opt/intel/oneapi/compiler/latest/lib/libirc.so'; \
+  if [ -f "$preload_lib" ]; then \
+    printf '%s\n' "export LD_PRELOAD='$preload_lib'" > /etc/profile.d/oneapi-preload.sh; \
+  fi
+
+FROM base-common AS ground-hpckit-intelpython
+ENV CLASSPATH='/opt/intel/oneapi/mpi/latest/share/java/mpi.jar'
+ENV CMAKE_PREFIX_PATH='/opt/intel/oneapi/tbb/latest/:/opt/intel/oneapi/mkl/latest/lib/cmake:/opt/intel/oneapi/compiler/latest'
+ENV CPATH='/opt/intel/oneapi/mkl/latest/include:/opt/intel/oneapi/dev-utilities/latest/include'
+ENV CPLUS_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
+ENV C_INCLUDE_PATH='/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include'
+ENV FI_PROVIDER_PATH='/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric'
+ENV GDB_INFO='/opt/intel/oneapi/debugger/latest/share/info/'
+ENV INFOPATH='/opt/intel/oneapi/debugger/latest/share/info'
+ENV INTEL_PYTHONHOME='/opt/intel/oneapi/debugger/latest/opt/debugger'
+ENV I_MPI_ROOT='/opt/intel/oneapi/mpi/latest'
+ENV LD_LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/debugger/latest/opt/debugger/lib:/opt/intel/oneapi/compiler/latest/opt/compiler/lib:/opt/intel/oneapi/compiler/latest/lib'
+ENV LIBRARY_PATH='/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/compiler/latest/lib'
+ENV MANPATH='/opt/intel/oneapi/mpi/latest/share/man:/opt/intel/oneapi/debugger/latest/share/man:/opt/intel/oneapi/compiler/latest/share/man'
+ENV MKLROOT='/opt/intel/oneapi/mkl/latest'
+ENV OCL_ICD_FILENAMES='/opt/intel/oneapi/compiler/latest/lib/libintelocl.so'
+ENV PATH='/opt/intel/oneapi/intelpython3/bin:/opt/intel/oneapi/mpi/latest/bin:/opt/intel/oneapi/mkl/latest/bin:/opt/intel/oneapi/dpcpp-ct/latest/bin:/opt/intel/oneapi/dev-utilities/latest/bin:/opt/intel/oneapi/debugger/latest/opt/debugger/bin:/opt/intel/oneapi/compiler/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+ENV PKG_CONFIG_PATH='/opt/intel/oneapi/tbb/latest/lib/pkgconfig:/opt/intel/oneapi/mpi/latest/lib/pkgconfig:/opt/intel/oneapi/mkl/latest/lib/pkgconfig:/opt/intel/oneapi/compiler/latest/lib/pkgconfig'
+ENV TBBROOT='/opt/intel/oneapi/tbb/latest/'
+ENV I_MPI_FABRICS=shm
+RUN set -eux; \
+  preload_lib='/opt/intel/oneapi/compiler/latest/lib/libirc.so'; \
+  if [ -f "$preload_lib" ]; then \
+    printf '%s\n' "export LD_PRELOAD='$preload_lib'" > /etc/profile.d/oneapi-preload.sh; \
+  fi
+
+ARG PROFILE
+FROM ground-${PROFILE} AS base

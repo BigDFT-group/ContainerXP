@@ -1,0 +1,88 @@
+# File role: Ubuntu oneAPI/CUDA ground image for BigDFT SDKs.
+# Build arguments: UBUNTU_VERSION, UBUNTU_CODENAME, ONEAPI_VERSION,
+# CUDA_TOOLKIT and INSTALL_INTEL_PYTHON.
+# Set CUDA_TOOLKIT=none to disable CUDA.
+
+# syntax=docker/dockerfile:1
+
+ARG UBUNTU_VERSION=24.04
+FROM ubuntu:${UBUNTU_VERSION}
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ARG UBUNTU_VERSION
+ARG UBUNTU_CODENAME=
+ARG ONEAPI_VERSION=
+ARG CUDA_TOOLKIT=12-5
+ARG ENABLE_INTEL_GPU_REPO=1
+ARG INSTALL_INTEL_PYPI_STACK=1
+ARG INSTALL_INTEL_PYTHON=0
+ARG INTELPYTHON_PACKAGE_NAME=2025.1.0_196
+ARG INTEL_DOWNLOAD_SHA=5c0778a5-6bf6-4286-a1b0-db6ea9dd899c
+ARG EXTRA_APT_PACKAGES=
+
+ENV SHELL=/bin/bash
+ENV LANG=C.UTF-8
+ENV CLASSPATH=/opt/intel/oneapi/mpi/latest/share/java/mpi.jar
+ENV CMAKE_PREFIX_PATH=/opt/intel/oneapi/tbb/latest/:/opt/intel/oneapi/mkl/latest/lib/cmake:/opt/intel/oneapi/compiler/latest
+ENV CPATH=/opt/intel/oneapi/mkl/latest/include:/opt/intel/oneapi/dev-utilities/latest/include
+ENV CPLUS_INCLUDE_PATH=/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include
+ENV C_INCLUDE_PATH=/opt/intel/oneapi/tbb/latest/include:/opt/intel/oneapi/mpi/latest/include:/opt/intel/oneapi/mkl/latest/include
+ENV FI_PROVIDER_PATH=/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib/prov:/usr/lib/x86_64-linux-gnu/libfabric
+ENV GDB_INFO=/opt/intel/oneapi/debugger/latest/share/info/
+ENV INFOPATH=/opt/intel/oneapi/debugger/latest/share/info
+ENV INTEL_PYTHONHOME=/opt/intel/oneapi/debugger/latest/opt/debugger
+ENV I_MPI_ROOT=/opt/intel/oneapi/mpi/latest
+ENV LD_LIBRARY_PATH=/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/opt/mpi/libfabric/lib:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/debugger/latest/opt/debugger/lib:/opt/intel/oneapi/compiler/latest/opt/compiler/lib:/opt/intel/oneapi/compiler/latest/lib
+ENV LIBRARY_PATH=/opt/intel/oneapi/tcm/1.4/lib:/opt/intel/oneapi/tbb/latest/lib/intel64/gcc4.8:/opt/intel/oneapi/mpi/latest/lib:/opt/intel/oneapi/mkl/latest/lib:/opt/intel/oneapi/compiler/latest/lib
+ENV MANPATH=/opt/intel/oneapi/mpi/latest/share/man:/opt/intel/oneapi/debugger/latest/share/man:/opt/intel/oneapi/compiler/latest/share/man
+ENV MKLROOT=/opt/intel/oneapi/mkl/latest
+ENV PATH=/opt/intel/oneapi/mpi/latest/bin:/opt/intel/oneapi/mkl/latest/bin:/opt/intel/oneapi/dpcpp-ct/latest/bin:/opt/intel/oneapi/dev-utilities/latest/bin:/opt/intel/oneapi/debugger/latest/opt/debugger/bin:/opt/intel/oneapi/compiler/latest/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PKG_CONFIG_PATH=/opt/intel/oneapi/tbb/latest/lib/pkgconfig:/opt/intel/oneapi/mpi/latest/lib/pkgconfig:/opt/intel/oneapi/mkl/latest/lib/pkgconfig:/opt/intel/oneapi/compiler/latest/lib/pkgconfig
+ENV TBBROOT=/opt/intel/oneapi/tbb/latest/
+ENV PYTHON=python3
+
+RUN set -eux; \
+    if [ -z "$UBUNTU_CODENAME" ]; then \
+      case "$UBUNTU_VERSION" in 24.04) UBUNTU_CODENAME=noble ;; 22.04) UBUNTU_CODENAME=jammy ;; 20.04) UBUNTU_CODENAME=focal ;; *) exit 2 ;; esac; \
+    fi; \
+    printf '%s\n' "$UBUNTU_CODENAME" > /etc/ubuntu-codename; \
+    apt-get update && apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl wget gpg-agent software-properties-common
+
+RUN set -eux; \
+    curl -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB | gpg --dearmor > /usr/share/keyrings/intel-oneapi-archive-keyring.gpg; \
+    echo 'deb [signed-by=/usr/share/keyrings/intel-oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main' > /etc/apt/sources.list.d/oneAPI.list; \
+    if [ "$ENABLE_INTEL_GPU_REPO" = 1 ]; then \
+      codename="$(cat /etc/ubuntu-codename)"; \
+      curl -fsSL https://repositories.intel.com/gpu/intel-graphics.key | gpg --dearmor > /usr/share/keyrings/intel-graphics-archive-keyring.gpg; \
+      echo "deb [signed-by=/usr/share/keyrings/intel-graphics-archive-keyring.gpg arch=amd64] https://repositories.intel.com/gpu/ubuntu ${codename} unified" > /etc/apt/sources.list.d/intel-graphics.list; \
+    fi; \
+    if [ -n "$CUDA_TOOLKIT" ] && [ "$CUDA_TOOLKIT" != none ]; then \
+      release="$(printf '%s' "$UBUNTU_VERSION" | tr -d .)"; \
+      wget -q "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${release}/x86_64/cuda-keyring_1.1-1_all.deb"; \
+      dpkg -i cuda-keyring_1.1-1_all.deb; rm -f cuda-keyring_1.1-1_all.deb; \
+    fi
+
+RUN set -eux; \
+    if [ -n "$ONEAPI_VERSION" ]; then cpp="intel-cpp-essentials-${ONEAPI_VERSION}"; fort="intel-fortran-essentials-${ONEAPI_VERSION}"; \
+    else cpp=intel-cpp-essentials; fort=intel-fortran-essentials; fi; \
+    packages="autoconf automake bison build-essential cmake doxygen flex git git-lfs gnupg libarchive13 libbz2-dev libfreetype6-dev libpcre2-dev libtool net-tools ocl-icd-opencl-dev pocl-opencl-icd openssh-client openssh-server pkg-config python3-dev python3-setuptools zlib1g-dev ${cpp} ${fort} intel-opencl-icd libze-intel-gpu1 libze1 libze-dev clinfo"; \
+    if [ -n "$CUDA_TOOLKIT" ] && [ "$CUDA_TOOLKIT" != none ]; then packages="$packages cuda-toolkit-${CUDA_TOOLKIT}"; fi; \
+    apt-get update && apt-get upgrade -y; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $packages $EXTRA_APT_PACKAGES; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
+    "$PYTHON" /tmp/get-pip.py --break-system-packages && rm -f /tmp/get-pip.py
+
+RUN set -eux; \
+    if [ "$INSTALL_INTEL_PYPI_STACK" = 1 ]; then \
+      pip install -i https://software.repos.intel.com/python/pypi --break-system-packages --root-user-action ignore numpy scipy dpnp dpctl tbb4py pip --upgrade; \
+      pip install --break-system-packages --root-user-action ignore smp cython numba scikit-learn-intelex; \
+    fi; \
+    if [ "$INSTALL_INTEL_PYTHON" = 1 ]; then \
+      installer="intelpython3-${INTELPYTHON_PACKAGE_NAME}-Linux-x86_64.sh"; \
+      wget "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/${INTEL_DOWNLOAD_SHA}/${installer}"; \
+      sh "$installer" -b -p /opt/intel/oneapi/intelpython3; rm -f "$installer"; \
+      ln -sf /opt/intel/oneapi/intelpython3/bin/python3 /usr/local/bin/python3; \
+    fi

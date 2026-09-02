@@ -1,0 +1,201 @@
+# File role: parameterised BigDFT upstream SDK builder.
+#
+# This intentionally has one SDK target.  The caller associates an image tag
+# with its selected module roots and condition set through the build arguments.
+
+# syntax=docker/dockerfile:1
+
+ARG BASE_IMAGE=bigdft/ground:ubuntu-system
+FROM ${BASE_IMAGE} AS base
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+# Source and rcfile selection.
+ARG CODENAME=oneapi-hpc
+ARG REPO=l_sim
+ARG BIGDFT_SUITE_URL=
+ARG BIGDFT_SUITE_BRANCH=devel
+ARG BIGDFT_SUITE_SOURCE_MODE=git
+ARG BIGDFT_SUITE_COPY_SUBDIR=.
+ARG BIGDFT_SUITE_SOURCES_DIR=/opt/bigdft/sources
+ARG BIGDFT_RCFILES_DIR=/opt/bigdft/rcfiles
+ARG UPSTREAM_TARBALLS_URL=https://gitlab.com/l_sim/bigdft-upstream-tarballs.git
+ARG UPSTREAM_TARBALLS_BRANCH=core-plugins
+ARG SDK_KOKKOS_CUDA_ARCH=
+
+ENV BIGDFT_SUITE_SOURCES=${BIGDFT_SUITE_SOURCES_DIR}
+ENV JHBUILD_RUN_AS_ROOT="please do it"
+ENV BIGDFT_SUITE_TARBALLDIR=/opt/bigdft/bigdft-upstream-tarballs
+ENV BIGDFT_SUITE_CHECKOUTROOT=/opt/bigdft/checkoutdir
+ENV BIGDFT_RCFILES_DIR=${BIGDFT_RCFILES_DIR}
+ENV BIGDFT_RCFILES_FALLBACK_DIR=${BIGDFT_SUITE_SOURCES}/rcfiles
+ENV JHBUILD_COMMAND="$PYTHON $BIGDFT_SUITE_SOURCES/bundler/jhbuild.py"
+ENV CODENAME=${CODENAME}
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:${LD_LIBRARY_PATH}
+ENV BIGDFT_KOKKOS_CUDA_ARCH=${SDK_KOKKOS_CUDA_ARCH}
+
+WORKDIR /opt/bigdft
+
+RUN git config --global user.email "bigdft-project@gmail.com" && \
+    git config --global user.name "BigDFT developer" && \
+    git lfs install && \
+    mkdir -p "$BIGDFT_SUITE_CHECKOUTROOT" "$BIGDFT_RCFILES_DIR" /etc/container-init.d /usr/local/bin
+
+RUN set -eux; \
+    printf '%s\n' \
+      '# Confirm before real shell exit (on Ctrl+D or termination)' \
+      'trap_exit() {' \
+      '  trap - EXIT' \
+      '  if [ -n "$UNDER_JHBUILD" ]; then' \
+      '    prompt="Are you sure you want to exit (UNDER_JHBUILD=$UNDER_JHBUILD)? (y/N): "' \
+      '  else' \
+      '    prompt="Are you sure you want to exit? (y/N): "' \
+      '  fi' \
+      '  read -p "$prompt" answer' \
+      '  case "$answer" in' \
+      '    [Yy]*) echo "Exiting..."; builtin exit ;;' \
+      '    *) echo "Exit canceled."; exec "$SHELL" ;;' \
+      '  esac' \
+      '}' \
+      '' \
+      'trap trap_exit EXIT' \
+      >> /etc/bash.bashrc
+
+
+# This layer makes all source archives available to the SDK; final CI jobs do
+# not need network access to obtain them.
+RUN set -eux; \
+    rm -rf "$BIGDFT_SUITE_TARBALLDIR"; \
+    GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch "$UPSTREAM_TARBALLS_BRANCH" \
+        "$UPSTREAM_TARBALLS_URL" "$BIGDFT_SUITE_TARBALLDIR"; \
+    git -C "$BIGDFT_SUITE_TARBALLDIR" lfs pull; \
+    git -C "$BIGDFT_SUITE_TARBALLDIR" lfs checkout; \
+    rm -rf "$BIGDFT_SUITE_TARBALLDIR/.git"
+
+RUN printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'set -euo pipefail' \
+    'dest="${1:?missing destination}"' \
+    'shift' \
+    'mkdir -p "$(dirname "$dest")"' \
+    'printf "%s\n" "$@" > "$dest"' \
+    'chmod +x "$dest"' \
+    > /usr/local/bin/install-lines && \
+    chmod +x /usr/local/bin/install-lines
+
+RUN install-lines /usr/local/bin/container-entrypoint \
+    '#!/usr/bin/env bash' \
+    'set -euo pipefail' \
+    'HOOK_DIR="${HOOK_DIR:-/etc/container-init.d}"' \
+    'if [ -d "$HOOK_DIR" ]; then' \
+    '  for f in "$HOOK_DIR"/*.sh; do' \
+    '    [ -r "$f" ] || continue' \
+    '    source "$f"' \
+    '  done' \
+    'fi' \
+    'exec "$@"'
+
+RUN install-lines /usr/local/bin/bigdft-rcfile \
+    '#!/usr/bin/env bash' \
+    'set -euo pipefail' \
+    'rcfile_name="${1:?missing rcfile basename}"' \
+    'if [ -f "${BIGDFT_RCFILES_DIR}/${rcfile_name}" ]; then' \
+    '  printf "%s\n" "${BIGDFT_RCFILES_DIR}/${rcfile_name}"' \
+    'elif [ -f "${BIGDFT_RCFILES_FALLBACK_DIR}/${rcfile_name}" ]; then' \
+    '  printf "%s\n" "${BIGDFT_RCFILES_FALLBACK_DIR}/${rcfile_name}"' \
+    'else' \
+    '  echo "Unable to resolve rcfile ${rcfile_name}" >&2' \
+    '  exit 1' \
+    'fi'
+
+RUN install-lines /usr/local/lib/bigdft-source-toolchain.sh \
+    '#!/usr/bin/env bash' \
+    'source_bigdft_toolchain() {' \
+    '  [ -n "${BIGDFT_TOOLCHAIN_INIT:-}" ] || return 0' \
+    '  [ -f "$BIGDFT_TOOLCHAIN_INIT" ] || { echo "Missing toolchain init: $BIGDFT_TOOLCHAIN_INIT" >&2; return 1; }' \
+    '  had_nounset=0' \
+    '  case "$-" in *u*) had_nounset=1; set +u ;; esac' \
+    '  source "$BIGDFT_TOOLCHAIN_INIT"' \
+    '  if [ "$had_nounset" -eq 1 ]; then set -u; fi' \
+    '}'
+
+RUN install-lines /usr/local/bin/bigdft-upstream \
+    '#!/usr/bin/env bash' \
+    'set -euo pipefail' \
+    'source /usr/local/lib/bigdft-source-toolchain.sh' \
+    'source_bigdft_toolchain' \
+    'rcfile="$(bigdft-rcfile "${CODENAME}-upstream.rc")"' \
+    'exec $PYTHON "$BIGDFT_SUITE_SOURCES/bundler/jhbuild.py" -m "$BIGDFT_SUITE_SOURCES/modulesets/upstream.modules" -f "$rcfile" "$@"'
+
+RUN install-lines /etc/container-init.d/20-bigdft-runtime.sh \
+    '#!/usr/bin/env bash' \
+    'source /usr/local/lib/bigdft-source-toolchain.sh' \
+    'source_bigdft_toolchain' \
+    'if [ -d /opt/upstream/lib/ur-adapters ]; then' \
+    '  export UR_ADAPTERS_SEARCH_PATH="/opt/upstream/lib/ur-adapters${UR_ADAPTERS_SEARCH_PATH:+:${UR_ADAPTERS_SEARCH_PATH}}"' \
+    'fi' \
+    'if [ -f /opt/upstream/bin/bigdftvars.sh ]; then' \
+    '  source /opt/upstream/bin/bigdftvars.sh' \
+    'fi' \
+    'if [ -f /opt/bigdft/install/bin/bigdftvars.sh ]; then' \
+    '  source /opt/bigdft/install/bin/bigdftvars.sh || true' \
+    'fi' \
+    'if command -v python3 >/dev/null 2>&1; then' \
+    '  py_mm="$(python3 -c "import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")")"' \
+    '  cand="/opt/upstream/local/python${py_mm}/dist-packages"' \
+    '  if [ -d "$cand" ]; then export PYTHONPATH="${cand}:${PYTHONPATH:-}"; return 0; fi' \
+    'fi' \
+    'for cand in /opt/upstream/local/python*/dist-packages; do' \
+    '  if [ -d "$cand" ]; then export PYTHONPATH="${cand}:${PYTHONPATH:-}"; break; fi' \
+    'done'
+
+RUN install-lines /bin/compile_bigdft-suite.sh \
+    '#!/usr/bin/env bash' \
+    'set -euo pipefail' \
+    'source /usr/local/lib/bigdft-source-toolchain.sh' \
+    'source_bigdft_toolchain' \
+    'rcfile="$(bigdft-rcfile "${CODENAME}.rc")"' \
+    'cd /opt/bigdft' \
+    '$PYTHON "$BIGDFT_SUITE_SOURCES/Installer.py" build -f "$rcfile" -y'
+
+COPY $BIGDFT_SUITE_COPY_SUBDIR /context
+RUN set -eux; \
+    rm -rf "$BIGDFT_SUITE_SOURCES"; \
+    case "$BIGDFT_SUITE_SOURCE_MODE" in \
+      git) \
+        if [ -n "$BIGDFT_SUITE_URL" ]; then suite_url="$BIGDFT_SUITE_URL"; \
+        else suite_url="https://gitlab.com/$REPO/bigdft-suite.git"; fi; \
+        git clone --depth 1 -b "$BIGDFT_SUITE_BRANCH" "$suite_url" "$BIGDFT_SUITE_SOURCES" ;; \
+      copy) mkdir -p "$BIGDFT_SUITE_SOURCES"; cp -a /context/. "$BIGDFT_SUITE_SOURCES"/ ;; \
+      *) echo "Unsupported BIGDFT_SUITE_SOURCE_MODE=$BIGDFT_SUITE_SOURCE_MODE" >&2; exit 1 ;; \
+    esac; \
+    rm -rf /context; \
+    bigdft-upstream list core-upstream-suite >/dev/null
+
+FROM base AS sdk
+ARG SDK_APT_PACKAGES=
+ARG SDK_PIP_PACKAGES=
+ARG SDK_PACKAGES
+ARG SDK_CONDITIONS
+ARG SDK_APT_UPGRADE=1
+
+RUN set -eux; \
+    test -n "$SDK_PACKAGES"; \
+    if [ -n "$SDK_APT_PACKAGES" ]; then \
+      apt-get update; \
+      if [ "$SDK_APT_UPGRADE" = 1 ]; then apt-get upgrade -y; fi; \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $SDK_APT_PACKAGES; \
+      rm -rf /var/lib/apt/lists/*; \
+    fi; \
+    if [ -n "$SDK_PIP_PACKAGES" ]; then \
+      pip install $SDK_PIP_PACKAGES --break-system-packages --root-user-action ignore; \
+    fi; \
+    bigdft-upstream --conditions="$SDK_CONDITIONS" build $SDK_PACKAGES; \
+    bigdft-upstream --conditions="$SDK_CONDITIONS" clean --skip=simtk $SDK_PACKAGES
+
+ENV PATH=/opt/upstream/bin:/opt/upstream/local/bin:${PATH}
+ENV LD_LIBRARY_PATH=/opt/upstream/lib:/opt/upstream/lib64:${LD_LIBRARY_PATH}
+ENV LIBRARY_PATH=/opt/upstream/lib:/opt/upstream/lib64:${LIBRARY_PATH}
+ENV PKG_CONFIG_PATH=/opt/upstream/lib/pkgconfig:/opt/upstream/lib64/pkgconfig:${PKG_CONFIG_PATH}
+ENV CMAKE_PREFIX_PATH=/opt/upstream:${CMAKE_PREFIX_PATH}
+ENTRYPOINT ["/usr/local/bin/container-entrypoint"]
+CMD ["bash"]

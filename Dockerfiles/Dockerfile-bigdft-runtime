@@ -1,0 +1,70 @@
+# File role: BigDFT runtime builder from an already-published SDK image.
+# The SDK image selects the compiler ABI, upstream dependency set, source and
+# rcfile; this file intentionally has no SDK flavour-specific logic.
+
+# syntax=docker/dockerfile:1
+
+ARG SDK_IMAGE=bigdft/core-sdk:gnu-ubuntu24
+FROM ${SDK_IMAGE}
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ARG TRACE_FILE_ACCESS=0
+ARG BIGDFT_SUITE_SOURCE_MODE=embedded
+ARG BIGDFT_SUITE_COPY_SUBDIR=.
+
+# `copy` lets a runtime probe exercise uncommitted BigDFT source/rcfile
+# corrections against an otherwise immutable SDK. The normal image keeps the
+# sources embedded in its SDK parent.
+COPY ${BIGDFT_SUITE_COPY_SUBDIR} /context
+RUN set -eux; \
+    case "$BIGDFT_SUITE_SOURCE_MODE" in \
+      embedded) ;; \
+      copy) \
+        rm -rf "$BIGDFT_SUITE_SOURCES" "$BIGDFT_RCFILES_DIR"; \
+        mkdir -p "$BIGDFT_SUITE_SOURCES" "$BIGDFT_RCFILES_DIR"; \
+        cp -a /context/. "$BIGDFT_SUITE_SOURCES"/; \
+        rm -rf "$BIGDFT_SUITE_SOURCES/.git" ;; \
+      *) echo "Unsupported BIGDFT_SUITE_SOURCE_MODE=$BIGDFT_SUITE_SOURCE_MODE" >&2; exit 1 ;; \
+    esac; \
+    rm -rf /context
+
+# TRACE_FILE_ACCESS=1 is a diagnostic build mode. It records successful file
+# accesses while compiling the suite, retains only an aggregated report, and
+# removes strace in the same layer. Normal runtime images are unaffected.
+# Trace files are enumerated with find rather than a trace.* shell glob: a
+# parallel suite build can create enough files to exceed ARG_MAX.
+RUN set -eux; \
+    if [ "$TRACE_FILE_ACCESS" = 1 ]; then \
+      apt-get update; \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends strace; \
+      rm -rf /var/lib/apt/lists/*; \
+      trace_dir=/tmp/bigdft-file-trace; \
+      mkdir -p "$trace_dir"; \
+      build_status=0; \
+      strace -ff -qq -o "$trace_dir/trace" -e trace=file -s 512 /bin/compile_bigdft-suite.sh || build_status=$?; \
+      { find "$trace_dir" -type f -name 'trace.*' -exec grep -h -v ' = -1 ' {} + || true; } | \
+        awk '{ line = $0; while (match(line, /"[^"]*"/)) { path = substr(line, RSTART + 1, RLENGTH - 2); if (substr(path, 1, 1) == "/") print path; line = substr(line, RSTART + RLENGTH); } }' | \
+        sort | uniq -c | sort -nr > /opt/bigdft/file-access-summary.txt; \
+      sed -n '1,240p' /opt/bigdft/file-access-summary.txt; \
+      rm -rf "$trace_dir"; \
+      apt-get purge -y --auto-remove strace; \
+      rm -rf /var/lib/apt/lists/*; \
+      if [ "$build_status" -ne 0 ]; then exit "$build_status"; fi; \
+    else \
+      compile_bigdft-suite.sh; \
+    fi
+
+RUN install-lines /usr/local/bin/bigdft-runtime-entrypoint \
+    '#!/usr/bin/env bash' \
+    'set -eo pipefail' \
+    'HOOK_DIR="${HOOK_DIR:-/etc/container-init.d}"' \
+    'if [ -d "$HOOK_DIR" ]; then' \
+    '  for f in "$HOOK_DIR"/*.sh; do' \
+    '    [ -r "$f" ] || continue' \
+    '    source "$f"' \
+    '  done' \
+    'fi' \
+    'exec "$@"'
+
+ENTRYPOINT ["/usr/local/bin/bigdft-runtime-entrypoint"]
+CMD ["bash"]

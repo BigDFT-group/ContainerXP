@@ -1,0 +1,86 @@
+version: 1
+description: >
+  Operational provenance ledger for maintained ContainerXP image chains.
+  This complements release-matrix.yaml, which remains a legacy/planning matrix.
+
+images:
+  - id: oneapi-2026.1-ubuntu26-cuda13.3-turing75-core-ci
+    status: validated-publication-pending
+    consumer: BigDFT Suite oneAPI/CUDA CI
+    codename: oneapi-cuda-hpc
+    source:
+      suite_remote: https://gitlab.com/luigigenovese/bigdft-suite.git
+      suite_branch: kokkos
+      suite_commit: ef95a04ce3
+      tarballs_branch: core-plugins
+    selection:
+      target_flavor: core
+      optional_conditions:
+        - sycl
+        - python
+        - devdoc
+        - simulation
+        - sirius
+        - kokkos
+      sdk_packages:
+        - intellvm
+        - onemath
+        - boost
+        - swig
+        - core-upstream-suite
+      kokkos_cuda_arch: TURING75
+      platform:
+        ubuntu: '26.04'
+        oneapi: '2026.1'
+        cuda: '13.3'
+    lineage:
+      ground:
+        dockerfile: Dockerfiles/Dockerfile-ground-oneapi-latest
+        local_tag: bigdft/ground:oneapi-2026.1-ubuntu26-cuda13.3-lean
+        publish: false
+      full_sdk:
+        dockerfile: Dockerfiles/Dockerfile-bigdft-sdk
+        local_tag: bigdft/core-sdk:oneapi-2026.1-ubuntu26-cuda13.3-turing75-r4
+        publish: false
+      ci_sdk:
+        dockerfile: Dockerfiles/Dockerfile-bigdft-ci-sdk
+        local_tag: bigdft/core-ci-sdk:oneapi-2026.1-ubuntu26-cuda13.3-lean
+        publish_tag: bigdft/core-ci-sdk:oneapi-2026.1-ubuntu26-cuda13.3-lean
+        publication:
+          status: pending
+          registry_digest: null
+    commands:
+      ground: >-
+        docker build --network=host --file Dockerfiles/Dockerfile-ground-oneapi-latest
+        --build-arg FORCE_IPV6=1 --build-arg UBUNTU_VERSION=26.04
+        --build-arg CUDA_TOOLKIT=13-3 --tag bigdft/ground:oneapi-2026.1-ubuntu26-cuda13.3-lean .
+      full_sdk: >-
+        docker build --file Dockerfiles/Dockerfile-bigdft-sdk --target sdk
+        --build-arg BASE_IMAGE=bigdft/ground:oneapi-2026.1-ubuntu26-cuda13.3-lean
+        --build-arg CODENAME=oneapi-cuda-hpc --build-arg SDK_KOKKOS_CUDA_ARCH=TURING75
+        --build-arg SDK_CONDITIONS='+sycl,+python,+devdoc,+simulation,+sirius,+kokkos'
+        --tag bigdft/core-sdk:oneapi-2026.1-ubuntu26-cuda13.3-turing75-r4 .
+      ci_sdk: >-
+        docker build --file Dockerfiles/Dockerfile-bigdft-ci-sdk
+        --build-arg SDK_IMAGE=bigdft/core-sdk:oneapi-2026.1-ubuntu26-cuda13.3-turing75-r4
+        --build-arg BASE_IMAGE=bigdft/ground:oneapi-2026.1-ubuntu26-cuda13.3-lean
+        --build-arg CODENAME=oneapi-cuda-hpc --build-arg SDK_KOKKOS_CUDA_ARCH=TURING75
+        --tag bigdft/core-ci-sdk:oneapi-2026.1-ubuntu26-cuda13.3-lean .
+    validation:
+      - Full SDK built with Kokkos 5.1.0, KokkosFFT 2.0.0, and CUDA architecture TURING75.
+      - Clean BigDFT Suite build completed with oneapi-cuda-hpc.rc and its paired upstream rcfile.
+      - CI SDK repeated the Suite build and retained the required GObject-introspection development dependencies.
+      - GPU runtime: NVIDIA CUDA OpenCL platform detected with --gpus all.
+      - Portable CPU OpenCL platform detected through POCL.
+      - Trace-guided payload review performed; do not use the trace as the only pruning authority.
+    update_triggers:
+      - Any edit to oneapi-cuda-hpc.rc, oneapi-cuda-hpc-upstream.rc, modulesets, or Suite source commit.
+      - Ubuntu, oneAPI, MPI, MKL, CUDA, NVIDIA-driver-stub, Kokkos, KokkosFFT, FFTW, or OpenCL/POCL update.
+      - A change to SDK payload, entrypoint environment, or CI job commands.
+    retention:
+      keep_full_sdk_locally: true
+      keep_ground_locally: true
+      rationale: Rebuild the lean CI payload only from a validated, ABI-compatible full SDK and ground pair.
+    operational_notes:
+      - Intel repository access may require IPv6; the ground recipe handles that separately from NVIDIA repository access.
+      - CUDA stubs are build-time link aids. Runtime GPU validation requires the NVIDIA container runtime.

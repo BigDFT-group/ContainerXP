@@ -1,0 +1,37 @@
+# File role: GNU/OpenMPI ground image for BigDFT SDKs.
+# Build arguments: UBUNTU_VERSION, APT_UPGRADE, EXTRA_APT_PACKAGES.
+
+# syntax=docker/dockerfile:1
+
+ARG UBUNTU_VERSION=24.04
+FROM ubuntu:${UBUNTU_VERSION}
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ARG APT_UPGRADE=1
+ARG EXTRA_APT_PACKAGES=
+
+ENV SHELL=/bin/bash
+ENV LANG=C.UTF-8
+ENV PYTHON=python3
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV LD_LIBRARY_PATH=
+ENV LIBRARY_PATH=
+ENV PKG_CONFIG_PATH=
+ENV CMAKE_PREFIX_PATH=
+
+RUN set -eux; \
+    apt-get update; \
+    if [ "$APT_UPGRADE" = 1 ]; then apt-get upgrade -y; fi; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      ca-certificates curl wget gpg-agent software-properties-common \
+      autoconf automake bison build-essential cmake doxygen flex gfortran \
+      git git-lfs libblas-dev liblapack-dev libopenmpi-dev libpcre2-dev \
+      libtool pkg-config python3-dev python3-setuptools; \
+    if [ -n "$EXTRA_APT_PACKAGES" ]; then \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $EXTRA_APT_PACKAGES; \
+    fi; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
+    "$PYTHON" /tmp/get-pip.py --break-system-packages && \
+    rm -f /tmp/get-pip.py

@@ -1,0 +1,50 @@
+# syntax=docker/dockerfile:1
+# Reusable Futile build-and-test image for Latest Ubuntu
+
+FROM ubuntu:latest AS base
+LABEL org.opencontainers.image.title="BigDFT Ubuntu latest CI ground"
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    OMPI_MCA_btl_vader_single_copy_mechanism=none \
+    PIPX_BIN_DIR=/usr/local/bin \
+    PIPX_HOME=/opt/pipx
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      autoconf automake libtool make pkg-config bzip2 patch \
+      gcc g++ gfortran \
+      libopenmpi-dev \
+      libblas-dev liblapack-dev libyaml-dev \
+      git wget openssh-client \
+      python3 python3-dev python3-pip python3-pytest python3-numpy \
+      python3-yaml cython3 pipx \
+ && pipx install nbval --include-deps \
+ && rm -rf /var/lib/apt/lists/*
+
+# OpenCL and BigDFT Installer/JHBuild prerequisites.  The suite OpenCL CI job
+# uses this target without the much larger CUDA toolchain.
+# Build with: docker build --target opencl -t bigdft/ground:ubuntu-latest-ci-opencl .
+FROM base AS opencl
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      autotools-dev python3-setuptools curl cmake \
+      build-essential debhelper fakeroot \
+      ocl-icd-opencl-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+# CUDA extends the OpenCL layer so registries can reuse the shared CI layers.
+# Build with: docker build --target cuda -t bigdft/ground:ubuntu-latest-ci-cuda .
+FROM opencl AS cuda
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends nvidia-cuda-toolkit \
+ && rm -rf /var/lib/apt/lists/*
+
+# Futile's Debian package job enables CUDA and OpenCL in debian/rules.
+# Build with: docker build --target debian -t bigdft/ground:ubuntu-latest-ci-debian .
+FROM cuda AS debian
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential debhelper \
+ && rm -rf /var/lib/apt/lists/*

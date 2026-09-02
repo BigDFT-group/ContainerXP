@@ -1,0 +1,80 @@
+# File role: compact, CI-capable BigDFT SDK assembled from a fresh ABI-matched
+# ground image and a completed full SDK. It intentionally does not inherit SDK
+# layers, so upstream build trees and cached source archives are absent.
+
+# syntax=docker/dockerfile:1
+
+ARG SDK_IMAGE=bigdft/core-sdk:gnu-ubuntu24
+ARG BASE_IMAGE=bigdft/ground:ubuntu-system
+FROM ${SDK_IMAGE} AS sdk-payload
+
+# Prepare only the files needed to configure and compile the BigDFT suite.
+# This is a separate stage so removing source-control metadata does reduce the
+# final image size.
+RUN set -eux; \
+    mkdir -p /ci-payload/opt/bigdft/checkoutdir/kokkos-5.1.0/bin \
+             /ci-payload/opt/bigdft/bigdft-upstream-tarballs \
+             /ci-payload/usr/local/bin \
+             /ci-payload/usr/local/lib \
+             /ci-payload/etc/container-init.d; \
+    cp -a /opt/upstream /ci-payload/opt/; \
+    cp -a /opt/bigdft/sources /ci-payload/opt/bigdft/; \
+    cp -a /opt/bigdft/rcfiles /ci-payload/opt/bigdft/; \
+    # The suite moduleset fetches NTPoly even with no_upstream; retaining this
+    # single cache archive keeps CI compilation network-independent.
+    cp -a /opt/bigdft/bigdft-upstream-tarballs/ntpoly-v3.1.1.tar.gz \
+        /ci-payload/opt/bigdft/bigdft-upstream-tarballs/; \
+    rm -rf /ci-payload/opt/bigdft/sources/.git; \
+    cp -a /usr/local/bin/container-entrypoint \
+        /usr/local/bin/install-lines \
+        /usr/local/bin/bigdft-rcfile \
+        /usr/local/bin/bigdft-upstream \
+        /ci-payload/usr/local/bin/; \
+    cp -a /usr/local/lib/bigdft-source-toolchain.sh /ci-payload/usr/local/lib/; \
+    cp -a /etc/container-init.d/20-bigdft-runtime.sh /ci-payload/etc/container-init.d/; \
+    cp -a /bin/compile_bigdft-suite.sh /ci-payload/usr/local/bin/
+
+FROM ${BASE_IMAGE}
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ARG CODENAME=oneapi-hpc
+ARG SDK_KOKKOS_CUDA_ARCH=
+# Upstream GLib's gio-2.0.pc requires these system development pkg-config
+# dependencies when g-ir-scanner compiles BigDFT's typelib helper.
+ARG CI_APT_PACKAGES="libmount-dev libselinux1-dev"
+
+ENV BIGDFT_SUITE_SOURCES=/opt/bigdft/sources
+ENV JHBUILD_RUN_AS_ROOT="please do it"
+ENV BIGDFT_SUITE_TARBALLDIR=/opt/bigdft/bigdft-upstream-tarballs
+ENV BIGDFT_SUITE_CHECKOUTROOT=/opt/bigdft/checkoutdir
+ENV BIGDFT_RCFILES_DIR=/opt/bigdft/rcfiles
+ENV BIGDFT_RCFILES_FALLBACK_DIR=/opt/bigdft/sources/rcfiles
+ENV JHBUILD_COMMAND="$PYTHON /opt/bigdft/sources/bundler/jhbuild.py"
+ENV CODENAME=${CODENAME}
+ENV BIGDFT_KOKKOS_CUDA_ARCH=${SDK_KOKKOS_CUDA_ARCH}
+ENV PATH=/opt/upstream/bin:/opt/upstream/local/bin:${PATH}
+ENV LD_LIBRARY_PATH=/opt/upstream/lib:/opt/upstream/lib64:${LD_LIBRARY_PATH}
+ENV LIBRARY_PATH=/opt/upstream/lib:/opt/upstream/lib64:${LIBRARY_PATH}
+ENV PKG_CONFIG_PATH=/opt/upstream/lib/pkgconfig:/opt/upstream/lib64/pkgconfig:${PKG_CONFIG_PATH}
+ENV CMAKE_PREFIX_PATH=/opt/upstream:${CMAKE_PREFIX_PATH}
+
+RUN set -eux; \
+    if [ -n "$CI_APT_PACKAGES" ]; then \
+      apt-get update; \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $CI_APT_PACKAGES; \
+      rm -rf /var/lib/apt/lists/*; \
+    fi
+
+COPY --from=sdk-payload /ci-payload/ /
+
+# The suite build creates only its own build/install state here. The upstream
+# source cache (except its observed NTPoly dependency) and all full-SDK
+# checkout/build artefacts are deliberately gone.
+# The symlink preserves compatibility with SDKs whose Kokkos package metadata
+# still records its original source-checkout wrapper path.
+RUN mkdir -p /opt/bigdft/install "$BIGDFT_SUITE_CHECKOUTROOT/kokkos-5.1.0/bin" "$BIGDFT_RCFILES_DIR"; \
+    ln -s /opt/upstream/bin/nvcc_wrapper "$BIGDFT_SUITE_CHECKOUTROOT/kokkos-5.1.0/bin/nvcc_wrapper"; \
+    ln -s /usr/local/bin/compile_bigdft-suite.sh /bin/compile_bigdft-suite.sh
+
+ENTRYPOINT ["/usr/local/bin/container-entrypoint"]
+CMD ["bash"]

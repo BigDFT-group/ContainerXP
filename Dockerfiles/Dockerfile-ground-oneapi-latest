@@ -1,0 +1,83 @@
+# File role: current oneAPI toolkit ground image, optionally with CUDA.
+# Build arguments: UBUNTU_VERSION, ONEAPI_PACKAGES, CUDA_TOOLKIT,
+# CUDA_PACKAGES, ENABLE_INTEL_GPU_REPO and FORCE_IPV6. Set CUDA_TOOLKIT=none to disable
+# CUDA. CUDA_PACKAGES overrides the full CUDA toolkit meta-package when a
+# lean compiler/runtime closure is wanted.
+
+# syntax=docker/dockerfile:1
+
+ARG UBUNTU_VERSION=26.04
+FROM ubuntu:${UBUNTU_VERSION}
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ARG UBUNTU_VERSION
+ARG UBUNTU_CODENAME=
+ARG ONEAPI_PACKAGES=intel-oneapi-toolkit
+ARG CUDA_TOOLKIT=13-3
+ARG CUDA_PACKAGES=
+ARG ENABLE_INTEL_GPU_REPO=0
+ARG EXTRA_APT_PACKAGES=
+ARG FORCE_IPV6=0
+
+ENV SHELL=/bin/bash
+ENV LANG=C.UTF-8
+ENV PYTHON=python3
+ENV BIGDFT_TOOLCHAIN_INIT=/etc/bigdft-toolchain-init.sh
+
+RUN set -eux; \
+    if [ -z "$UBUNTU_CODENAME" ]; then \
+      case "$UBUNTU_VERSION" in 26.04) UBUNTU_CODENAME=resolute ;; 24.04) UBUNTU_CODENAME=noble ;; 22.04) UBUNTU_CODENAME=jammy ;; *) exit 2 ;; esac; \
+    fi; \
+    printf '%s\n' "$UBUNTU_CODENAME" > /etc/ubuntu-codename; \
+    apt-get update && apt-get upgrade -y; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      ca-certificates curl wget gpg-agent software-properties-common
+
+RUN set -eux; \
+    case "$FORCE_IPV6" in \
+      0) curl_options= ;; \
+      1) curl_options=-6; printf '%s\n' 'Acquire::ForceIPv6 "true";' > /etc/apt/apt.conf.d/99force-ipv6 ;; \
+      *) echo "FORCE_IPV6 must be 0 or 1" >&2; exit 2 ;; \
+    esac; \
+    curl $curl_options -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB \
+      | gpg --dearmor > /usr/share/keyrings/oneapi-archive-keyring.gpg; \
+    echo 'deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main' > /etc/apt/sources.list.d/oneAPI.list; \
+    if [ "$ENABLE_INTEL_GPU_REPO" = 1 ]; then \
+      codename="$(cat /etc/ubuntu-codename)"; \
+      curl $curl_options -fsSL https://repositories.intel.com/gpu/intel-graphics.key | gpg --dearmor > /usr/share/keyrings/intel-graphics-archive-keyring.gpg; \
+      echo "deb [signed-by=/usr/share/keyrings/intel-graphics-archive-keyring.gpg arch=amd64] https://repositories.intel.com/gpu/ubuntu ${codename} unified" > /etc/apt/sources.list.d/intel-graphics.list; \
+    fi; \
+    :
+
+RUN set -eux; \
+    packages="autoconf automake bison build-essential cmake doxygen flex git git-lfs libblas-dev liblapack-dev libopenmpi-dev libpcre2-dev libtool libze-dev ocl-icd-opencl-dev pocl-opencl-icd clinfo pkg-config python3-dev python3-setuptools g++-16 ${ONEAPI_PACKAGES}"; \
+    apt-get update && apt-get upgrade -y; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $packages $EXTRA_APT_PACKAGES; \
+    rm -f /etc/apt/apt.conf.d/99force-ipv6; \
+    rm -rf /var/lib/apt/lists/*
+
+# NVIDIA's repository is IPv4-only from some networks.  It is deliberately
+# configured after the oneAPI install, which may require FORCE_IPV6=1.
+RUN set -eux; \
+    if [ -n "$CUDA_TOOLKIT" ] && [ "$CUDA_TOOLKIT" != none ]; then \
+      release="$(printf '%s' "$UBUNTU_VERSION" | tr -d .)"; \
+      wget -4 -q "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${release}/x86_64/cuda-keyring_1.1-1_all.deb"; \
+      dpkg -i cuda-keyring_1.1-1_all.deb; rm -f cuda-keyring_1.1-1_all.deb; \
+      if [ -n "$CUDA_PACKAGES" ]; then packages="$CUDA_PACKAGES"; \
+      else packages="cuda-toolkit-${CUDA_TOOLKIT} cuda-driver-dev-${CUDA_TOOLKIT}"; fi; \
+      apt-get update; \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $packages; \
+      ln -sf libcuda.so /usr/local/cuda/targets/x86_64-linux/lib/stubs/libcuda.so.1; \
+    fi; \
+    test -r /etc/OpenCL/vendors/intel64.icd; \
+    test -e "$(cat /etc/OpenCL/vendors/intel64.icd)"; \
+    # The NVIDIA driver supplies libnvidia-opencl.so.1 at container run time.
+    # Keep POCL too: it provides the CPU OpenCL platform used by generic CI.
+    printf '%s\n' 'libnvidia-opencl.so.1' > /etc/OpenCL/vendors/nvidia.icd; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'source /opt/intel/oneapi/setvars.sh' \
+      > /etc/bigdft-toolchain-init.sh && \
+    chmod +x /etc/bigdft-toolchain-init.sh

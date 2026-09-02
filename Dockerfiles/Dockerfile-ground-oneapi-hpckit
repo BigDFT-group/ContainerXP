@@ -1,0 +1,21 @@
+# File role: Intel HPCKit ground image with Intel Python.
+
+# syntax=docker/dockerfile:1
+
+ARG HPCKIT_IMAGE=intel/oneapi-hpckit
+FROM ${HPCKIT_IMAGE}
+LABEL maintainer=bigdft-developers@lists.launchpad.net
+
+ARG INTELPYTHON_PACKAGE_NAME=2025.0.0_71
+ARG INTEL_DOWNLOAD_SHA=065bada9-07c4-425a-98e0-d219baccd9d6
+
+ENV SHELL=/bin/bash
+
+RUN set -eux; \
+    installer="intelpython3-${INTELPYTHON_PACKAGE_NAME}-Linux-x86_64.sh"; \
+    wget "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/${INTEL_DOWNLOAD_SHA}/${installer}"; \
+    sh "$installer" -b -p /opt/intel/oneapi/intelpython3; rm -f "$installer"
+
+ENV INTELPYTHON=/opt/intel/oneapi/intelpython3
+ENV PYTHON=/opt/intel/oneapi/intelpython3/bin/python3
+ENV PATH=/opt/intel/oneapi/intelpython3/bin:${PATH}

@@ -210,7 +210,8 @@ Current hook usage:
 - `Dockerfile-bigdft` installs:
   - `/etc/container-init.d/20-bigdft-runtime.sh`
   - Responsibilities:
-    - source `/opt/bigdft/install/bin/bigdftvars.sh` if present
+    - source `/opt/upstream/bin/bigdftvars.sh` first, then the legacy
+      `/opt/bigdft/install/bin/bigdftvars.sh` if present
     - detect Python major/minor at runtime
     - export dynamic `PYTHONPATH` from `/opt/upstream/local/pythonX.Y/dist-packages`
 - `Dockerfile-ide-llm` installs:
